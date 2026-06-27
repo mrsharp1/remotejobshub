@@ -1,9 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    'Supabase credentials are missing. Check your environment variables in .env'
-  )
+
+let clientUrl = supabaseUrl
+let clientKey = supabaseAnonKey
+
+// Validate URL format to prevent createClient from throwing synchronous errors
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
 }
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+if (!clientUrl || !isValidUrl(clientUrl) || !clientKey) {
+  console.warn(
+    'Supabase credentials are missing or invalid. Falling back to dummy configuration.'
+  )
+  clientUrl = 'https://placeholder-project.supabase.co'
+  clientKey = 'placeholder-key'
+}
+
+export const supabase = createClient(clientUrl, clientKey)
