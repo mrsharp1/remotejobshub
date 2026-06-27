@@ -4,4 +4,4 @@ export const ROLES = {
   BUYER: 'buyer',
   GUEST: 'guest',
 } as const
-export type UserRole = typeof ROLES[keyof typeof ROLES]
+export type UserRole = (typeof ROLES)[keyof typeof ROLES]

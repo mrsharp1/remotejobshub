@@ -14,4 +14,4 @@ export const ROUTES = {
   SELLER: '/seller',
   ADMIN: '/admin',
 } as const
-export type AppRoute = typeof ROUTES[keyof typeof ROUTES]
+export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]

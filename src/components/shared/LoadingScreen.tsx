@@ -5,7 +5,9 @@ export const LoadingScreen: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center space-y-4">
         <Spinner />
-        <p className="font-heading text-lg font-medium">Loading Remote Jobs Hub...</p>
+        <p className="font-heading text-lg font-medium">
+          Loading Remote Jobs Hub...
+        </p>
       </div>
     </div>
   )

@@ -3,4 +3,4 @@ export const PLATFORMS = {
   MOBILE: 'mobile',
   DESKTOP: 'desktop',
 } as const
-export type Platform = typeof PLATFORMS[keyof typeof PLATFORMS]
+export type Platform = (typeof PLATFORMS)[keyof typeof PLATFORMS]

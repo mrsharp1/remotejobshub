@@ -5,37 +5,70 @@ import { useUIStore } from '@/stores/uiStore'
 export const DashboardLayout: React.FC = () => {
   const { isSidebarOpen, toggleSidebar } = useUIStore()
   return (
-    <div className="flex min-h-screen bg-muted/20">
-      <aside className={`border-r bg-background transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-16'} hidden flex-col md:flex`}>
+    <div className="bg-muted/20 flex min-h-screen">
+      <aside
+        className={`border-r bg-background transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-16'} hidden flex-col md:flex`}
+      >
         <div className="flex h-16 items-center justify-between px-4">
-          <span className={`font-heading font-bold ${isSidebarOpen ? 'block' : 'hidden'}`}>Hub Dashboard</span>
-          <button onClick={toggleSidebar} className="rounded p-1 hover:bg-muted">
-            {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          <span
+            className={`font-heading font-bold ${isSidebarOpen ? 'block' : 'hidden'}`}
+          >
+            Hub Dashboard
+          </span>
+          <button
+            onClick={toggleSidebar}
+            className="rounded p-1 hover:bg-muted"
+          >
+            {isSidebarOpen ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
           </button>
         </div>
         <nav className="flex-1 space-y-1 p-2">
-          <Link to="/dashboard" className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+          <Link
+            to="/dashboard"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
             <LayoutDashboard className="h-5 w-5" />
-            <span className={isSidebarOpen ? 'inline' : 'hidden'}>Overview</span>
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Overview
+            </span>
           </Link>
-          <Link to="/seller" className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+          <Link
+            to="/seller"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
             <Settings className="h-5 w-5" />
-            <span className={isSidebarOpen ? 'inline' : 'hidden'}>Seller Settings</span>
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Seller Settings
+            </span>
           </Link>
-          <Link to="/" className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+          <Link
+            to="/"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
             <Home className="h-5 w-5" />
-            <span className={isSidebarOpen ? 'inline' : 'hidden'}>Back to Site</span>
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Back to Site
+            </span>
           </Link>
         </nav>
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:justify-end">
-          <button onClick={toggleSidebar} className="rounded p-2 hover:bg-muted md:hidden">
+          <button
+            onClick={toggleSidebar}
+            className="rounded p-2 hover:bg-muted md:hidden"
+          >
             <Menu className="h-6 w-6" />
           </button>
           <div className="text-sm">Welcome, User</div>
         </header>
-        <main className="flex-1 p-6"><Outlet /></main>
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   )

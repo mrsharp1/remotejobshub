@@ -3,20 +3,26 @@ import { Link, Outlet } from 'react-router-dom'
 import { Shield, Home, Users, BarChart } from 'lucide-react'
 export const AdminLayout: React.FC = () => {
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <aside className="w-64 border-r bg-background flex flex-col">
-        <div className="flex h-16 items-center px-6 border-b">
+    <div className="bg-muted/30 flex min-h-screen">
+      <aside className="flex w-64 flex-col border-r bg-background">
+        <div className="flex h-16 items-center border-b px-6">
           <Link to="/" className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-destructive" />
-            <span className="font-heading font-bold text-lg">Admin Portal</span>
+            <span className="font-heading text-lg font-bold">Admin Portal</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 p-4">
-          <Link to="/admin" className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+          <Link
+            to="/admin"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
             <Shield className="h-5 w-5" />
             <span>Admin Center</span>
           </Link>
-          <Link to="/" className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+          <Link
+            to="/"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
             <Home className="h-5 w-5" />
             <span>Main Platform</span>
           </Link>
@@ -27,7 +33,9 @@ export const AdminLayout: React.FC = () => {
           <div className="font-bold text-destructive">SECURE CONSOLE</div>
           <div className="text-sm font-medium">Administrator</div>
         </header>
-        <main className="flex-1 p-6"><Outlet /></main>
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   )
