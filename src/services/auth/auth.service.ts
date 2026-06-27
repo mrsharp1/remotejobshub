@@ -50,6 +50,48 @@ export const authService = {
     }
   },
 
+  async signIn(email: string, password: string) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
+      return data
+    } catch (err) {
+      console.error('Error in signIn:', err)
+      throw err
+    }
+  },
+
+  async signUp(email: string, password: string, options?: { data?: any }) {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options,
+      })
+      if (error) throw error
+      return data
+    } catch (err) {
+      console.error('Error in signUp:', err)
+      throw err
+    }
+  },
+
+  async sendPasswordResetEmail(email: string, redirectTo?: string) {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      })
+      if (error) throw error
+      return data
+    } catch (err) {
+      console.error('Error in sendPasswordResetEmail:', err)
+      throw err
+    }
+  },
+
   async signOut(): Promise<void> {
     try {
       const { error } = await supabase.auth.signOut()
