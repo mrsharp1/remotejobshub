@@ -92,8 +92,9 @@ export const RegisterPage: React.FC = () => {
         },
       })
       setIsSuccess(true)
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Registration failed. Please try again.')
+    } catch (err: unknown) {
+      const error = err as Error
+      setErrorMsg(error.message || 'Registration failed. Please try again.')
     } finally {
       setIsLoading(false)
     }

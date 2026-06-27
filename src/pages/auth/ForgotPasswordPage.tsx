@@ -38,8 +38,11 @@ export const ForgotPasswordPage: React.FC = () => {
       const resetUrl = `${siteUrl}/login`
       await authService.sendPasswordResetEmail(data.email, resetUrl)
       setIsSuccess(true)
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to send reset link. Please try again.')
+    } catch (err: unknown) {
+      const error = err as Error
+      setErrorMsg(
+        error.message || 'Failed to send reset link. Please try again.'
+      )
     } finally {
       setIsLoading(false)
     }

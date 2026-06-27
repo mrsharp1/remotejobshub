@@ -64,7 +64,11 @@ export const authService = {
     }
   },
 
-  async signUp(email: string, password: string, options?: { data?: any }) {
+  async signUp(
+    email: string,
+    password: string,
+    options?: { data?: Record<string, unknown> }
+  ) {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,

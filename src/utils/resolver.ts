@@ -1,19 +1,27 @@
-import { ZodSchema } from 'zod'
+import { ZodSchema, ZodIssue } from 'zod'
 
-export const zodResolver = (schema: ZodSchema) => async (values: any) => {
-  const result = schema.safeParse(values)
-  if (result.success) {
-    return { values: result.data, errors: {} }
-  }
-
-  const errors = result.error.errors.reduce((acc: any, current: any) => {
-    const path = current.path.join('.')
-    acc[path] = {
-      type: current.code,
-      message: current.message,
+export const zodResolver =
+  <T extends Record<string, unknown>>(schema: ZodSchema<T>) =>
+  async (values: T) => {
+    const result = schema.safeParse(values)
+    if (result.success) {
+      return { values: result.data, errors: {} }
     }
-    return acc
-  }, {})
 
-  return { values: {}, errors }
-}
+    const errors = result.error.errors.reduce(
+      (
+        acc: Record<string, { type: string; message: string }>,
+        current: ZodIssue
+      ) => {
+        const path = current.path.join('.')
+        acc[path] = {
+          type: current.code,
+          message: current.message,
+        }
+        return acc
+      },
+      {}
+    )
+
+    return { values: {}, errors }
+  }

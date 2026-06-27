@@ -40,8 +40,9 @@ export const LoginPage: React.FC = () => {
     try {
       await authService.signIn(data.email, data.password)
       navigate('/dashboard')
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Invalid email or password.')
+    } catch (err: unknown) {
+      const error = err as Error
+      setErrorMsg(error.message || 'Invalid email or password.')
     } finally {
       setIsLoading(false)
     }
