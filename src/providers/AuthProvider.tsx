@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true
 
-    const { subscription } = authService.onAuthStateChange(
+    const subscription = authService.onAuthStateChange(
       async (_event, currentSession) => {
         try {
           if (currentSession?.user) {
