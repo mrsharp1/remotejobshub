@@ -4,13 +4,19 @@ import { Session, User } from '@supabase/supabase-js'
 
 export const authService = {
   async getCurrentUser(): Promise<User | null> {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
     if (error) return null
     return user
   },
 
   async getCurrentSession(): Promise<Session | null> {
-    const { data: { session }, error } = await supabase.auth.getSession()
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
     if (error) return null
     return session
   },
@@ -21,7 +27,7 @@ export const authService = {
       .select('*')
       .eq('id', userId)
       .single()
-    
+
     if (error) {
       console.error('Error fetching profile:', error.message)
       return null
@@ -37,11 +43,11 @@ export const authService = {
   onAuthStateChange(
     callback: (event: string, session: Session | null) => void
   ) {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        callback(event, session)
-      }
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      callback(event, session)
+    })
     return subscription
-  }
+  },
 }

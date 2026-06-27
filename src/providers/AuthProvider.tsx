@@ -35,25 +35,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true
 
-    const { subscription } = authService.onAuthStateChange(async (_event, currentSession) => {
-      try {
-        if (currentSession?.user) {
-          const fetchedProfile = await authService.getProfile(currentSession.user.id)
-          if (isMounted) {
-            setAuth(currentSession.user, fetchedProfile, currentSession)
+    const { subscription } = authService.onAuthStateChange(
+      async (_event, currentSession) => {
+        try {
+          if (currentSession?.user) {
+            const fetchedProfile = await authService.getProfile(
+              currentSession.user.id
+            )
+            if (isMounted) {
+              setAuth(currentSession.user, fetchedProfile, currentSession)
+            }
+          } else {
+            if (isMounted) {
+              clearAuth()
+            }
           }
-        } else {
+        } catch (err) {
+          console.error('Authentication status sync failed:', err)
           if (isMounted) {
             clearAuth()
           }
         }
-      } catch (err) {
-        console.error('Authentication status sync failed:', err)
-        if (isMounted) {
-          clearAuth()
-        }
       }
-    })
+    )
 
     return () => {
       isMounted = false
