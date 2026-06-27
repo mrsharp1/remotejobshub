@@ -35,33 +35,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true
 
-    const subscription = authService.onAuthStateChange(
-      async (_event, currentSession) => {
-        try {
-          if (currentSession?.user) {
-            const fetchedProfile = await authService.getProfile(
-              currentSession.user.id
-            )
-            if (isMounted) {
-              setAuth(currentSession.user, fetchedProfile, currentSession)
-            }
-          } else {
-            if (isMounted) {
-              clearAuth()
-            }
+    const initializeAuth = async () => {
+      try {
+        const currentSession = await authService.getCurrentSession()
+        if (!isMounted) return
+
+        if (currentSession?.user) {
+          const fetchedProfile = await authService.getProfile(
+            currentSession.user.id
+          )
+          if (isMounted) {
+            setAuth(currentSession.user, fetchedProfile, currentSession)
           }
-        } catch (err) {
-          console.error('Authentication status sync failed:', err)
+        } else {
           if (isMounted) {
             clearAuth()
           }
         }
+      } catch (err) {
+        console.error('Failed to initialize session:', err)
+        if (isMounted) {
+          clearAuth()
+        }
       }
-    )
+    }
+
+    initializeAuth()
+
+    let subscription: { unsubscribe: () => void } | null = null
+    try {
+      subscription = authService.onAuthStateChange(
+        async (_event, currentSession) => {
+          try {
+            if (currentSession?.user) {
+              const fetchedProfile = await authService.getProfile(
+                currentSession.user.id
+              )
+              if (isMounted) {
+                setAuth(currentSession.user, fetchedProfile, currentSession)
+              }
+            } else {
+              if (isMounted) {
+                clearAuth()
+              }
+            }
+          } catch (err) {
+            console.error('Authentication status sync failed:', err)
+            if (isMounted) {
+              clearAuth()
+            }
+          }
+        }
+      )
+    } catch (err) {
+      console.error('Failed to subscribe to auth state changes:', err)
+      if (isMounted) {
+        clearAuth()
+      }
+    }
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
   }, [setAuth, clearAuth])
 
