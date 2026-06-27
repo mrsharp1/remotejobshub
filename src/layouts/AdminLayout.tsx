@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, Outlet } from 'react-router-dom'
-import { Shield, Home, Users, BarChart } from 'lucide-react'
+import { Shield, Home } from 'lucide-react'
 export const AdminLayout: React.FC = () => {
   return (
     <div className="bg-muted/30 flex min-h-screen">

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, Outlet } from 'react-router-dom'
-import { Menu, X, LayoutDashboard, Settings, LogOut, Home } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Settings, Home } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 export const DashboardLayout: React.FC = () => {
   const { isSidebarOpen, toggleSidebar } = useUIStore()
