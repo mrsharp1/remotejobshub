@@ -7,6 +7,18 @@ export interface User {
   createdAt: string
   avatarUrl?: string
 }
+export interface Profile {
+  id: string
+  full_name: string | null
+  email: string
+  phone: string | null
+  country: string | null
+  avatar_url: string | null
+  role: 'buyer' | 'seller' | 'admin'
+  status: 'active' | 'suspended' | 'pending' | 'deleted'
+  created_at: string
+  updated_at: string
+}
 export interface Seller {
   id: string
   userId: string

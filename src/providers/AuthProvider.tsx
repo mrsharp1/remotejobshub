@@ -1,35 +1,112 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@/types'
+import React, { createContext, useContext, useEffect } from 'react'
+import { User, Session } from '@supabase/supabase-js'
+import { Profile } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
+import { authService } from '@/services/auth/auth.service'
+import { LoadingScreen } from '@/components/shared/LoadingScreen'
+
 interface AuthContextType {
-  isLoading: boolean
   user: User | null
+  profile: Profile | null
+  session: Session | null
+  loading: boolean
+  isAuthenticated: boolean
+  refreshProfile: () => Promise<void>
+  signOut: () => Promise<void>
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [isLoading, setIsLoading] = useState(true)
-  const { user, setUser } = useAuthStore()
+  const {
+    user,
+    profile,
+    session,
+    loading,
+    isAuthenticated,
+    setAuth,
+    setProfile,
+    setLoading,
+    clearAuth,
+  } = useAuthStore()
+
   useEffect(() => {
-    const checkUser = async () => {
+    let isMounted = true
+
+    const { subscription } = authService.onAuthStateChange(async (_event, currentSession) => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        setUser(null)
-      } catch (error) {
-        console.error(error)
+        if (currentSession?.user) {
+          const fetchedProfile = await authService.getProfile(currentSession.user.id)
+          if (isMounted) {
+            setAuth(currentSession.user, fetchedProfile, currentSession)
+          }
+        } else {
+          if (isMounted) {
+            clearAuth()
+          }
+        }
+      } catch (err) {
+        console.error('Authentication status sync failed:', err)
+        if (isMounted) {
+          clearAuth()
+        }
+      }
+    })
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [setAuth, clearAuth])
+
+  const refreshProfile = async () => {
+    if (user) {
+      setLoading(true)
+      try {
+        const fetchedProfile = await authService.getProfile(user.id)
+        setProfile(fetchedProfile)
+      } catch (err) {
+        console.error('Failed to refresh profile:', err)
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
-    checkUser()
-  }, [setUser])
+  }
+
+  const signOut = async () => {
+    setLoading(true)
+    try {
+      await authService.signOut()
+    } catch (err) {
+      console.error('Failed to sign out:', err)
+    } finally {
+      clearAuth()
+    }
+  }
+
+  if (loading) {
+    return <LoadingScreen />
+  }
+
   return (
-    <AuthContext.Provider value={{ isLoading, user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        session,
+        loading,
+        isAuthenticated,
+        refreshProfile,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
 }
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext)
