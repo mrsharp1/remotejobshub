@@ -3,14 +3,12 @@
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     full_name TEXT,
-    email TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
     phone TEXT,
     country TEXT,
     avatar_url TEXT,
     role TEXT NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending', 'deleted')),
-    email_verified BOOLEAN DEFAULT FALSE,
-    phone_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -27,11 +25,13 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- SECTION: Policies
 
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile" ON public.profiles
     FOR SELECT
     TO authenticated
     USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE
     TO authenticated
@@ -39,6 +39,7 @@ CREATE POLICY "Users can update own profile" ON public.profiles
     WITH CHECK (auth.uid() = id);
 
 -- POLICY COMMENTED FOR FUTURE ADMIN IMPLEMENTATION
+-- DROP POLICY IF EXISTS "Admins can read all profiles" ON public.profiles;
 -- CREATE POLICY "Admins can read all profiles" ON public.profiles
 --     FOR SELECT
 --     TO authenticated
@@ -50,6 +51,7 @@ CREATE POLICY "Users can update own profile" ON public.profiles
 --     );
 
 -- POLICY COMMENTED FOR FUTURE ADMIN IMPLEMENTATION
+-- DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
 -- CREATE POLICY "Admins can update all profiles" ON public.profiles
 --     FOR UPDATE
 --     TO authenticated
@@ -72,7 +74,8 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, role, status)
-    VALUES (new.id, new.email, 'buyer', 'active');
+    VALUES (new.id, new.email, 'buyer', 'active')
+    ON CONFLICT (id) DO NOTHING;
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
