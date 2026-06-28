@@ -88,6 +88,11 @@ const AdminDashboardPage = lazy(() =>
     default: m.AdminDashboardPage,
   }))
 )
+const AdminListingsPage = lazy(() =>
+  import('@/pages/admin/AdminListingsPage').then((m) => ({
+    default: m.AdminListingsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -262,6 +267,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminDashboardPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/listings',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminListingsPage />
           </Suspense>
         ),
       },

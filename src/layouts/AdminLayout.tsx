@@ -37,7 +37,7 @@ export const AdminLayout: React.FC = () => {
   const sidebarLinks = [
     { label: 'Dashboard', to: '/admin', icon: Shield },
     { label: 'Users', to: '/admin?view=users', icon: Users },
-    { label: 'Listings', to: '/admin?view=listings', icon: ListFilter },
+    { label: 'Listings', to: '/admin/listings', icon: ListFilter },
     { label: 'Orders', to: '/admin?view=orders', icon: ListFilter },
     { label: 'Payments', to: '/admin?view=payments', icon: DollarSign },
     { label: 'Disputes', to: '/admin?view=disputes', icon: AlertTriangle },

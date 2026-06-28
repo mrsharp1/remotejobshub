@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { Listing } from '@/types'
+import { notificationService } from '@/services/marketplace/notification.service'
 
 export const listingService = {
   async createListing(
@@ -295,6 +296,201 @@ export const listingService = {
       }
     } catch (err) {
       console.error('Error in incrementViews:', err)
+    }
+  },
+
+  async approveListing(id: string, adminId: string): Promise<void> {
+    try {
+      const { data: listing, error } = await supabase
+        .from('listings')
+        .update({
+          approval_status: 'approved',
+          status: 'published',
+          approved_by: adminId,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Notify seller
+      await notificationService.createNotification({
+        user_id: listing.seller_id,
+        title: 'Listing Approved 🎉',
+        message: `Your listing "${listing.title}" has been approved and is now live on the marketplace.`,
+        type: 'listing',
+        reference_type: 'listing',
+        reference_id: id,
+      })
+    } catch (err) {
+      console.error('Error in approveListing:', err)
+      throw err
+    }
+  },
+
+  async rejectListing(
+    id: string,
+    notes: string,
+    adminId: string
+  ): Promise<void> {
+    try {
+      const { data: listing, error } = await supabase
+        .from('listings')
+        .update({
+          approval_status: 'rejected',
+          status: 'draft',
+          review_notes: notes,
+          approved_by: adminId,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Notify seller
+      await notificationService.createNotification({
+        user_id: listing.seller_id,
+        title: 'Listing Rejected',
+        message: `Your listing "${listing.title}" was rejected. Reason: ${notes}`,
+        type: 'listing',
+        reference_type: 'listing',
+        reference_id: id,
+      })
+    } catch (err) {
+      console.error('Error in rejectListing:', err)
+      throw err
+    }
+  },
+
+  async requestListingChanges(
+    id: string,
+    notes: string,
+    adminId: string
+  ): Promise<void> {
+    try {
+      const { data: listing, error } = await supabase
+        .from('listings')
+        .update({
+          approval_status: 'pending',
+          status: 'draft',
+          review_notes: notes,
+          approved_by: adminId,
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Notify seller
+      await notificationService.createNotification({
+        user_id: listing.seller_id,
+        title: 'Changes Requested',
+        message: `Changes are requested for your listing "${listing.title}". Reason: ${notes}`,
+        type: 'listing',
+        reference_type: 'listing',
+        reference_id: id,
+      })
+    } catch (err) {
+      console.error('Error in requestListingChanges:', err)
+      throw err
+    }
+  },
+
+  async featureListing(
+    id: string,
+    isFeatured: boolean,
+    featuredUntil?: string
+  ): Promise<void> {
+    try {
+      const { data: listing, error } = await supabase
+        .from('listings')
+        .update({
+          is_featured: isFeatured,
+          featured_until: featuredUntil || null,
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Notify seller
+      await notificationService.createNotification({
+        user_id: listing.seller_id,
+        title: isFeatured ? 'Listing Featured ⭐' : 'Listing Unfeatured',
+        message: isFeatured
+          ? `Your listing "${listing.title}" is now featured on the marketplace homepage!`
+          : `Your listing "${listing.title}" is no longer featured.`,
+        type: 'listing',
+        reference_type: 'listing',
+        reference_id: id,
+      })
+    } catch (err) {
+      console.error('Error in featureListing:', err)
+      throw err
+    }
+  },
+
+  async archiveListing(id: string): Promise<void> {
+    try {
+      const { data: listing, error } = await supabase
+        .from('listings')
+        .update({
+          status: 'archived',
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Notify seller
+      await notificationService.createNotification({
+        user_id: listing.seller_id,
+        title: 'Listing Archived',
+        message: `Your listing "${listing.title}" has been archived.`,
+        type: 'listing',
+        reference_type: 'listing',
+        reference_id: id,
+      })
+    } catch (err) {
+      console.error('Error in archiveListing:', err)
+      throw err
+    }
+  },
+
+  async deleteListing(id: string): Promise<void> {
+    try {
+      // Fetch details first to notify before deleting if possible
+      const { data: listing } = await supabase
+        .from('listings')
+        .select('seller_id, title')
+        .eq('id', id)
+        .single()
+
+      const { error } = await supabase.from('listings').delete().eq('id', id)
+
+      if (error) throw error
+
+      if (listing) {
+        // Notify seller
+        await notificationService.createNotification({
+          user_id: listing.seller_id,
+          title: 'Listing Deleted',
+          message: `Your listing "${listing.title}" has been deleted from the platform.`,
+          type: 'listing',
+          reference_type: 'system',
+          reference_id: id,
+        })
+      }
+    } catch (err) {
+      console.error('Error in deleteListing:', err)
+      throw err
     }
   },
 }

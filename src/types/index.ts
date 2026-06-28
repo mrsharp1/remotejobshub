@@ -76,6 +76,10 @@ export interface Listing {
   recovery_email_included: boolean
   phone_included: boolean
   identity_verified: boolean
+  review_notes?: string | null
+  approved_by?: string | null
+  approved_at?: string | null
+  featured_until?: string | null
   images?: ListingImage[]
   tags?: ListingTag[]
   seller?: Profile
