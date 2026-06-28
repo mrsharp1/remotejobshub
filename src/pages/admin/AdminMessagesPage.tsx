@@ -1,15 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Search,
-  MessageSquare,
-  Shield,
-  Eye,
-  Trash2,
-  AlertTriangle,
-  Loader2,
-  Download,
-} from 'lucide-react'
+import { Search, Shield, Loader2, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Conversation, Message } from '@/types'
 

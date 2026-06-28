@@ -6,14 +6,12 @@ import {
   Send,
   Loader2,
   Paperclip,
-  Smile,
   ExternalLink,
-  ShieldCheck,
   User,
 } from 'lucide-react'
 import { messageService } from '@/services/marketplace/message.service'
 import { useAuthStore } from '@/stores/authStore'
-import { Conversation, Message } from '@/types'
+import { Message } from '@/types'
 
 export const SellerMessagesPage: React.FC = () => {
   const { user } = useAuthStore()

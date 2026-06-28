@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Conversation, Message, ConversationParticipant } from '@/types'
+import { Conversation, Message } from '@/types'
 import { notificationService } from '@/services/marketplace/notification.service'
 
 export const messageService = {
@@ -17,7 +17,7 @@ export const messageService = {
 
       if (existingParticipant) {
         for (const p of existingParticipant) {
-          const conv = p.conversation as any
+          const conv = p.conversation as unknown as Conversation
           if (conv && conv.listing_id === listingId) {
             // Check if seller is also in this conversation
             const { data: sellerPart } = await supabase

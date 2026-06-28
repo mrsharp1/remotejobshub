@@ -6,14 +6,13 @@ import {
   Send,
   Loader2,
   Paperclip,
-  Smile,
   ExternalLink,
   ShieldCheck,
   User,
 } from 'lucide-react'
 import { messageService } from '@/services/marketplace/message.service'
 import { useAuthStore } from '@/stores/authStore'
-import { Conversation, Message } from '@/types'
+import { Message } from '@/types'
 
 export const BuyerMessagesPage: React.FC = () => {
   const { user } = useAuthStore()
@@ -232,7 +231,7 @@ export const BuyerMessagesPage: React.FC = () => {
                   <div>
                     <h3 className="flex items-center gap-1 font-heading text-xs font-bold text-foreground">
                       {otherParticipant?.profile?.full_name || 'Seller'}
-                      {otherParticipant?.profile?.verified && (
+                      {(otherParticipant?.profile as any)?.verified && (
                         <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                       )}
                     </h3>
