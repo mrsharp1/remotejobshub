@@ -234,7 +234,7 @@ export const BuyerMessagesPage: React.FC = () => {
                       {(
                         otherParticipant?.profile as unknown as Record<
                           string,
-                          unknown
+                          boolean
                         >
                       )?.verified && (
                         <ShieldCheck className="h-3.5 w-3.5 text-primary" />
