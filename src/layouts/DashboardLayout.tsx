@@ -1,6 +1,14 @@
 import React from 'react'
 import { Link, Outlet } from 'react-router-dom'
-import { Menu, X, LayoutDashboard, Settings, Home } from 'lucide-react'
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Settings,
+  Home,
+  Wallet,
+  MessageSquare,
+} from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { NotificationBell } from '@/components/shared/NotificationBell'
@@ -37,6 +45,42 @@ export const DashboardLayout: React.FC = () => {
             <LayoutDashboard className="h-5 w-5" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Overview
+            </span>
+          </Link>
+          <Link
+            to="/dashboard/messages"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <MessageSquare className="h-5 w-5" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Buyer Messages
+            </span>
+          </Link>
+          <Link
+            to="/dashboard/wallet"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Wallet className="h-5 w-5" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Buyer Wallet
+            </span>
+          </Link>
+          <Link
+            to="/seller/wallet"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Wallet className="h-5 w-5" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Seller Wallet
+            </span>
+          </Link>
+          <Link
+            to="/seller/messages"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <MessageSquare className="h-5 w-5" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Seller Messages
             </span>
           </Link>
           <Link

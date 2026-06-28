@@ -302,3 +302,41 @@ export interface MessageAttachment {
   file_type?: string | null
   created_at: string
 }
+
+export interface Wallet {
+  id: string
+  user_id: string
+  available_balance: number
+  pending_balance: number
+  escrow_balance: number
+  bonus_credits: number
+  referral_earnings: number
+  created_at: string
+  updated_at: string
+  profile?: Profile
+}
+
+export interface WalletTransaction {
+  id: string
+  wallet_id: string
+  amount: number
+  type: 'deposit' | 'withdrawal' | 'escrow_hold' | 'escrow_release' | 'bonus' | 'referral' | 'debit' | 'credit'
+  status: 'pending' | 'completed' | 'failed' | 'cancelled'
+  description?: string | null
+  reference_id?: string | null
+  created_at: string
+}
+
+export interface WithdrawalRequest {
+  id: string
+  user_id: string
+  amount: number
+  bank_name: string
+  account_number: string
+  account_name: string
+  status: 'pending' | 'approved' | 'rejected'
+  rejection_reason?: string | null
+  created_at: string
+  updated_at: string
+  profile?: Profile
+}

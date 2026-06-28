@@ -133,6 +133,21 @@ const AdminMessagesPage = lazy(() =>
     default: m.AdminMessagesPage,
   }))
 )
+const BuyerWalletPage = lazy(() =>
+  import('@/pages/dashboard/BuyerWalletPage').then((m) => ({
+    default: m.BuyerWalletPage,
+  }))
+)
+const SellerWalletPage = lazy(() =>
+  import('@/pages/seller/SellerWalletPage').then((m) => ({
+    default: m.SellerWalletPage,
+  }))
+)
+const AdminWalletsPage = lazy(() =>
+  import('@/pages/admin/AdminWalletsPage').then((m) => ({
+    default: m.AdminWalletsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -328,6 +343,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/wallet',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerWalletPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/wallet',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerWalletPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -379,6 +410,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminMessagesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/wallets',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminWalletsPage />
           </Suspense>
         ),
       },
