@@ -8,7 +8,6 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
-  FileText,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { reviewService } from '@/services/marketplace/review.service'

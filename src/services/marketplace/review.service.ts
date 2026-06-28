@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Review, SellerRating } from '@/types'
+import { Review, SellerRating, Profile } from '@/types'
 import { notificationService } from '@/services/marketplace/notification.service'
 
 export const reviewService = {
@@ -239,7 +239,7 @@ export const reviewService = {
     }
   },
 
-  async getTopRatedSellers(): Promise<any[]> {
+  async getTopRatedSellers(): Promise<Profile[]> {
     try {
       const { data, error } = await supabase
         .from('profiles')

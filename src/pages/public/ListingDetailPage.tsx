@@ -18,8 +18,10 @@ import {
 import { listingService } from '@/services/marketplace/listing.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { paymentService } from '@/services/marketplace/payment.service'
+import { reviewService } from '@/services/marketplace/review.service'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
+import { Review } from '@/types'
 import { PurchaseSummaryModal } from '@/components/marketplace/PurchaseSummaryModal'
 import { MarketplaceListingCard } from '@/components/marketplace/MarketplaceListingCard'
 
@@ -707,7 +709,7 @@ export const ListingDetailPage: React.FC = () => {
                   </p>
                 ) : (
                   <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
-                    {listingReviews.map((rev) => (
+                    {listingReviews.map((rev: Review) => (
                       <div
                         key={rev.id}
                         className="bg-muted/20 space-y-1.5 rounded-lg border p-3"
