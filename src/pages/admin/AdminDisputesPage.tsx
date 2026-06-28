@@ -1,22 +1,17 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  AlertTriangle,
   Scale,
   User,
   ExternalLink,
   MessageSquare,
   FileText,
   Loader2,
-  CheckCircle,
-  XCircle,
-  HelpCircle,
   FolderOpen,
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { disputeService } from '@/services/marketplace/dispute.service'
 import { useAuthStore } from '@/stores/authStore'
-import { Dispute, DisputeMessage, DisputeEvidence } from '@/types'
+import { DisputeMessage, DisputeEvidence } from '@/types'
 
 export const AdminDisputesPage: React.FC = () => {
   const { user } = useAuthStore()
@@ -170,7 +165,14 @@ export const AdminDisputesPage: React.FC = () => {
           <button
             key={tab.key}
             onClick={() => {
-              setActiveTab(tab.key as any)
+              setActiveTab(
+                tab.key as
+                  | 'pending'
+                  | 'under_review'
+                  | 'resolved'
+                  | 'closed'
+                  | 'rejected'
+              )
               setSelectedDisputeId(null)
             }}
             className={`border-b-2 px-4 py-2.5 transition-all ${
