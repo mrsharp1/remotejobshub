@@ -86,12 +86,10 @@ export const RegisterPage: React.FC = () => {
     setErrorMsg(null)
     try {
       const signUpResult = await authService.signUp(data.email, data.password, {
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phone,
-            country: data.country,
-          },
+        data: {
+          full_name: data.fullName,
+          phone: data.phone,
+          country: data.country,
         },
       })
 
