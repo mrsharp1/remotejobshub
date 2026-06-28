@@ -79,6 +79,10 @@ export interface Listing {
   is_featured: boolean
   created_at: string
   updated_at: string
+  original_email_included: boolean
+  recovery_email_included: boolean
+  phone_included: boolean
+  identity_verified: boolean
   images?: ListingImage[]
   tags?: ListingTag[]
 }
