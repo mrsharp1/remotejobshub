@@ -9,14 +9,13 @@ import {
   AlertTriangle,
   Bell,
   Clock,
-  TrendingUp,
   BarChart2,
-  SlidersHorizontal,
   Settings,
   ShieldCheck,
   Loader2,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { Profile, Listing, Order, Notification } from '@/types'
 
 export const AdminDashboardPage: React.FC = () => {
   const [chartMetric, setChartMetric] = useState<
@@ -410,7 +409,7 @@ export const AdminDashboardPage: React.FC = () => {
                 Recent Signups
               </h4>
               <div className="space-y-2">
-                {activity.users.map((u: any) => (
+                {activity.users.map((u: Profile) => (
                   <div
                     key={u.id}
                     className="bg-muted/20 flex items-center justify-between rounded p-2"
@@ -432,7 +431,7 @@ export const AdminDashboardPage: React.FC = () => {
                 Recent Listings
               </h4>
               <div className="space-y-2">
-                {activity.listings.map((l: any) => (
+                {activity.listings.map((l: Listing) => (
                   <div
                     key={l.id}
                     className="bg-muted/20 flex items-center justify-between rounded p-2"
@@ -454,7 +453,7 @@ export const AdminDashboardPage: React.FC = () => {
                 Recent Orders
               </h4>
               <div className="space-y-2">
-                {activity.orders.map((o: any) => (
+                {activity.orders.map((o: Order) => (
                   <div
                     key={o.id}
                     className="bg-muted/20 flex items-center justify-between rounded p-2"
@@ -476,7 +475,7 @@ export const AdminDashboardPage: React.FC = () => {
                 System Alerts
               </h4>
               <div className="space-y-2">
-                {activity.notifications.map((n: any) => (
+                {activity.notifications.map((n: Notification) => (
                   <div
                     key={n.id}
                     className="bg-muted/20 flex flex-col gap-0.5 rounded p-2"
