@@ -7,18 +7,12 @@ import {
   Heart,
   Share2,
   AlertTriangle,
-  Mail,
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  Eye,
   ChevronLeft,
   ChevronRight,
-  UserCheck,
-  Calendar,
   MessageSquare,
-  ArrowRight,
-  TrendingUp,
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
 import { useAuthStore } from '@/stores/authStore'
