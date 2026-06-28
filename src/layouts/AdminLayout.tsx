@@ -1,92 +1,147 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, Outlet, Navigate } from 'react-router-dom'
 import {
   Shield,
   Home,
   Users,
-  FileText,
-  ShoppingBag,
-  CreditCard,
+  Settings,
+  ListFilter,
+  DollarSign,
   AlertTriangle,
   Bell,
-  TrendingUp,
-  Settings,
-  LayoutDashboard,
+  BarChart2,
+  Lock,
+  Loader2,
+  Menu,
+  X,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { LoadingScreen } from '@/components/shared/LoadingScreen'
 
 export const AdminLayout: React.FC = () => {
-  const { profile, loading } = useAuthStore()
+  const { user, profile, loading } = useAuthStore()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   if (loading) {
-    return <LoadingScreen />
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  // Authorize only users where profile role is admin
-  if (!profile || profile.role !== 'admin') {
-    return <Navigate to="/marketplace" replace />
+  // Secure Route Authorization: Check profile.role
+  if (!user || profile?.role !== 'admin') {
+    return <Navigate to="/" replace />
   }
+
+  const sidebarLinks = [
+    { label: 'Dashboard', to: '/admin', icon: Shield },
+    { label: 'Users', to: '/admin?view=users', icon: Users },
+    { label: 'Listings', to: '/admin?view=listings', icon: ListFilter },
+    { label: 'Orders', to: '/admin?view=orders', icon: ListFilter },
+    { label: 'Payments', to: '/admin?view=payments', icon: DollarSign },
+    { label: 'Disputes', to: '/admin?view=disputes', icon: AlertTriangle },
+    { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
+    { label: 'Analytics', to: '/admin?view=analytics', icon: BarChart2 },
+    { label: 'Settings', to: '/admin?view=settings', icon: Settings },
+  ]
 
   return (
-    <div className="bg-muted/30 flex min-h-screen">
-      {/* Sidebar navigation */}
-      <aside className="flex w-64 flex-col border-r bg-background">
-        <div className="flex h-16 items-center border-b px-6">
-          <Link to="/" className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-destructive" />
-            <span className="font-heading text-lg font-bold">Admin Portal</span>
-          </Link>
+    <div className="bg-muted/30 flex min-h-screen text-foreground">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-64 flex-col border-r bg-background md:flex">
+        <div className="flex h-16 items-center gap-2 border-b px-6">
+          <Shield className="h-6 w-6 animate-pulse text-destructive" />
+          <span className="font-heading text-lg font-bold text-destructive">
+            Secure Portal
+          </span>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-          {[
-            { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-            { to: '/admin/users', label: 'Users', icon: Users },
-            { to: '/admin/listings', label: 'Listings', icon: FileText },
-            { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-            { to: '/admin/payments', icon: CreditCard, label: 'Payments' },
-            { to: '/admin/disputes', label: 'Disputes', icon: AlertTriangle },
-            { to: '/admin/notifications', label: 'Notifications', icon: Bell },
-            { to: '/admin/analytics', label: 'Analytics', icon: TrendingUp },
-            { to: '/admin/settings', label: 'Settings', icon: Settings },
-          ].map((item) => (
+        <nav className="flex-1 space-y-1 p-4">
+          {sidebarLinks.map((link, idx) => (
             <Link
-              key={item.label}
-              to={item.to}
-              onClick={(e) => {
-                // Prevent routing for mocked placeholders except main dashboard
-                if (item.to !== '/admin') {
-                  e.preventDefault()
-                  alert(`${item.label} section console is coming soon!`)
-                }
-              }}
-              className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              key={idx}
+              to={link.to}
+              className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <item.icon className="h-4.5 w-4.5 text-muted-foreground" />
-              <span>{item.label}</span>
+              <link.icon className="h-4.5 w-4.5" />
+              <span>{link.label}</span>
             </Link>
           ))}
-          <div className="border-border/40 my-4 border-t pt-4">
+          <div className="border-border/40 mt-4 border-t pt-4">
             <Link
               to="/"
-              className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              <Home className="h-4.5 w-4.5 text-muted-foreground" />
+              <Home className="h-4.5 w-4.5" />
               <span>Main Platform</span>
             </Link>
           </div>
         </nav>
       </aside>
 
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="fixed inset-0 bg-black/60"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative z-50 flex w-64 flex-col space-y-4 bg-background p-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <span className="flex items-center gap-1.5 font-heading font-bold text-destructive">
+                <Shield className="h-5 w-5" /> Secure Console
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded p-1 hover:bg-muted"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="space-y-1">
+              {sidebarLinks.map((link, idx) => (
+                <Link
+                  key={idx}
+                  to={link.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <link.icon className="h-4.5 w-4.5" />
+                  <span>{link.label}</span>
+                </Link>
+              ))}
+              <div className="border-border/40 mt-4 border-t pt-4">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Home className="h-4.5 w-4.5" />
+                  <span>Main Platform</span>
+                </Link>
+              </div>
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      {/* Main Panel Content */}
       <div className="flex flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b bg-background px-6">
-          <div className="flex items-center gap-1.5 font-bold text-destructive">
-            <Shield className="h-4.5 w-4.5" /> SECURE CONSOLE
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="rounded p-2 hover:bg-muted md:hidden"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="border-destructive/20 bg-destructive/5 flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive">
+            <Lock className="h-3 w-3" /> SECURE CONSOLE
           </div>
-          <div className="text-sm font-medium">
-            Administrator ({profile.full_name})
+          <div className="text-xs font-bold capitalize text-muted-foreground">
+            {profile?.full_name || 'Administrator'}
           </div>
         </header>
+
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>

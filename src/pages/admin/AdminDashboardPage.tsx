@@ -1,126 +1,242 @@
 import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Users,
   UserCheck,
-  FileText,
   ShoppingBag,
+  ListFilter,
   DollarSign,
   AlertTriangle,
   Bell,
+  Clock,
   TrendingUp,
+  BarChart2,
+  SlidersHorizontal,
   Settings,
-  ShieldAlert,
-  ArrowRight,
-  ExternalLink,
+  ShieldCheck,
+  Loader2,
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export const AdminDashboardPage: React.FC = () => {
-  const [analyticsPeriod, setAnalyticsPeriod] = useState<
+  const [chartMetric, setChartMetric] = useState<
     'users' | 'orders' | 'revenue' | 'listings'
   >('revenue')
 
-  // Telemetry Mock Parameters
-  const telemetry = {
-    totalUsers: 1420,
-    buyers: 890,
-    sellers: 530,
-    verifiedSellers: 210,
-    activeListings: 432,
-    pendingListings: 18,
-    orders: 312,
-    revenue: 68900,
-    disputes: 4,
-    notifications: 2450,
-  }
+  // Live Database Queries for Metrics
+  const {
+    data: telemetry = {
+      users: 0,
+      buyers: 0,
+      sellers: 0,
+      verifiedSellers: 0,
+      activeListings: 0,
+      pendingListings: 0,
+      orders: 0,
+      revenue: 0,
+      disputes: 0,
+      notifications: 0,
+    },
+    isLoading,
+  } = useQuery({
+    queryKey: ['admin-telemetry-metrics'],
+    queryFn: async () => {
+      // 1. Fetch Users, Buyers, Sellers Counts
+      const { data: profiles = [] } = await supabase
+        .from('profiles')
+        .select('role, seller_verified')
+      const totalUsers = profiles.length
+      const sellers = profiles.filter(
+        (p) => p.role === 'seller' || p.seller_verified
+      ).length
+      const verifiedSellers = profiles.filter((p) => p.seller_verified).length
+      const buyers = totalUsers - sellers
 
-  // Analytics datasets
+      // 2. Fetch Listings Counts
+      const { data: listings = [] } = await supabase
+        .from('listings')
+        .select('status, approval_status')
+      const activeListings = listings.filter(
+        (l) => l.status === 'published'
+      ).length
+      const pendingListings = listings.filter(
+        (l) => l.approval_status === 'pending'
+      ).length
+
+      // 3. Fetch Orders & Revenue & Disputes Counts
+      const { data: ordersData = [] } = await supabase
+        .from('orders')
+        .select('status, amount')
+      const totalOrders = ordersData.length
+      const disputes = ordersData.filter((o) => o.status === 'disputed').length
+      const revenue = ordersData
+        .filter((o) => o.status === 'completed')
+        .reduce((acc, o) => acc + Number(o.amount), 0)
+
+      // 4. Fetch Notifications Counts
+      const { count: notifCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+
+      return {
+        users: totalUsers,
+        buyers,
+        sellers,
+        verifiedSellers,
+        activeListings,
+        pendingListings,
+        orders: totalOrders,
+        revenue,
+        disputes,
+        notifications: notifCount || 0,
+      }
+    },
+  })
+
+  // Live Query for Latest Activities Feed
+  const {
+    data: activity = {
+      users: [],
+      listings: [],
+      orders: [],
+      notifications: [],
+    },
+  } = useQuery({
+    queryKey: ['admin-activity-logs'],
+    queryFn: async () => {
+      const { data: recentUsers } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4)
+      const { data: recentListings } = await supabase
+        .from('listings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4)
+      const { data: recentOrders } = await supabase
+        .from('orders')
+        .select('*, listing:listings(title), buyer:profiles(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(4)
+      const { data: recentNotifications } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4)
+
+      return {
+        users: recentUsers || [],
+        listings: recentListings || [],
+        orders: recentOrders || [],
+        notifications: recentNotifications || [],
+      }
+    },
+  })
+
+  // Analytics Chart placeholders
   const chartDatasets = {
     users: [
-      { label: 'Jan', val: 400 },
-      { label: 'Feb', val: 620 },
-      { label: 'Mar', val: 780 },
-      { label: 'Apr', val: 990 },
-      { label: 'May', val: 1210 },
-      { label: 'Jun', val: 1420 },
+      { label: 'Jan', value: 12 },
+      { label: 'Feb', value: 24 },
+      { label: 'Mar', value: 45 },
+      { label: 'Apr', value: 80 },
+      { label: 'May', value: 120 },
+      { label: 'Jun', value: telemetry.users || 150 },
     ],
     orders: [
-      { label: 'Jan', val: 32 },
-      { label: 'Feb', val: 54 },
-      { label: 'Mar', val: 41 },
-      { label: 'Apr', val: 78 },
-      { label: 'May', val: 91 },
-      { label: 'Jun', val: 110 },
+      { label: 'Jan', value: 5 },
+      { label: 'Feb', value: 12 },
+      { label: 'Mar', value: 18 },
+      { label: 'Apr', value: 32 },
+      { label: 'May', value: 48 },
+      { label: 'Jun', value: telemetry.orders || 55 },
     ],
     revenue: [
-      { label: 'Jan', val: 8200 },
-      { label: 'Feb', val: 12400 },
-      { label: 'Mar', val: 9500 },
-      { label: 'Apr', val: 16800 },
-      { label: 'May', val: 19100 },
-      { label: 'Jun', val: 22900 },
+      { label: 'Jan', value: 500 },
+      { label: 'Feb', value: 1200 },
+      { label: 'Mar', value: 1800 },
+      { label: 'Apr', value: 3400 },
+      { label: 'May', value: 5800 },
+      { label: 'Jun', value: telemetry.revenue || 7200 },
     ],
     listings: [
-      { label: 'Jan', val: 120 },
-      { label: 'Feb', val: 190 },
-      { label: 'Mar', val: 240 },
-      { label: 'Apr', val: 310 },
-      { label: 'May', val: 380 },
-      { label: 'Jun', val: 432 },
+      { label: 'Jan', value: 8 },
+      { label: 'Feb', value: 15 },
+      { label: 'Mar', value: 22 },
+      { label: 'Apr', value: 35 },
+      { label: 'May', value: 64 },
+      {
+        label: 'Jun',
+        value: telemetry.activeListings + telemetry.pendingListings || 82,
+      },
     ],
   }
 
-  const activeDataset = chartDatasets[analyticsPeriod]
-  const maxVal = Math.max(...activeDataset.map((d) => d.val), 10)
+  const activeDataset = chartDatasets[chartMetric]
+  const maxVal = Math.max(...activeDataset.map((d) => d.value), 10)
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-destructive" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
       {/* Title Header */}
-      <div className="border-border/40 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
-            Superuser Control Console
-          </span>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Overview Dashboard
-          </h1>
-        </div>
+      <div className="border-border/40 border-b pb-4">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+          Security Administrator Control Console
+        </span>
+        <h1 className="font-heading text-2xl font-bold text-foreground">
+          System Overview Dashboard
+        </h1>
       </div>
 
-      {/* Telemetry Cards Grid */}
+      {/* Telemetry Grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
           {
             title: 'Total Users',
-            value: telemetry.totalUsers.toLocaleString(),
+            value: telemetry.users,
             icon: Users,
             color: 'text-primary',
           },
           {
-            title: 'Buyers / Sellers',
-            value: `${telemetry.buyers} / ${telemetry.sellers}`,
+            title: 'Market Buyers',
+            value: telemetry.buyers,
             icon: Users,
-            color: 'text-indigo-500',
+            color: 'text-muted-foreground',
           },
           {
-            title: 'Verified Sellers',
-            value: telemetry.verifiedSellers,
+            title: 'Market Sellers',
+            value: telemetry.sellers,
             icon: UserCheck,
             color: 'text-emerald-500',
           },
           {
+            title: 'Verified Sellers',
+            value: telemetry.verifiedSellers,
+            icon: ShieldCheck,
+            color: 'text-emerald-600',
+          },
+          {
             title: 'Active Listings',
             value: telemetry.activeListings,
-            icon: FileText,
+            icon: ListFilter,
             color: 'text-blue-500',
           },
           {
-            title: 'Pending Approval',
+            title: 'Pending Listings',
             value: telemetry.pendingListings,
-            icon: ShieldAlert,
+            icon: Clock,
             color: 'text-yellow-500',
           },
           {
-            title: 'Total Orders',
+            title: 'Escrow Orders',
             value: telemetry.orders,
             icon: ShoppingBag,
             color: 'text-primary',
@@ -132,7 +248,7 @@ export const AdminDashboardPage: React.FC = () => {
             color: 'text-emerald-500',
           },
           {
-            title: 'Active Disputes',
+            title: 'Disputes Opened',
             value: telemetry.disputes,
             icon: AlertTriangle,
             color: 'text-orange-500',
@@ -141,7 +257,7 @@ export const AdminDashboardPage: React.FC = () => {
             title: 'System Alerts',
             value: telemetry.notifications,
             icon: Bell,
-            color: 'text-muted-foreground',
+            color: 'text-primary',
           },
         ].map((card, idx) => (
           <div
@@ -149,58 +265,24 @@ export const AdminDashboardPage: React.FC = () => {
             className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm"
           >
             <div className="flex items-center justify-between">
-              <span className="truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                 {card.title}
               </span>
               <card.icon className={`h-4 w-4 ${card.color}`} />
             </div>
-            <div className="font-heading text-lg font-bold text-foreground">
+            <div className="truncate font-heading text-lg font-bold text-foreground">
               {card.value}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick Action links */}
+      {/* Analytics Graph Row */}
       <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
-          Quick Actions Console
-        </h3>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            { label: 'Manage Users', action: 'Users moderation panel' },
-            { label: 'Manage Listings', action: 'Listings review studio' },
-            { label: 'Manage Orders', action: 'Orders database query' },
-            { label: 'Manage Disputes', action: 'Escrow dispute escalation' },
-            {
-              label: 'Verification Requests',
-              action: 'Sellers badge verifications',
-            },
-            { label: 'Platform Settings', action: 'Site parameters configs' },
-          ].map((act, idx) => (
-            <button
-              key={idx}
-              onClick={() =>
-                alert(`Redirecting to: ${act.action} (Console coming soon)`)
-              }
-              className="flex flex-col items-center justify-center space-y-1.5 rounded-lg border border-border bg-background p-3 text-center transition-colors hover:bg-muted"
-            >
-              <span className="text-xs font-bold text-foreground">
-                {act.label}
-              </span>
-              <span className="text-[9px] leading-snug text-muted-foreground">
-                {act.action}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Analytics Chart layout */}
-      <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b pb-3">
-          <h3 className="font-heading text-sm font-bold text-foreground">
-            Platform Metrics Chart
+        <div className="border-border/40 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="flex items-center gap-1.5 font-heading text-sm font-bold text-foreground">
+            <BarChart2 className="h-4 w-4 text-destructive" /> Metric Analytics
+            Telemetry
           </h3>
           <div className="flex rounded-lg bg-muted p-0.5 text-[10px] font-semibold">
             {[
@@ -211,9 +293,9 @@ export const AdminDashboardPage: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setAnalyticsPeriod(tab.key as any)}
+                onClick={() => setChartMetric(tab.key as any)}
                 className={`rounded-md px-3 py-1 transition-all ${
-                  analyticsPeriod === tab.key
+                  chartMetric === tab.key
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground'
                 }`}
@@ -226,19 +308,19 @@ export const AdminDashboardPage: React.FC = () => {
 
         <div className="flex h-44 items-end gap-3 px-2 pt-6">
           {activeDataset.map((d, idx) => {
-            const pct = (d.val / maxVal) * 100
+            const pct = (d.value / maxVal) * 100
             return (
               <div
                 key={idx}
                 className="flex h-full flex-1 flex-col items-center justify-end gap-2"
               >
                 <span className="text-[9px] font-bold text-foreground">
-                  {analyticsPeriod === 'revenue'
-                    ? `$${d.val.toLocaleString()}`
-                    : d.val}
+                  {chartMetric === 'revenue'
+                    ? `$${d.value.toLocaleString()}`
+                    : d.value}
                 </span>
                 <div
-                  className="bg-destructive/25 w-full cursor-pointer rounded-t-sm transition-all hover:bg-destructive"
+                  className="bg-destructive/20 w-full cursor-pointer rounded-t-sm transition-all hover:bg-destructive"
                   style={{ height: `${Math.max(pct, 5)}%` }}
                 />
                 <span className="mt-1 text-[9px] font-medium text-muted-foreground">
@@ -250,114 +332,163 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent activity grids */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Latest Listings and Orders */}
-        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="flex items-center justify-between border-b pb-2 font-heading text-sm font-bold text-foreground">
-            <span>Recent Marketplace Orders</span>
-            <span className="text-[10px] text-muted-foreground">
-              Updated live
-            </span>
+      {/* Sibling Columns: Quick Actions & Latest Activity Logs */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {/* Left Column: Quick Actions */}
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-4">
+          <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
+            Quick Console Actions
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2.5">
             {[
               {
-                id: '1',
-                title: 'DataAnnotation Sandbox Account',
-                buyer: 'Friday Chimobi',
-                price: 450,
-                status: 'payment_received',
+                label: 'Manage Users',
+                desc: 'Audit role authorizations',
+                icon: Users,
               },
               {
-                id: '2',
-                title: 'Verified Outlier Contributor Profile',
-                buyer: 'Alice Brown',
-                price: 290,
-                status: 'buyer_review',
+                label: 'Manage Listings',
+                desc: 'Verify account configurations',
+                icon: ListFilter,
               },
               {
-                id: '3',
-                title: 'Scale AI Developer Console',
-                buyer: 'Bob Smith',
-                price: 650,
-                status: 'completed',
+                label: 'Manage Orders',
+                desc: 'Track escrow milestones',
+                icon: ShoppingBag,
               },
-            ].map((ord) => (
-              <div
-                key={ord.id}
-                className="hover:bg-muted/50 flex items-center justify-between rounded border border-transparent p-2 text-xs transition-all hover:border-border"
+              {
+                label: 'Manage Disputes',
+                desc: 'Moderate buyer dispute tickets',
+                icon: AlertTriangle,
+              },
+              {
+                label: 'Verification Requests',
+                desc: 'Inspect seller checkmarks',
+                icon: ShieldCheck,
+              },
+              {
+                label: 'Platform Settings',
+                desc: 'Configure payment gateways',
+                icon: Settings,
+              },
+            ].map((action, idx) => (
+              <button
+                key={idx}
+                onClick={() =>
+                  alert(
+                    `${action.label} panel logic is coming soon in the moderation update!`
+                  )
+                }
+                className="hover:bg-muted/50 border-border/65 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
               >
+                <div className="bg-destructive/10 rounded-md p-1.5 text-destructive">
+                  <action.icon className="h-4.5 w-4.5" />
+                </div>
                 <div>
-                  <h4 className="max-w-[240px] truncate font-bold text-foreground">
-                    {ord.title}
+                  <h4 className="text-xs font-bold text-foreground">
+                    {action.label}
                   </h4>
-                  <span className="text-[10px] text-muted-foreground">
-                    Buyer: {ord.buyer}
-                  </span>
+                  <p className="mt-0.5 text-[9px] text-muted-foreground">
+                    {action.desc}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <span className="block font-bold text-foreground">
-                    ${ord.price}
-                  </span>
-                  <span className="text-[9px] capitalize text-primary">
-                    {ord.status.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Latest Users signups and verifications */}
-        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="flex items-center justify-between border-b pb-2 font-heading text-sm font-bold text-foreground">
-            <span>Recent User Signups</span>
-            <span className="text-[10px] text-muted-foreground">
-              Audit logs
-            </span>
+        {/* Right Column: Latest Activities Feed */}
+        <div className="space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-8">
+          <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
+            Latest System Activity Feed
           </h3>
-          <div className="space-y-3">
-            {[
-              {
-                name: 'John Doe',
-                email: 'john@remotejobshub.com',
-                role: 'buyer',
-                since: '10 mins ago',
-              },
-              {
-                name: 'Sarah Connor',
-                email: 'sarah@skynet.io',
-                role: 'seller',
-                since: '25 mins ago',
-              },
-              {
-                name: 'Admin Staff',
-                email: 'moderator@remotejobshub.com',
-                role: 'admin',
-                since: '1 hour ago',
-              },
-            ].map((usr, idx) => (
-              <div
-                key={idx}
-                className="hover:bg-muted/50 flex items-center justify-between rounded p-2 text-xs transition-colors"
-              >
-                <div>
-                  <h4 className="font-bold text-foreground">{usr.name}</h4>
-                  <span className="text-[10px] text-muted-foreground">
-                    {usr.email}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="block font-semibold capitalize text-foreground">
-                    {usr.role}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">
-                    {usr.since}
-                  </span>
-                </div>
+
+          <div className="grid grid-cols-1 gap-6 text-[10px] md:grid-cols-2">
+            {/* Recent Signups */}
+            <div className="space-y-3">
+              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
+                Recent Signups
+              </h4>
+              <div className="space-y-2">
+                {activity.users.map((u: any) => (
+                  <div
+                    key={u.id}
+                    className="bg-muted/20 flex items-center justify-between rounded p-2"
+                  >
+                    <span className="max-w-[130px] truncate font-bold">
+                      {u.full_name || 'New Profile'}
+                    </span>
+                    <span className="bg-destructive/10 rounded px-1.5 py-0.5 text-[8px] font-bold capitalize text-destructive">
+                      {u.role || 'user'}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Recent Listings */}
+            <div className="space-y-3">
+              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
+                Recent Listings
+              </h4>
+              <div className="space-y-2">
+                {activity.listings.map((l: any) => (
+                  <div
+                    key={l.id}
+                    className="bg-muted/20 flex items-center justify-between rounded p-2"
+                  >
+                    <span className="max-w-[130px] truncate font-bold">
+                      {l.title}
+                    </span>
+                    <span className="text-muted-foreground">
+                      ${Number(l.price).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Orders */}
+            <div className="space-y-3">
+              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
+                Recent Orders
+              </h4>
+              <div className="space-y-2">
+                {activity.orders.map((o: any) => (
+                  <div
+                    key={o.id}
+                    className="bg-muted/20 flex items-center justify-between rounded p-2"
+                  >
+                    <span className="max-w-[120px] truncate font-bold">
+                      {o.listing?.title || 'Account Order'}
+                    </span>
+                    <span className="capitalize">
+                      {o.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Notifications */}
+            <div className="space-y-3">
+              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
+                System Alerts
+              </h4>
+              <div className="space-y-2">
+                {activity.notifications.map((n: any) => (
+                  <div
+                    key={n.id}
+                    className="bg-muted/20 flex flex-col gap-0.5 rounded p-2"
+                  >
+                    <span className="truncate font-bold">{n.title}</span>
+                    <p className="line-clamp-1 leading-snug text-muted-foreground">
+                      {n.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
