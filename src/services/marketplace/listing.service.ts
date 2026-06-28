@@ -141,7 +141,9 @@ export const listingService = {
     try {
       const { data, error } = await supabase
         .from('listings')
-        .select('*, images:listing_images(*), tags:listing_tags(*)')
+        .select(
+          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles(*)'
+        )
         .eq('id', id)
         .single()
 
