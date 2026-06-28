@@ -34,19 +34,6 @@ export interface Seller {
   isVerified: boolean
   createdAt: string
 }
-export interface Listing {
-  id: string
-  sellerId: string
-  title: string
-  description: string
-  category: string
-  price: number
-  location?: string
-  isRemote: boolean
-  tags: string[]
-  createdAt: string
-  updatedAt: string
-}
 export interface Payment {
   id: string
   orderId: string
