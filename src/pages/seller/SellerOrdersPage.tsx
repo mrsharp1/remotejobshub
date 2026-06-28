@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   DollarSign,
@@ -10,7 +10,6 @@ import {
   Star,
   Search,
   SlidersHorizontal,
-  ChevronRight,
   ExternalLink,
   Loader2,
   Calendar,
