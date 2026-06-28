@@ -1,16 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ShieldCheck,
-  Send,
-  Loader2,
-  AlertCircle,
-  FileText,
-  DollarSign,
-  ArrowRight,
-  MessageSquare,
-} from 'lucide-react'
+import { Send, Loader2, AlertCircle, MessageSquare } from 'lucide-react'
 import { orderService } from '@/services/marketplace/order.service'
 import { useAuthStore } from '@/stores/authStore'
 import { Order, OrderMessage, OrderTimeline } from '@/types'
@@ -43,7 +34,7 @@ export const OrderDetailPage: React.FC = () => {
   })
 
   // Fetch Messages & Timeline once order loads
-  const loadOrderTimeline = async () => {
+  const loadOrderTimeline = useCallback(async () => {
     if (!id) return
     try {
       const data = await orderService.getTimeline(id)
@@ -51,9 +42,9 @@ export const OrderDetailPage: React.FC = () => {
     } catch (err) {
       console.error(err)
     }
-  }
+  }, [id])
 
-  const loadOrderMessages = async () => {
+  const loadOrderMessages = useCallback(async () => {
     if (!id) return
     try {
       const data = await orderService.getOrderMessages(id)
@@ -61,14 +52,14 @@ export const OrderDetailPage: React.FC = () => {
     } catch (err) {
       console.error(err)
     }
-  }
+  }, [id])
 
   useEffect(() => {
     if (order?.id) {
       loadOrderTimeline()
       loadOrderMessages()
     }
-  }, [order?.id])
+  }, [order?.id, loadOrderTimeline, loadOrderMessages])
 
   // Scroll to bottom of message logs
   useEffect(() => {

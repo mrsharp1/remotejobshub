@@ -47,7 +47,6 @@ export const EscrowProgress: React.FC<EscrowProgressProps> = ({ status }) => {
           {steps.map((step, idx) => {
             const isCompleted = idx < currentIdx
             const isActive = idx === currentIdx
-            const isPending = idx > currentIdx
 
             return (
               <div

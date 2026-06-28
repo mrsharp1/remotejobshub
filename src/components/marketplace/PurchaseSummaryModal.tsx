@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react'
+import { X, ShieldCheck, Loader2 } from 'lucide-react'
 import { Listing } from '@/types'
 
 interface PurchaseSummaryModalProps {

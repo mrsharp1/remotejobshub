@@ -44,14 +44,7 @@ export interface Payment {
   reference: string
   createdAt: string
 }
-export interface Order {
-  id: string
-  buyerId: string
-  listingId: string
-  amount: number
-  status: 'pending' | 'completed' | 'cancelled'
-  createdAt: string
-}
+
 export interface Review {
   id: string
   listing_id: string
