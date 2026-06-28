@@ -157,3 +157,45 @@ export interface Notification {
   created_at: string
   updated_at: string
 }
+
+export interface Dispute {
+  id: string
+  order_id: string
+  opened_by: string
+  admin_id?: string | null
+  reason: string
+  status:
+    | 'pending'
+    | 'under_review'
+    | 'resolved_buyer'
+    | 'resolved_seller'
+    | 'closed'
+    | 'rejected'
+  resolution_notes?: string | null
+  created_at: string
+  updated_at: string
+  order?: Order
+  opened_by_profile?: Profile
+  admin?: Profile
+  messages?: DisputeMessage[]
+  evidence?: DisputeEvidence[]
+}
+
+export interface DisputeMessage {
+  id: string
+  dispute_id: string
+  sender_id: string
+  message_text: string
+  created_at: string
+  sender?: Profile
+}
+
+export interface DisputeEvidence {
+  id: string
+  dispute_id: string
+  submitted_by: string
+  description: string
+  file_url?: string | null
+  created_at: string
+  submitted_by_profile?: Profile
+}

@@ -40,7 +40,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Listings', to: '/admin/listings', icon: ListFilter },
     { label: 'Orders', to: '/admin?view=orders', icon: ListFilter },
     { label: 'Payments', to: '/admin?view=payments', icon: DollarSign },
-    { label: 'Disputes', to: '/admin?view=disputes', icon: AlertTriangle },
+    { label: 'Disputes', to: '/admin/disputes', icon: AlertTriangle },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin?view=analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },
