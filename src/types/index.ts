@@ -258,3 +258,47 @@ export interface SellerRating {
   is_verified_seller: boolean
   trust_score: number
 }
+
+export interface Conversation {
+  id: string
+  listing_id?: string | null
+  last_message_text?: string | null
+  last_message_sent_at?: string | null
+  created_at: string
+  updated_at: string
+  listing?: Listing
+  participants?: ConversationParticipant[]
+  messages?: Message[]
+}
+
+export interface ConversationParticipant {
+  id: string
+  conversation_id: string
+  user_id: string
+  unread_count: number
+  is_archived: boolean
+  is_starred: boolean
+  is_blocked: boolean
+  last_read_at?: string | null
+  profile?: Profile
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  sender_id: string
+  message_text: string
+  created_at: string
+  is_read: boolean
+  sender?: Profile
+  attachments?: MessageAttachment[]
+}
+
+export interface MessageAttachment {
+  id: string
+  message_id: string
+  file_url: string
+  file_name?: string | null
+  file_type?: string | null
+  created_at: string
+}

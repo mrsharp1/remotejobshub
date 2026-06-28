@@ -118,6 +118,21 @@ const AdminReviewsPage = lazy(() =>
     default: m.AdminReviewsPage,
   }))
 )
+const BuyerMessagesPage = lazy(() =>
+  import('@/pages/dashboard/BuyerMessagesPage').then((m) => ({
+    default: m.BuyerMessagesPage,
+  }))
+)
+const SellerMessagesPage = lazy(() =>
+  import('@/pages/seller/SellerMessagesPage').then((m) => ({
+    default: m.SellerMessagesPage,
+  }))
+)
+const AdminMessagesPage = lazy(() =>
+  import('@/pages/admin/AdminMessagesPage').then((m) => ({
+    default: m.AdminMessagesPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -297,6 +312,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/messages',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerMessagesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/messages',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerMessagesPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -340,6 +371,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminReviewsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/messages',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminMessagesPage />
           </Suspense>
         ),
       },

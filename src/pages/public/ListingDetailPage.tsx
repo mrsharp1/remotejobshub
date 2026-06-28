@@ -181,6 +181,28 @@ export const ListingDetailPage: React.FC = () => {
     }
   }
 
+  const handleContactSeller = async () => {
+    if (!listing) return
+    if (!user?.id) {
+      navigate('/login')
+      return
+    }
+    if (user.id === listing.seller_id) {
+      alert('You cannot start a conversation with yourself.')
+      return
+    }
+    try {
+      await messageService.createConversation(
+        listing.id,
+        user.id,
+        listing.seller_id
+      )
+      navigate('/dashboard/messages')
+    } catch {
+      alert('Failed to initialize conversation')
+    }
+  }
+
   const isFavorited = listing ? favorites.includes(listing.id) : false
 
   const images = useMemo(() => {
@@ -519,9 +541,7 @@ export const ListingDetailPage: React.FC = () => {
               Buy Asset Now
             </button>
             <button
-              onClick={() =>
-                alert('Contacting seller is coming soon in the next update!')
-              }
+              onClick={handleContactSeller}
               className="flex w-full items-center justify-center rounded-lg border border-border bg-background py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
             >
               <MessageSquare className="mr-2 h-4 w-4" /> Contact Seller
