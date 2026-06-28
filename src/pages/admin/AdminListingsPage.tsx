@@ -67,7 +67,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.approveListing(id, user.id)
       refetch()
       setSelectedListing(null)
-    } catch (_err) {
+    } catch {
       alert('Failed to approve listing')
     }
   }
@@ -92,7 +92,7 @@ export const AdminListingsPage: React.FC = () => {
       setSelectedListing(null)
       setActionTarget(null)
       setReviewNotes('')
-    } catch (_err) {
+    } catch {
       alert(`Failed to complete action: ${actionTarget}`)
     }
   }
@@ -105,7 +105,7 @@ export const AdminListingsPage: React.FC = () => {
       setSelectedListing((prev) =>
         prev ? { ...prev, is_featured: !prev.is_featured } : null
       )
-    } catch (_err) {
+    } catch {
       alert('Failed to update featured state')
     }
   }
@@ -115,7 +115,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.archiveListing(id)
       refetch()
       setSelectedListing(null)
-    } catch (_err) {
+    } catch {
       alert('Failed to archive listing')
     }
   }
@@ -131,7 +131,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.deleteListing(id)
       refetch()
       setSelectedListing(null)
-    } catch (_err) {
+    } catch {
       alert('Failed to delete listing')
     }
   }
