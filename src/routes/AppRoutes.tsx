@@ -68,6 +68,11 @@ const SellerDashboardPage = lazy(() =>
     default: m.SellerDashboardPage,
   }))
 )
+const SellerOrdersPage = lazy(() =>
+  import('@/pages/seller/SellerOrdersPage').then((m) => ({
+    default: m.SellerOrdersPage,
+  }))
+)
 const AdminDashboardPage = lazy(() =>
   import('@/pages/admin/AdminDashboardPage').then((m) => ({
     default: m.AdminDashboardPage,
@@ -209,6 +214,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <OrderDetailPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/orders',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerOrdersPage />
           </Suspense>
         ),
       },
