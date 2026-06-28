@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Star,
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
 import { orderService } from '@/services/marketplace/order.service'
@@ -87,6 +88,26 @@ export const ListingDetailPage: React.FC = () => {
   const filteredRelated = useMemo(() => {
     return relatedListings.filter((l) => l.id !== listing?.id).slice(0, 4)
   }, [relatedListings, listing?.id])
+
+  // Fetch seller rating metrics
+  const { data: sellerRating } = useQuery({
+    queryKey: ['seller-rating-metrics', listing?.seller_id],
+    queryFn: () => {
+      if (!listing?.seller_id) return null
+      return reviewService.getSellerRating(listing.seller_id)
+    },
+    enabled: !!listing?.seller_id,
+  })
+
+  // Fetch listing reviews
+  const { data: listingReviews = [] } = useQuery({
+    queryKey: ['listing-reviews-list', listing?.id],
+    queryFn: () => {
+      if (!listing?.id) return []
+      return reviewService.getListingReviews(listing.id)
+    },
+    enabled: !!listing?.id,
+  })
 
   // Toggle favorite trigger
   const handleToggleFavorite = async () => {
@@ -596,6 +617,143 @@ export const ListingDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Seller Reputation & Review Widget */}
+          {sellerRating && (
+            <div className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h3 className="border-border/50 flex items-center justify-between border-b pb-3 font-heading text-sm font-bold text-foreground">
+                <span>Seller Reputation</span>
+                <span className="bg-primary/10 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase text-primary">
+                  Trust Score: {sellerRating.trust_score}/100
+                </span>
+              </h3>
+
+              <div className="flex items-center gap-2.5">
+                <div className="text-3xl font-extrabold text-foreground">
+                  {sellerRating.average_rating}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex text-amber-500">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < Math.round(sellerRating.average_rating)
+                            ? 'fill-current'
+                            : 'text-muted'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-[10px] font-semibold text-muted-foreground">
+                    Based on {sellerRating.total_reviews} reviews
+                  </div>
+                </div>
+              </div>
+
+              {/* Reputation tags badges */}
+              <div className="flex flex-wrap gap-1.5 pt-1 text-[8px] font-extrabold uppercase tracking-wider">
+                {sellerRating.is_verified_seller && (
+                  <span className="bg-primary/10 border-primary/20 rounded border px-2 py-0.5 text-primary">
+                    Verified Seller
+                  </span>
+                )}
+                {sellerRating.average_rating >= 4.8 &&
+                  sellerRating.completed_orders >= 5 && (
+                    <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-amber-600">
+                      Gold Seller
+                    </span>
+                  )}
+                {sellerRating.trust_score >= 90 && (
+                  <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-emerald-600">
+                    Top Seller
+                  </span>
+                )}
+              </div>
+
+              <div className="border-border/50 space-y-2 border-t pt-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    5-star rating rate:
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {sellerRating.five_star_percentage}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Repeat Buyer count:
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {sellerRating.repeat_buyers}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Sales:</span>
+                  <span className="font-bold text-foreground">
+                    {sellerRating.completed_orders} orders
+                  </span>
+                </div>
+              </div>
+
+              {/* Reviews logs List */}
+              <div className="border-border/50 space-y-3 border-t pt-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Latest Reviews ({listingReviews.length})
+                </h4>
+                {listingReviews.length === 0 ? (
+                  <p className="py-2 text-center text-[11px] italic text-muted-foreground">
+                    No reviews for this listing yet.
+                  </p>
+                ) : (
+                  <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
+                    {listingReviews.map((rev) => (
+                      <div
+                        key={rev.id}
+                        className="bg-muted/20 space-y-1.5 rounded-lg border p-3"
+                      >
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-foreground">
+                            {rev.buyer_profile?.full_name || 'Buyer'}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {new Date(rev.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex text-amber-500">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${
+                                i < rev.rating ? 'fill-current' : 'text-muted'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <h5 className="text-[11px] font-bold leading-tight text-foreground">
+                          {rev.title}
+                        </h5>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          "{rev.review}"
+                        </p>
+
+                        {rev.seller_reply && (
+                          <div className="mt-1.5 space-y-0.5 rounded border bg-background p-2 text-[10px]">
+                            <span className="block font-bold text-foreground">
+                              Seller Reply:
+                            </span>
+                            <p className="italic text-muted-foreground">
+                              "{rev.seller_reply}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

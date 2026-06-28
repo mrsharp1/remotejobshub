@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Send, Loader2, AlertCircle, MessageSquare } from 'lucide-react'
+import { Send, Loader2, AlertCircle, MessageSquare, Star } from 'lucide-react'
 import { orderService } from '@/services/marketplace/order.service'
+import { reviewService } from '@/services/marketplace/review.service'
 import { useAuthStore } from '@/stores/authStore'
-import { Order, OrderMessage, OrderTimeline } from '@/types'
+import { Order, OrderMessage, OrderTimeline, Review } from '@/types'
 import { EscrowProgress } from '@/components/marketplace/EscrowProgress'
+import { supabase } from '@/lib/supabase'
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -32,6 +34,60 @@ export const OrderDetailPage: React.FC = () => {
     },
     enabled: !!id,
   })
+
+  // Review states
+  const [rating, setRating] = useState(5)
+  const [reviewTitle, setReviewTitle] = useState('')
+  const [reviewText, setReviewText] = useState('')
+  const [wouldRecommend, setWouldRecommend] = useState(true)
+  const [isEditingReview, setIsEditingReview] = useState(false)
+
+  // Query review details
+  const { data: reviewData, refetch: refetchReview } = useQuery({
+    queryKey: ['order-review', order?.id],
+    queryFn: async () => {
+      if (!order?.id) return null
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('order_id', order.id)
+        .maybeSingle()
+      return data as Review | null
+    },
+    enabled: !!order?.id && order.status === 'completed',
+  })
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!order || !user) return
+    try {
+      if (reviewData) {
+        await reviewService.updateReview(reviewData.id, {
+          rating,
+          title: reviewTitle,
+          review: reviewText,
+          would_recommend: wouldRecommend,
+        })
+        setIsEditingReview(false)
+      } else {
+        await reviewService.createReview({
+          order_id: order.id,
+          listing_id: order.listing_id,
+          seller_id: order.seller_id,
+          buyer_id: user.id,
+          rating,
+          title: reviewTitle,
+          review: reviewText,
+          would_recommend: wouldRecommend,
+        })
+      }
+      refetchReview()
+    } catch (err: unknown) {
+      const errMsg =
+        err instanceof Error ? err.message : 'Failed to submit review'
+      alert(errMsg)
+    }
+  }
 
   // Fetch Messages & Timeline once order loads
   const loadOrderTimeline = useCallback(async () => {
@@ -417,8 +473,187 @@ export const OrderDetailPage: React.FC = () => {
 
                 {/* Completed / Cancelled terminal status views */}
                 {order.status === 'completed' && (
-                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center text-xs font-semibold text-emerald-600">
-                    Order completed successfully.
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center text-xs font-semibold text-emerald-600">
+                      Order completed successfully.
+                    </div>
+
+                    {isBuyer && (
+                      <div className="space-y-4 border-t pt-4 text-xs">
+                        {reviewData && !isEditingReview ? (
+                          <div className="bg-muted/30 space-y-2.5 rounded-lg border p-4">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-foreground">
+                                Your Seller Review Feedback
+                              </span>
+                              <div className="flex text-amber-500">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-3.5 w-3.5 ${
+                                      i < reviewData.rating
+                                        ? 'fill-current'
+                                        : 'text-muted'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <h5 className="font-bold text-foreground">
+                              {reviewData.title}
+                            </h5>
+                            <p className="italic leading-relaxed text-muted-foreground">
+                              "{reviewData.review}"
+                            </p>
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                              <span>
+                                Recommend seller:{' '}
+                                {reviewData.would_recommend ? 'Yes' : 'No'}
+                              </span>
+                              {new Date(reviewData.created_at).getTime() >
+                                Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+                                <button
+                                  onClick={() => {
+                                    setRating(reviewData.rating)
+                                    setReviewTitle(reviewData.title)
+                                    setReviewText(reviewData.review)
+                                    setWouldRecommend(
+                                      reviewData.would_recommend
+                                    )
+                                    setIsEditingReview(true)
+                                  }}
+                                  className="font-bold text-primary hover:underline"
+                                >
+                                  Edit Review (7 Days Limit)
+                                </button>
+                              )}
+                            </div>
+
+                            {reviewData.seller_reply && (
+                              <div className="border-border/50 mt-2 space-y-1 rounded border bg-background p-3 text-[11px]">
+                                <span className="block font-bold text-foreground">
+                                  Seller Reply:
+                                </span>
+                                <p className="italic text-muted-foreground">
+                                  "{reviewData.seller_reply}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <form
+                            onSubmit={handleReviewSubmit}
+                            className="bg-muted/20 space-y-3.5 rounded-lg border p-4"
+                          >
+                            <h4 className="flex items-center gap-1 text-[13px] font-bold text-foreground">
+                              <Star className="h-4 w-4 fill-current text-amber-500" />
+                              {reviewData
+                                ? 'Edit Seller Review Feedback'
+                                : 'Rate Your Seller Order'}
+                            </h4>
+
+                            {/* Stars rating selection */}
+                            <div className="flex justify-center gap-1.5 py-2">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <button
+                                  type="button"
+                                  key={i}
+                                  onClick={() => setRating(i + 1)}
+                                  className="text-amber-500 transition-transform hover:scale-110"
+                                >
+                                  <Star
+                                    className={`h-7 w-7 ${
+                                      i < rating ? 'fill-current' : 'text-muted'
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Review Title */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                                Review Summary Title
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Summary title (e.g. Great delivery, accurate account details)"
+                                value={reviewTitle}
+                                onChange={(e) => setReviewTitle(e.target.value)}
+                                className="w-full rounded border bg-background p-2 text-xs text-foreground"
+                                required
+                              />
+                            </div>
+
+                            {/* Review Text */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
+                                <label>Review Comments</label>
+                                <span>{reviewText.length}/500</span>
+                              </div>
+                              <textarea
+                                placeholder="Write detailed feedback about the checkout quality, delivery speed, and credentials handoff..."
+                                value={reviewText}
+                                onChange={(e) =>
+                                  setReviewText(e.target.value.slice(0, 500))
+                                }
+                                className="h-24 w-full rounded border bg-background p-2 text-xs text-foreground"
+                                required
+                              />
+                            </div>
+
+                            {/* Would Recommend */}
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-foreground">
+                                Would you recommend this seller?
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setWouldRecommend(true)}
+                                  className={`rounded border px-3 py-1 transition-colors ${
+                                    wouldRecommend
+                                      ? 'border-primary bg-primary text-white'
+                                      : 'bg-background text-muted-foreground'
+                                  }`}
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setWouldRecommend(false)}
+                                  className={`rounded border px-3 py-1 transition-colors ${
+                                    !wouldRecommend
+                                      ? 'border-primary bg-primary text-white'
+                                      : 'bg-background text-muted-foreground'
+                                  }`}
+                                >
+                                  No
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2 text-xs font-bold">
+                              {isEditingReview && (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsEditingReview(false)}
+                                  className="rounded border px-3 py-1.5 hover:bg-muted"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                              <button
+                                type="submit"
+                                className="hover:bg-primary/95 rounded bg-primary px-4 py-1.5 text-white transition-colors"
+                              >
+                                {reviewData ? 'Save Changes' : 'Submit Review'}
+                              </button>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

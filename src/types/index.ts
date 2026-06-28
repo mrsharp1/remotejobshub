@@ -221,3 +221,40 @@ export interface Payment {
   buyer?: Profile
   seller?: Profile
 }
+
+export interface Review {
+  id: string
+  order_id: string
+  listing_id: string
+  seller_id: string
+  buyer_id: string
+  rating: number
+  title: string
+  review: string
+  would_recommend: boolean
+  seller_reply?: string | null
+  seller_reply_date?: string | null
+  admin_hidden: boolean
+  created_at: string
+  updated_at: string
+  buyer_profile?: Profile
+  seller_profile?: Profile
+  listing?: Listing
+}
+
+export interface ReviewSummary {
+  average_rating: number
+  total_reviews: number
+  star_distribution: Record<number, number>
+}
+
+export interface SellerRating {
+  average_rating: number
+  total_reviews: number
+  five_star_percentage: number
+  repeat_buyers: number
+  response_rate: number
+  completed_orders: number
+  is_verified_seller: boolean
+  trust_score: number
+}

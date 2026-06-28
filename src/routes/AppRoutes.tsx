@@ -113,6 +113,11 @@ const AdminPaymentsPage = lazy(() =>
     default: m.AdminPaymentsPage,
   }))
 )
+const AdminReviewsPage = lazy(() =>
+  import('@/pages/admin/AdminReviewsPage').then((m) => ({
+    default: m.AdminReviewsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -327,6 +332,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminPaymentsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/reviews',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminReviewsPage />
           </Suspense>
         ),
       },
