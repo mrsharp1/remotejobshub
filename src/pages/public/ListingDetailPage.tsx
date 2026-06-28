@@ -15,8 +15,10 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
+import { orderService } from '@/services/marketplace/order.service'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
+import { PurchaseSummaryModal } from '@/components/marketplace/PurchaseSummaryModal'
 import { MarketplaceListingCard } from '@/components/marketplace/MarketplaceListingCard'
 
 export const ListingDetailPage: React.FC = () => {
@@ -27,6 +29,7 @@ export const ListingDetailPage: React.FC = () => {
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [favorites, setFavorites] = useState<string[]>([])
   const [isCopied, setIsCopied] = useState(false)
+  const [showSummaryModal, setShowSummaryModal] = useState(false)
 
   // Fetch Listing Detail
   const {
@@ -107,6 +110,23 @@ export const ListingDetailPage: React.FC = () => {
     navigator.clipboard.writeText(window.location.href)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
+  }
+
+  const handleConfirmPurchase = async () => {
+    if (!user?.id || !listing) return
+    try {
+      const order = await orderService.createOrder({
+        buyer_id: user.id,
+        seller_id: listing.seller_id,
+        listing_id: listing.id,
+        amount: listing.price,
+      })
+      setShowSummaryModal(false)
+      navigate(`/orders/${order.id}`)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
   }
 
   const isFavorited = listing ? favorites.includes(listing.id) : false
@@ -435,9 +455,13 @@ export const ListingDetailPage: React.FC = () => {
               </span>
             </div>
             <button
-              onClick={() =>
-                alert('Checkout is coming soon in the next update!')
-              }
+              onClick={() => {
+                if (!user?.id) {
+                  navigate(`/login?redirect=/listing/${listing.id}`)
+                  return
+                }
+                setShowSummaryModal(true)
+              }}
               className="flex w-full items-center justify-center rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground shadow transition-opacity hover:opacity-90"
             >
               Buy Asset Now
@@ -580,6 +604,14 @@ export const ListingDetailPage: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {showSummaryModal && (
+        <PurchaseSummaryModal
+          listing={listing}
+          onClose={() => setShowSummaryModal(false)}
+          onConfirmPurchase={handleConfirmPurchase}
+        />
       )}
     </div>
   )

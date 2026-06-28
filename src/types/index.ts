@@ -107,3 +107,43 @@ export interface Favorite {
   listing_id: string
   created_at: string
 }
+
+export interface Order {
+  id: string
+  buyer_id: string
+  seller_id: string
+  listing_id: string
+  status:
+    | 'pending'
+    | 'payment_pending'
+    | 'payment_received'
+    | 'seller_processing'
+    | 'buyer_review'
+    | 'completed'
+    | 'cancelled'
+    | 'disputed'
+  amount: number
+  currency: string
+  created_at: string
+  updated_at: string
+  buyer?: Profile
+  seller?: Profile
+  listing?: Listing
+}
+
+export interface OrderTimeline {
+  id: string
+  order_id: string
+  status: string
+  notes?: string | null
+  created_at: string
+}
+
+export interface OrderMessage {
+  id: string
+  order_id: string
+  sender_id: string
+  message_text: string
+  created_at: string
+  sender?: Profile
+}
