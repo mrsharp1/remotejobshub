@@ -7,7 +7,7 @@ export const paymentService = {
     email: string,
     amount: number,
     orderId: string,
-    onSuccess: (reference: any) => void,
+    onSuccess: (reference: { reference: string }) => void,
     onClose: () => void
   ): void {
     const scriptId = 'paystack-inline-js'
@@ -15,10 +15,18 @@ export const paymentService = {
 
     const initPaystack = () => {
       const publicKey =
-        import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
+        (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string) ||
         'pk_test_306282026paystackdummykeyrjh'
 
-      const handler = (window as any).PaystackPop.setup({
+      const sdk = window as unknown as {
+        PaystackPop: {
+          setup: (options: Record<string, unknown>) => {
+            openIframe: () => void
+          }
+        }
+      }
+
+      const handler = sdk.PaystackPop.setup({
         key: publicKey,
         email: email,
         amount: Math.round(amount * 100), // convert to kobo/cents
@@ -27,8 +35,8 @@ export const paymentService = {
         metadata: {
           orderId,
         },
-        callback: (response: any) => {
-          onSuccess(response)
+        callback: (response: unknown) => {
+          onSuccess(response as { reference: string })
         },
         onClose: () => {
           onClose()

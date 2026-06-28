@@ -210,11 +210,11 @@ export interface Payment {
   payment_method?: string | null
   amount: number
   currency: string
-  gateway_response?: any | null
+  gateway_response?: Record<string, unknown> | null
   paid_at?: string | null
   released_at?: string | null
   refunded_at?: string | null
-  metadata?: any | null
+  metadata?: Record<string, unknown> | null
   created_at: string
   updated_at: string
   order?: Order

@@ -1,14 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  DollarSign,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  Download,
-  Receipt,
-} from 'lucide-react'
+import { Download, Receipt } from 'lucide-react'
 import { paymentService } from '@/services/marketplace/payment.service'
 import { useAuthStore } from '@/stores/authStore'
 

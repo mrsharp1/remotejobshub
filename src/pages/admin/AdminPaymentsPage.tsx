@@ -1,15 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  DollarSign,
-  Search,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Eye,
-  Loader2,
-} from 'lucide-react'
+import { DollarSign, Search, Eye, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { paymentService } from '@/services/marketplace/payment.service'
 import { Payment } from '@/types'
