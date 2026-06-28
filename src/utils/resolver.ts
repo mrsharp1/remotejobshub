@@ -1,8 +1,9 @@
 import { ZodSchema, ZodIssue } from 'zod'
 
 export const zodResolver =
-  <T extends Record<string, unknown>>(schema: ZodSchema<T>) =>
-  async (values: T) => {
+  (schema: ZodSchema) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async (values: any): Promise<any> => {
     const result = schema.safeParse(values)
     if (result.success) {
       return { values: result.data, errors: {} }

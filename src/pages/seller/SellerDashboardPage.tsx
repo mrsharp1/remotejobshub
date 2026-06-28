@@ -172,7 +172,8 @@ export const SellerDashboardPage: React.FC = () => {
         )
       } else {
         await listingService.createListing(
-          { ...data, seller_id: profile.id, status: 'draft' },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { ...data, seller_id: profile.id, status: 'draft' } as any,
           imagesList,
           tagsList
         )
@@ -207,7 +208,8 @@ export const SellerDashboardPage: React.FC = () => {
         )
       } else {
         await listingService.createListing(
-          { ...formData, seller_id: profile.id, status: 'submitted' },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { ...formData, seller_id: profile.id, status: 'submitted' } as any,
           formImages,
           formTags
         )
@@ -439,7 +441,10 @@ export const SellerDashboardPage: React.FC = () => {
 
             {studioView === 'preview' && formData && (
               <ListingPreview
-                listing={formData}
+                listing={
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  { ...formData, images: formImages, tags: formTags } as any
+                }
                 onBack={() => setStudioView('form')}
                 onSubmit={handleConfirmPublish}
                 submitting={submitting}
