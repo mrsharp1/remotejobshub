@@ -41,9 +41,10 @@ export const AdminDashboardPage: React.FC = () => {
     queryKey: ['admin-telemetry-metrics'],
     queryFn: async () => {
       // 1. Fetch Users, Buyers, Sellers Counts
-      const { data: profiles = [] } = await supabase
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('role, seller_verified')
+      const profiles = profilesData || []
       const totalUsers = profiles.length
       const sellers = profiles.filter(
         (p) => p.role === 'seller' || p.seller_verified
@@ -52,9 +53,10 @@ export const AdminDashboardPage: React.FC = () => {
       const buyers = totalUsers - sellers
 
       // 2. Fetch Listings Counts
-      const { data: listings = [] } = await supabase
+      const { data: listingsData } = await supabase
         .from('listings')
         .select('status, approval_status')
+      const listings = listingsData || []
       const activeListings = listings.filter(
         (l) => l.status === 'published'
       ).length
@@ -63,9 +65,10 @@ export const AdminDashboardPage: React.FC = () => {
       ).length
 
       // 3. Fetch Orders & Revenue & Disputes Counts
-      const { data: ordersData = [] } = await supabase
+      const { data: ordersDataRaw } = await supabase
         .from('orders')
         .select('status, amount')
+      const ordersData = ordersDataRaw || []
       const totalOrders = ordersData.length
       const disputes = ordersData.filter((o) => o.status === 'disputed').length
       const revenue = ordersData
@@ -292,7 +295,11 @@ export const AdminDashboardPage: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setChartMetric(tab.key as any)}
+                onClick={() =>
+                  setChartMetric(
+                    tab.key as 'users' | 'orders' | 'revenue' | 'listings'
+                  )
+                }
                 className={`rounded-md px-3 py-1 transition-all ${
                   chartMetric === tab.key
                     ? 'bg-background text-foreground shadow-sm'
