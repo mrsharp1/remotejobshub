@@ -130,8 +130,25 @@ export const listingService = {
 
   async deleteListing(id: string): Promise<void> {
     try {
+      const { data: listing } = await supabase
+        .from('listings')
+        .select('seller_id, title')
+        .eq('id', id)
+        .single()
+
       const { error } = await supabase.from('listings').delete().eq('id', id)
       if (error) throw error
+
+      if (listing) {
+        await notificationService.createNotification({
+          user_id: listing.seller_id,
+          title: 'Listing Deleted',
+          message: `Your listing "${listing.title}" has been deleted from the platform.`,
+          type: 'listing',
+          reference_type: 'system',
+          reference_id: id,
+        })
+      }
     } catch (err) {
       console.error('Error in deleteListing:', err)
       throw err
@@ -460,36 +477,6 @@ export const listingService = {
       })
     } catch (err) {
       console.error('Error in archiveListing:', err)
-      throw err
-    }
-  },
-
-  async deleteListing(id: string): Promise<void> {
-    try {
-      // Fetch details first to notify before deleting if possible
-      const { data: listing } = await supabase
-        .from('listings')
-        .select('seller_id, title')
-        .eq('id', id)
-        .single()
-
-      const { error } = await supabase.from('listings').delete().eq('id', id)
-
-      if (error) throw error
-
-      if (listing) {
-        // Notify seller
-        await notificationService.createNotification({
-          user_id: listing.seller_id,
-          title: 'Listing Deleted',
-          message: `Your listing "${listing.title}" has been deleted from the platform.`,
-          type: 'listing',
-          reference_type: 'system',
-          reference_id: id,
-        })
-      }
-    } catch (err) {
-      console.error('Error in deleteListing:', err)
       throw err
     }
   },

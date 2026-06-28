@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  ListFilter,
   Search,
   CheckCircle,
   XCircle,
@@ -9,12 +8,9 @@ import {
   Bookmark,
   Eye,
   Trash2,
-  Filter,
   Loader2,
-  ChevronRight,
   ShieldCheck,
   Star,
-  ExternalLink,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { listingService } from '@/services/marketplace/listing.service'
@@ -71,7 +67,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.approveListing(id, user.id)
       refetch()
       setSelectedListing(null)
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to approve listing')
     }
   }
@@ -96,7 +92,7 @@ export const AdminListingsPage: React.FC = () => {
       setSelectedListing(null)
       setActionTarget(null)
       setReviewNotes('')
-    } catch (err) {
+    } catch (_err) {
       alert(`Failed to complete action: ${actionTarget}`)
     }
   }
@@ -109,7 +105,7 @@ export const AdminListingsPage: React.FC = () => {
       setSelectedListing((prev) =>
         prev ? { ...prev, is_featured: !prev.is_featured } : null
       )
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to update featured state')
     }
   }
@@ -119,7 +115,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.archiveListing(id)
       refetch()
       setSelectedListing(null)
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to archive listing')
     }
   }
@@ -135,7 +131,7 @@ export const AdminListingsPage: React.FC = () => {
       await listingService.deleteListing(id)
       refetch()
       setSelectedListing(null)
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to delete listing')
     }
   }
@@ -239,7 +235,9 @@ export const AdminListingsPage: React.FC = () => {
         <div className="relative md:col-span-2">
           <select
             value={selectedSort}
-            onChange={(e) => setSelectedSort(e.target.value as any)}
+            onChange={(e) =>
+              setSelectedSort(e.target.value as 'newest' | 'oldest')
+            }
             className="w-full cursor-pointer appearance-none rounded-lg border bg-background px-3 py-2 text-xs"
           >
             <option value="newest">Newest First</option>
