@@ -63,6 +63,11 @@ const BuyerOrdersPage = lazy(() =>
     default: m.BuyerOrdersPage,
   }))
 )
+const NotificationsPage = lazy(() =>
+  import('@/pages/dashboard/NotificationsPage').then((m) => ({
+    default: m.NotificationsPage,
+  }))
+)
 const OrderDetailPage = lazy(() =>
   import('@/pages/dashboard/OrderDetailPage').then((m) => ({
     default: m.OrderDetailPage,
@@ -211,6 +216,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <BuyerOrdersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'dashboard/notifications',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <NotificationsPage />
           </Suspense>
         ),
       },
