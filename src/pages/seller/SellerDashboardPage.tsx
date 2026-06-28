@@ -1,14 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import {
-  FileText,
-  DollarSign,
-  Eye,
-  Star,
-  Plus,
-  ArrowRight,
-  TrendingUp,
-} from 'lucide-react'
+import { FileText, DollarSign, Eye, Star, Plus, TrendingUp } from 'lucide-react'
+import { Profile } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { SellerStatsCard } from '@/components/seller/SellerStatsCard'
 import { ProfileCompletionCard } from '@/components/seller/ProfileCompletionCard'
@@ -20,7 +13,7 @@ import { PaymentCard } from '@/components/seller/PaymentCard'
 export const SellerDashboardPage: React.FC = () => {
   const { profile, setProfile } = useAuthStore()
 
-  const handleProfileUpdated = (updatedProfile: any) => {
+  const handleProfileUpdated = (updatedProfile: Profile) => {
     setProfile(updatedProfile)
   }
 
@@ -68,6 +61,7 @@ export const SellerDashboardPage: React.FC = () => {
           </h1>
           <p className="mt-1 text-muted-foreground">
             Manage your listings, monitor stats, and review verification state.
+            Your profile is {completionPercentage}% complete.
           </p>
         </div>
         <div className="flex items-center gap-3">

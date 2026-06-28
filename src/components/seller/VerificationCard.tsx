@@ -20,7 +20,7 @@ export const VerificationCard: React.FC<VerificationCardProps> = ({
   >(
     profile?.seller_verified
       ? 'verified'
-      : (profile?.status as any) === 'pending'
+      : profile?.status === 'pending'
         ? 'pending'
         : 'not_verified'
   )
