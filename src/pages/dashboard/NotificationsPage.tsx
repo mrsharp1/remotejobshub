@@ -2,14 +2,12 @@ import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Bell,
   CreditCard,
   ShoppingBag,
   Settings,
   AlertCircle,
   Loader2,
   Trash2,
-  CheckCircle,
   XCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
