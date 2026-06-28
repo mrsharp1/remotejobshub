@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FileText,
@@ -12,7 +12,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { Listing } from '@/types'
+import { Profile, Listing } from '@/types'
 import { listingService } from '@/services/marketplace/listing.service'
 import { SellerStatsCard } from '@/components/seller/SellerStatsCard'
 import { ProfileCompletionCard } from '@/components/seller/ProfileCompletionCard'
@@ -36,18 +36,18 @@ export const SellerDashboardPage: React.FC = () => {
   )
   const [sellerListings, setSellerListings] = useState<Listing[]>([])
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
-  const [formData, setFormData] = useState<any>(null)
+  const [formData, setFormData] = useState<Partial<Listing> | null>(null)
   const [formImages, setFormImages] = useState<string[]>([])
   const [formTags, setFormTags] = useState<string[]>([])
   const [loadingListings, setLoadingListings] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  const handleProfileUpdated = (updatedProfile: any) => {
+  const handleProfileUpdated = (updatedProfile: Profile) => {
     setProfile(updatedProfile)
   }
 
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     if (!profile?.id) return
     setLoadingListings(true)
     try {
@@ -58,13 +58,13 @@ export const SellerDashboardPage: React.FC = () => {
     } finally {
       setLoadingListings(false)
     }
-  }
+  }, [profile?.id])
 
   useEffect(() => {
     if (activeTab === 'studio' && studioView === 'list') {
       fetchListings()
     }
-  }, [activeTab, studioView, profile?.id])
+  }, [activeTab, studioView, fetchListings])
 
   // Profile completion calculations
   const checklistItems = [
@@ -157,7 +157,7 @@ export const SellerDashboardPage: React.FC = () => {
   }
 
   const handleSaveDraft = async (
-    data: any,
+    data: Partial<Listing>,
     imagesList: string[],
     tagsList: string[]
   ) => {
@@ -184,7 +184,7 @@ export const SellerDashboardPage: React.FC = () => {
   }
 
   const handleSubmitPreview = (
-    data: any,
+    data: Partial<Listing>,
     imagesList: string[],
     tagsList: string[]
   ) => {

@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
 import {
   Globe,
   DollarSign,
-  Calendar,
   ShieldCheck,
   CheckCircle,
   XCircle,
@@ -28,7 +26,8 @@ export const ListingPreview: React.FC<ListingPreviewProps> = ({
   submitting,
 }) => {
   const [activeImageIdx, setActiveImageIdx] = useState(0)
-  const images = listing.images || []
+  const images = (listing.images as unknown as string[]) || []
+  const tags = (listing.tags as unknown as string[]) || []
 
   return (
     <div className="space-y-6">
@@ -254,13 +253,13 @@ export const ListingPreview: React.FC<ListingPreviewProps> = ({
           </div>
 
           {/* Tag Chips Card */}
-          {listing.tags && listing.tags.length > 0 && (
+          {tags && tags.length > 0 && (
             <div className="space-y-3 rounded-xl border border-border bg-card p-6 shadow-sm">
               <h3 className="font-heading text-sm font-bold text-foreground">
                 Metadata Tags
               </h3>
               <div className="flex flex-wrap gap-1.5">
-                {listing.tags.map((tag) => (
+                {tags.map((tag) => (
                   <span
                     key={tag}
                     className="rounded bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground"
