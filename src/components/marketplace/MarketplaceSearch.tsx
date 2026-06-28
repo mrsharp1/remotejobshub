@@ -1,6 +1,15 @@
 import React from 'react'
 import { Search, Globe, Filter } from 'lucide-react'
-import { PLATFORMS } from '@/constants/platforms'
+
+const MARKETPLACE_PLATFORMS = [
+  'Outlier',
+  'Handshake',
+  'DataAnnotation',
+  'TELUS',
+  'Scale AI',
+  'Appen',
+  'OneForma',
+]
 
 interface MarketplaceSearchProps {
   keyword: string
@@ -43,7 +52,7 @@ export const MarketplaceSearch: React.FC<MarketplaceSearchProps> = ({
           className="w-full appearance-none rounded-lg border border-input bg-background py-2 pl-3 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">All Platforms</option>
-          {PLATFORMS.map((p) => (
+          {MARKETPLACE_PLATFORMS.map((p) => (
             <option key={p} value={p}>
               {p}
             </option>

@@ -85,6 +85,7 @@ export interface Listing {
   identity_verified: boolean
   images?: ListingImage[]
   tags?: ListingTag[]
+  seller?: Profile
 }
 
 export interface ListingImage {

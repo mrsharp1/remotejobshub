@@ -1,6 +1,15 @@
 import React from 'react'
 import { X, RotateCcw, ShieldCheck } from 'lucide-react'
-import { PLATFORMS } from '@/constants/platforms'
+
+const MARKETPLACE_PLATFORMS = [
+  'Outlier',
+  'Handshake',
+  'DataAnnotation',
+  'TELUS',
+  'Scale AI',
+  'Appen',
+  'OneForma',
+]
 
 interface FilterSidebarProps {
   selectedPlatforms: string[]
@@ -58,7 +67,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           Platforms
         </label>
         <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1">
-          {PLATFORMS.map((p) => {
+          {MARKETPLACE_PLATFORMS.map((p) => {
             const isChecked = selectedPlatforms.includes(p)
             return (
               <label

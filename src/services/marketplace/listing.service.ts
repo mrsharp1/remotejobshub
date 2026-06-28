@@ -165,7 +165,9 @@ export const listingService = {
     try {
       let query = supabase
         .from('listings')
-        .select('*, images:listing_images(*), tags:listing_tags(*)')
+        .select(
+          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles(*)'
+        )
         .eq('approval_status', 'approved')
         .eq('status', 'published')
 
