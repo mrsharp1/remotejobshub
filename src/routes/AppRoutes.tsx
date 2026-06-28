@@ -98,6 +98,21 @@ const AdminDisputesPage = lazy(() =>
     default: m.AdminDisputesPage,
   }))
 )
+const BuyerPaymentsPage = lazy(() =>
+  import('@/pages/dashboard/BuyerPaymentsPage').then((m) => ({
+    default: m.BuyerPaymentsPage,
+  }))
+)
+const SellerPaymentsPage = lazy(() =>
+  import('@/pages/seller/SellerPaymentsPage').then((m) => ({
+    default: m.SellerPaymentsPage,
+  }))
+)
+const AdminPaymentsPage = lazy(() =>
+  import('@/pages/admin/AdminPaymentsPage').then((m) => ({
+    default: m.AdminPaymentsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -261,6 +276,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/payments',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerPaymentsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/payments',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerPaymentsPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -288,6 +319,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminDisputesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/payments',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminPaymentsPage />
           </Suspense>
         ),
       },

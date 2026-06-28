@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
 import { orderService } from '@/services/marketplace/order.service'
+import { paymentService } from '@/services/marketplace/payment.service'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
 import { PurchaseSummaryModal } from '@/components/marketplace/PurchaseSummaryModal'
@@ -113,16 +114,44 @@ export const ListingDetailPage: React.FC = () => {
   }
 
   const handleConfirmPurchase = async () => {
-    if (!user?.id || !listing) return
+    if (!user?.id || !user?.email || !listing) return
     try {
+      // 1. Create order in pending status
       const order = await orderService.createOrder({
         buyer_id: user.id,
         seller_id: listing.seller_id,
         listing_id: listing.id,
         amount: listing.price,
       })
+
+      // 2. Close modal view
       setShowSummaryModal(false)
-      navigate(`/orders/${order.id}`)
+
+      // 3. Initialize Paystack payment popups
+      paymentService.initializePayment(
+        user.email,
+        listing.price,
+        order.id,
+        async (response) => {
+          try {
+            // Verify payment on success and redirect
+            await paymentService.verifyPayment(response.reference, order.id)
+            navigate(`/orders/${order.id}`)
+          } catch (verifyErr) {
+            console.error('Failed to verify payment reference:', verifyErr)
+            alert(
+              'Verification failed. Please contact support with reference: ' +
+                response.reference
+            )
+          }
+        },
+        () => {
+          alert(
+            'Payment checkout window closed. You can fulfill this transaction in the buyer dashboard.'
+          )
+          navigate(`/orders/${order.id}`)
+        }
+      )
     } catch (err) {
       console.error(err)
       throw err

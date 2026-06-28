@@ -199,3 +199,25 @@ export interface DisputeEvidence {
   created_at: string
   submitted_by_profile?: Profile
 }
+
+export interface Payment {
+  id: string
+  order_id: string
+  buyer_id: string
+  seller_id: string
+  paystack_reference: string
+  payment_status: 'pending' | 'success' | 'failed' | 'released' | 'refunded'
+  payment_method?: string | null
+  amount: number
+  currency: string
+  gateway_response?: any | null
+  paid_at?: string | null
+  released_at?: string | null
+  refunded_at?: string | null
+  metadata?: any | null
+  created_at: string
+  updated_at: string
+  order?: Order
+  buyer?: Profile
+  seller?: Profile
+}
