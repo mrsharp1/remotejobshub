@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { authService } from '@/services/auth/auth.service'
 import { zodResolver } from '@/utils/resolver'
+import { useAuthStore } from '@/stores/authStore'
 
 const registerSchema = z
   .object({
@@ -84,13 +85,37 @@ export const RegisterPage: React.FC = () => {
     setIsLoading(true)
     setErrorMsg(null)
     try {
-      await authService.signUp(data.email, data.password, {
-        data: {
-          full_name: data.fullName,
-          phone: data.phone,
-          country: data.country,
+      const signUpResult = await authService.signUp(data.email, data.password, {
+        options: {
+          data: {
+            full_name: data.fullName,
+            phone: data.phone,
+            country: data.country,
+          },
         },
       })
+
+      const user = signUpResult?.user
+      const session = signUpResult?.session
+
+      if (user) {
+        // Immediately update corresponding row in public.profiles table
+        try {
+          const updatedProfile = await authService.updateProfile(user.id, {
+            full_name: data.fullName,
+            phone: data.phone || null,
+            country: data.country,
+          })
+
+          // Sync auth store immediately if session was created automatically
+          if (session && updatedProfile) {
+            useAuthStore.getState().setAuth(user, updatedProfile, session)
+          }
+        } catch (updateErr) {
+          console.error('Failed to complete user profile details:', updateErr)
+        }
+      }
+
       setIsSuccess(true)
     } catch (err: unknown) {
       const error = err as Error

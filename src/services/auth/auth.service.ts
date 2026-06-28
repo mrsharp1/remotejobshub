@@ -50,6 +50,29 @@ export const authService = {
     }
   },
 
+  async updateProfile(
+    userId: string,
+    profileData: Partial<Profile>
+  ): Promise<Profile | null> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating profile:', error.message)
+        throw error
+      }
+      return data as Profile
+    } catch (err) {
+      console.error('Error in updateProfile:', err)
+      throw err
+    }
+  },
+
   async signIn(email: string, password: string) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({

@@ -2,8 +2,10 @@ import React from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { Menu, X, LayoutDashboard, Settings, Home } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 export const DashboardLayout: React.FC = () => {
   const { isSidebarOpen, toggleSidebar } = useUIStore()
+  const { profile } = useAuthStore()
   return (
     <div className="bg-muted/20 flex min-h-screen">
       <aside
@@ -64,7 +66,11 @@ export const DashboardLayout: React.FC = () => {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="text-sm">Welcome, User</div>
+          <div className="text-sm">
+            {profile?.full_name
+              ? `Welcome back, ${profile.full_name} 👋`
+              : 'Welcome back!'}
+          </div>
         </header>
         <main className="flex-1 p-6">
           <Outlet />

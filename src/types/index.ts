@@ -18,6 +18,12 @@ export interface Profile {
   status: 'active' | 'suspended' | 'pending' | 'deleted'
   created_at: string
   updated_at: string
+  bio: string | null
+  company_name: string | null
+  company_website: string | null
+  seller_verified: boolean
+  seller_since: string | null
+  subscription_plan: string
 }
 export interface Seller {
   id: string
