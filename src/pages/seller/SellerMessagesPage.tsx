@@ -71,7 +71,7 @@ export const SellerMessagesPage: React.FC = () => {
     return () => {
       channel.unsubscribe()
     }
-  }, [selectedConvId, user?.id])
+  }, [selectedConvId, user?.id, refetchConvs])
 
   // Scroll to bottom of message feed
   useEffect(() => {

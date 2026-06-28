@@ -72,7 +72,7 @@ export const BuyerMessagesPage: React.FC = () => {
     return () => {
       channel.unsubscribe()
     }
-  }, [selectedConvId, user?.id])
+  }, [selectedConvId, user?.id, refetchConvs])
 
   // Scroll to bottom of message feed
   useEffect(() => {
@@ -231,7 +231,12 @@ export const BuyerMessagesPage: React.FC = () => {
                   <div>
                     <h3 className="flex items-center gap-1 font-heading text-xs font-bold text-foreground">
                       {otherParticipant?.profile?.full_name || 'Seller'}
-                      {(otherParticipant?.profile as any)?.verified && (
+                      {(
+                        otherParticipant?.profile as unknown as Record<
+                          string,
+                          unknown
+                        >
+                      )?.verified && (
                         <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                       )}
                     </h3>
