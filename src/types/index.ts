@@ -67,9 +67,51 @@ export interface Order {
 }
 export interface Review {
   id: string
-  listingId: string
+  listing_id: string
   reviewerId: string
   rating: number
   comment?: string
   createdAt: string
+}
+
+export interface Listing {
+  id: string
+  seller_id: string
+  title: string
+  platform: string
+  country: string
+  account_age?: string | null
+  monthly_income?: number | null
+  price: number
+  description?: string | null
+  reason_for_sale?: string | null
+  status: 'draft' | 'submitted' | 'published' | 'sold' | 'archived'
+  approval_status: 'pending' | 'approved' | 'rejected'
+  views: number
+  favorites_count: number
+  is_featured: boolean
+  created_at: string
+  updated_at: string
+  images?: ListingImage[]
+  tags?: ListingTag[]
+}
+
+export interface ListingImage {
+  id: string
+  listing_id: string
+  image_url: string
+  display_order: number
+  created_at: string
+}
+
+export interface ListingTag {
+  id: string
+  listing_id: string
+  tag: string
+}
+
+export interface Favorite {
+  user_id: string
+  listing_id: string
+  created_at: string
 }
