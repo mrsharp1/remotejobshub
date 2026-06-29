@@ -11,6 +11,7 @@ import {
   Bell,
   Award,
   ShieldCheck,
+  BarChart2,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -120,6 +121,24 @@ export const DashboardLayout: React.FC = () => {
             <ShieldCheck className="h-5 w-5 text-green-500" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Seller KYC Verification
+            </span>
+          </Link>
+          <Link
+            to="/dashboard/analytics"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <BarChart2 className="h-5 w-5 text-indigo-500" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Buyer Analytics
+            </span>
+          </Link>
+          <Link
+            to="/seller/analytics"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <BarChart2 className="h-5 w-5 text-amber-500" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Seller Analytics
             </span>
           </Link>
           <Link

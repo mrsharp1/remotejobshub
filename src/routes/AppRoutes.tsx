@@ -183,6 +183,21 @@ const AdminVerificationPage = lazy(() =>
     default: m.AdminVerificationPage,
   }))
 )
+const AdminAnalyticsPage = lazy(() =>
+  import('@/pages/admin/AdminAnalyticsPage').then((m) => ({
+    default: m.AdminAnalyticsPage,
+  }))
+)
+const SellerAnalyticsPage = lazy(() =>
+  import('@/pages/seller/SellerAnalyticsPage').then((m) => ({
+    default: m.SellerAnalyticsPage,
+  }))
+)
+const BuyerAnalyticsPage = lazy(() =>
+  import('@/pages/dashboard/BuyerAnalyticsPage').then((m) => ({
+    default: m.BuyerAnalyticsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -426,6 +441,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/analytics',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerAnalyticsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/analytics',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerAnalyticsPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -509,6 +540,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminVerificationPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/analytics',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminAnalyticsPage />
           </Suspense>
         ),
       },

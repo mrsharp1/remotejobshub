@@ -54,7 +54,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Referrals', to: '/admin/referrals', icon: Award },
     { label: 'KYC Center', to: '/admin/verification', icon: ShieldCheck },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
-    { label: 'Analytics', to: '/admin?view=analytics', icon: BarChart2 },
+    { label: 'Analytics', to: '/admin/analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },
   ]
 
