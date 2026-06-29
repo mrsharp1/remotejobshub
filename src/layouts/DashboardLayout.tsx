@@ -69,7 +69,7 @@ export const DashboardLayout: React.FC = () => {
             to="/seller/wallet"
             className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
           >
-            <Wallet className="h-5 w-5" />
+            <Wallet className="h-5 w-5 text-amber-500" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Seller Wallet
             </span>
@@ -78,7 +78,7 @@ export const DashboardLayout: React.FC = () => {
             to="/seller/messages"
             className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
           >
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="h-5 w-5 text-amber-500" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Seller Messages
             </span>

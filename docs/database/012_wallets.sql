@@ -1,5 +1,5 @@
 -- 012_wallets.sql
--- Idempotent database migration to establish general wallets, transactions, and withdrawal requests
+-- Migration file to establish platform wallets, credit ledger, and withdrawal cashout requests
 
 -- 1. Create Wallets Table
 CREATE TABLE IF NOT EXISTS public.wallets (
@@ -40,10 +40,10 @@ CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create Indexes
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON public.wallets(user_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON public.wallet_transactions(wallet_id);
-CREATE INDEX IF NOT EXISTS idx_withdrawals_user_id ON public.withdrawal_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_transactions_wallet_id ON public.wallet_transactions(wallet_id);
+CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_user_id ON public.withdrawal_requests(user_id);
 
 -- Enable RLS
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
@@ -51,51 +51,75 @@ ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Wallets: visible to owner or admin
-DROP POLICY IF EXISTS "Select wallets policy" ON public.wallets;
-CREATE POLICY "Select wallets policy" ON public.wallets
+-- Wallets Policies
+DROP POLICY IF EXISTS "Select wallet policy" ON public.wallets;
+CREATE POLICY "Select wallet policy" ON public.wallets
   FOR SELECT USING (
     user_id = auth.uid() OR
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
--- Transactions: visible to owner of wallet or admin
+DROP POLICY IF EXISTS "Update wallet policy" ON public.wallets;
+CREATE POLICY "Update wallet policy" ON public.wallets
+  FOR UPDATE USING (
+    user_id = auth.uid() OR
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Transactions Policies
 DROP POLICY IF EXISTS "Select transactions policy" ON public.wallet_transactions;
 CREATE POLICY "Select transactions policy" ON public.wallet_transactions
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM public.wallets w 
-      WHERE w.id = wallet_transactions.wallet_id AND w.user_id = auth.uid()
+      SELECT 1 FROM public.wallets 
+      WHERE id = wallet_transactions.wallet_id AND user_id = auth.uid()
     ) OR
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
--- Withdrawal Requests: visible to owner or admin
-DROP POLICY IF EXISTS "Select withdrawal requests policy" ON public.withdrawal_requests;
-CREATE POLICY "Select withdrawal requests policy" ON public.withdrawal_requests
+DROP POLICY IF EXISTS "Insert transactions policy" ON public.wallet_transactions;
+CREATE POLICY "Insert transactions policy" ON public.wallet_transactions
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Withdrawal Requests Policies
+DROP POLICY IF EXISTS "Select withdrawal policy" ON public.withdrawal_requests;
+CREATE POLICY "Select withdrawal policy" ON public.withdrawal_requests
   FOR SELECT USING (
     user_id = auth.uid() OR
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
-DROP POLICY IF EXISTS "Insert withdrawal requests policy" ON public.withdrawal_requests;
-CREATE POLICY "Insert withdrawal requests policy" ON public.withdrawal_requests
+DROP POLICY IF EXISTS "Insert withdrawal policy" ON public.withdrawal_requests;
+CREATE POLICY "Insert withdrawal policy" ON public.withdrawal_requests
   FOR INSERT WITH CHECK (
     user_id = auth.uid()
   );
 
--- Trigger: auto-create wallet when profile is created
-CREATE OR REPLACE FUNCTION public.handle_new_wallet()
+DROP POLICY IF EXISTS "Update withdrawal policy" ON public.withdrawal_requests;
+CREATE POLICY "Update withdrawal policy" ON public.withdrawal_requests
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Trigger: auto-provision wallet for new users
+CREATE OR REPLACE FUNCTION public.handle_create_user_wallet()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.wallets (user_id, available_balance, pending_balance, escrow_balance, bonus_credits, referral_earnings)
-  VALUES (NEW.id, 0.00, 0.00, 0.00, 10.00, 0.00) -- offer $10 starting bonus credit
+  VALUES (NEW.id, 0.00, 0.00, 0.00, 0.00, 0.00)
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS trg_new_wallet ON public.profiles;
-CREATE TRIGGER trg_new_wallet
+DROP TRIGGER IF EXISTS trg_create_user_wallet ON public.profiles;
+CREATE TRIGGER trg_create_user_wallet
   AFTER INSERT ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_wallet();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_create_user_wallet();
+
+-- Backfill wallets for existing profiles
+INSERT INTO public.wallets (user_id, available_balance, pending_balance, escrow_balance, bonus_credits, referral_earnings)
+SELECT id, 0.00, 0.00, 0.00, 0.00, 0.00 FROM public.profiles
+ON CONFLICT (user_id) DO NOTHING;

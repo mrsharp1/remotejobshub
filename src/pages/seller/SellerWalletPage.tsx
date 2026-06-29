@@ -2,13 +2,14 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Wallet as WalletIcon,
-  DollarSign,
-  TrendingUp,
-  History,
+  PlusCircle,
+  ArrowDownLeft,
   Loader2,
-  Plus,
-  Building2,
-  CheckCircle2,
+  Calendar,
+  DollarSign,
+  Briefcase,
+  Layers,
+  FileText,
 } from 'lucide-react'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { useAuthStore } from '@/stores/authStore'
@@ -18,36 +19,31 @@ import { WithdrawalRequest } from '@/types'
 export const SellerWalletPage: React.FC = () => {
   const { user } = useAuthStore()
 
-  // Withdrawal States
+  // Withdrawal Form state
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [bankName, setBankName] = useState('')
   const [accountNum, setAccountNum] = useState('')
   const [accountName, setAccountName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Fetch current user wallet details
-  const { data: wallet, isLoading, refetch: refetchWallet } = useQuery({
+  // Fetch Wallet details
+  const {
+    data: wallet,
+    isLoading: isWalletLoading,
+    refetch: refetchWallet,
+  } = useQuery({
     queryKey: ['seller-wallet', user?.id],
-    queryFn: () => {
-      if (!user?.id) throw new Error('No user authenticated')
-      return walletService.getWallet(user.id)
-    },
+    queryFn: () => (user?.id ? walletService.getWallet(user.id) : null),
     enabled: !!user?.id,
   })
 
-  // Fetch transactions list
-  const { data: transactions = [], refetch: refetchTxs } = useQuery({
-    queryKey: ['seller-wallet-transactions', wallet?.id],
-    queryFn: () => {
-      if (!wallet?.id) return []
-      return walletService.getTransactions(wallet.id)
-    },
-    enabled: !!wallet?.id,
-  })
-
-  // Fetch withdrawal requests history
-  const { data: payouts = [], isLoading: isPayoutsLoading, refetch: refetchPayouts } = useQuery({
-    queryKey: ['seller-payouts', user?.id],
+  // Fetch withdrawal requests list
+  const {
+    data: withdrawals = [],
+    isLoading: isWithdrawLoading,
+    refetch: refetchWithdrawals,
+  } = useQuery({
+    queryKey: ['seller-withdrawals', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
       const { data, error } = await supabase
@@ -62,17 +58,14 @@ export const SellerWalletPage: React.FC = () => {
     enabled: !!user?.id,
   })
 
-  // Handle request payout
+  // Submit Withdrawal request
   const handleRequestWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user?.id || !wallet) return
-    const amt = parseFloat(withdrawAmount)
-    if (isNaN(amt) || amt <= 0) {
-      alert('Please input a valid positive amount.')
+    if (!user?.id || !wallet || !withdrawAmount || Number(withdrawAmount) <= 0)
       return
-    }
-    if (amt > wallet.available_balance) {
-      alert('Insufficient available balance.')
+
+    if (Number(wallet.available_balance) < Number(withdrawAmount)) {
+      alert('Insufficient wallet available balance')
       return
     }
 
@@ -80,259 +73,252 @@ export const SellerWalletPage: React.FC = () => {
     try {
       await walletService.requestWithdrawal(
         user.id,
-        amt,
-        bankName.trim(),
-        accountNum.trim(),
-        accountName.trim()
+        Number(withdrawAmount),
+        bankName,
+        accountNum,
+        accountName
       )
-      alert('Withdrawal request submitted successfully for approval!')
       setWithdrawAmount('')
       setBankName('')
       setAccountNum('')
       setAccountName('')
-      refetchWallet()
-      refetchTxs()
-      refetchPayouts()
-    } catch {
-      alert('Withdrawal request submission failed.')
+      await refetchWallet()
+      await refetchWithdrawals()
+      alert('Withdrawal request submitted successfully!')
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit withdrawal request')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  const stats = [
+    {
+      title: 'Available for Withdrawal',
+      amount: wallet?.available_balance || 0,
+      icon: DollarSign,
+      color: 'text-primary bg-primary/10 border-primary/20',
+    },
+    {
+      title: 'Pending Clearances',
+      amount: wallet?.pending_balance || 0,
+      icon: Briefcase,
+      color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    },
+    {
+      title: 'Escrow Holdings',
+      amount: wallet?.escrow_balance || 0,
+      icon: WalletIcon,
+      color: 'text-green-500 bg-green-500/10 border-green-500/20',
+    },
+    {
+      title: 'Bonus Allocation',
+      amount: wallet?.bonus_credits || 0,
+      icon: Layers,
+      color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    },
+  ]
 
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="border-b pb-4 border-border/40">
+      <div className="border-border/40 border-b pb-4">
         <h1 className="font-heading text-2xl font-bold text-foreground">
-          Earnings & Payout Wallet
+          Earnings & Wallet Center
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Request cashouts, review pending earnings allocations, and track payout timelines.
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Request payouts and inspect your platform balance ledgers.
         </p>
       </div>
 
-      {/* Cards Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Available for Payout</span>
-            <WalletIcon className="h-4.5 w-4.5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.available_balance.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Can be withdrawn to bank account immediately.</p>
-          </div>
+      {isWalletLoading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Pending Earnings</span>
-            <DollarSign className="h-4.5 w-4.5 text-amber-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.pending_balance.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Funds currently undergoing approval checks.</p>
-          </div>
-        </div>
-
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Escrow Holdings</span>
-            <TrendingUp className="h-4.5 w-4.5 text-indigo-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.escrow_balance.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Funds locked in orders escrow.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Withdrawal Requests & Transactions */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Payout History */}
-          <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b flex items-center gap-2 bg-muted/10">
-              <History className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                Withdrawal Requests History
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              {isPayoutsLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {stats.map((c, i) => (
+              <div
+                key={i}
+                className="space-y-4 rounded-xl border bg-card p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {c.title}
+                  </span>
+                  <div className={`rounded-lg border p-1.5 ${c.color}`}>
+                    <c.icon className="h-4 w-4" />
+                  </div>
                 </div>
-              ) : payouts.length === 0 ? (
-                <div className="text-center py-10 text-xs text-muted-foreground italic bg-background">
-                  No withdrawal requests found.
+                <div>
+                  <h3 className="font-heading text-2xl font-black text-foreground">
+                    ${Number(c.amount).toFixed(2)}
+                  </h3>
                 </div>
-              ) : (
-                <table className="w-full text-left text-xs divide-y">
-                  <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase">
-                    <tr>
-                      <th className="p-3.5">Bank Details</th>
-                      <th className="p-3.5">Amount</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5">Date</th>
-                      <th className="p-3.5">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y bg-background text-foreground">
-                    {payouts.map((req) => (
-                      <tr key={req.id} className="hover:bg-muted/10">
-                        <td className="p-3.5">
-                          <div className="font-bold">{req.bank_name}</div>
-                          <div className="text-[10px] text-muted-foreground">{req.account_number} ({req.account_name})</div>
-                        </td>
-                        <td className="p-3.5 font-bold">${req.amount.toFixed(2)}</td>
-                        <td className="p-3.5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                            req.status === 'approved'
-                              ? 'bg-emerald-500/10 text-emerald-600'
-                              : req.status === 'pending'
-                              ? 'bg-amber-500/10 text-amber-600'
-                              : 'bg-destructive/10 text-destructive'
-                          }`}>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+            {/* Left Column: Withdrawals tracking list */}
+            <div className="space-y-4 lg:col-span-8">
+              <div className="rounded-xl border bg-card shadow-sm">
+                <div className="border-b p-4">
+                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+                    Withdrawal requests logs
+                  </h3>
+                </div>
+
+                <div className="divide-border/50 divide-y">
+                  {isWithdrawLoading ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : withdrawals.length === 0 ? (
+                    <div className="py-12 text-center text-xs italic text-muted-foreground">
+                      No withdrawal requests submitted yet.
+                    </div>
+                  ) : (
+                    withdrawals.map((req: WithdrawalRequest) => (
+                      <div
+                        key={req.id}
+                        className="hover:bg-muted/10 flex items-center justify-between p-4 text-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border bg-muted font-bold text-muted-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-foreground">
+                              Payout to {req.bank_name} (
+                              {req.account_number.slice(-4)})
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              Recipient Name: {req.account_name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="block font-mono font-bold text-foreground">
+                            ${Number(req.amount).toFixed(2)}
+                          </span>
+                          <span
+                            className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-extrabold uppercase ${
+                              req.status === 'approved'
+                                ? 'bg-green-500/10 text-green-600'
+                                : req.status === 'rejected'
+                                  ? 'bg-destructive/10 text-destructive'
+                                  : 'bg-amber-500/10 text-amber-500'
+                            }`}
+                          >
                             {req.status}
                           </span>
-                        </td>
-                        <td className="p-3.5 text-muted-foreground">{new Date(req.created_at).toLocaleDateString()}</td>
-                        <td className="p-3.5 text-muted-foreground max-w-xs truncate">{req.rejection_reason || 'N/A'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
-          {/* Transactions list */}
-          <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-muted/10">
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                Wallet Transaction Logs
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              {transactions.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground italic bg-background">
-                  No recorded transactions.
+                          <span className="mt-1.5 flex items-center justify-end gap-1 text-[9px] text-muted-foreground">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {new Date(req.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ) : (
-                <table className="w-full text-left text-xs divide-y">
-                  <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase">
-                    <tr>
-                      <th className="p-3.5">Type</th>
-                      <th className="p-3.5">Amount</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y bg-background text-foreground">
-                    {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-muted/10">
-                        <td className="p-3.5 capitalize font-bold">{tx.type}</td>
-                        <td className="p-3.5 font-bold">${tx.amount.toFixed(2)}</td>
-                        <td className="p-3.5 capitalize text-muted-foreground">{tx.status}</td>
-                        <td className="p-3.5 text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              </div>
+            </div>
+
+            {/* Right Column: Withdrawal form */}
+            <div className="space-y-4 lg:col-span-4">
+              <div className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
+                <div>
+                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+                    Request Withdrawal
+                  </h3>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Request payout to your local bank account.
+                  </p>
+                </div>
+
+                <form onSubmit={handleRequestWithdrawal} className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                      Bank Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Access Bank"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="0123456789"
+                      value={accountNum}
+                      onChange={(e) => setAccountNum(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                      Account Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                      Amount ($)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="50.00"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
+                      min="1"
+                      step="any"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="hover:bg-primary/95 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-xs font-bold text-white transition-colors disabled:opacity-60"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <ArrowDownLeft className="h-3.5 w-3.5" /> Request
+                        Cashout
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Right: Request Payout Cashout Form */}
-        <div className="lg:col-span-4 bg-card border rounded-xl p-5 shadow-sm space-y-4">
-          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-            <Plus className="h-4.5 w-4.5 text-primary" /> Request Withdrawal
-          </h3>
-          <form onSubmit={handleRequestWithdrawal} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-muted-foreground">Amount ($USD)</label>
-              <input
-                type="number"
-                placeholder="e.g. 500.00"
-                step="0.01"
-                min="10"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-background text-xs text-foreground font-bold"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-muted-foreground">Bank Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Chase Bank"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-background text-xs text-foreground"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-muted-foreground">Account Number</label>
-              <input
-                type="text"
-                placeholder="e.g. 123456789"
-                value={accountNum}
-                onChange={(e) => setAccountNum(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-background text-xs text-foreground"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-muted-foreground">Account Name</label>
-              <input
-                type="text"
-                placeholder="e.g. John Doe Account"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-background text-xs text-foreground"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2.5 bg-primary hover:bg-primary/95 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-            >
-              {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Submit Payout Request'}
-            </button>
-          </form>
-
-          <div className="bg-muted/20 border p-3 rounded-lg text-[9px] text-muted-foreground space-y-1.5 leading-relaxed">
-            <h4 className="font-bold text-foreground flex items-center gap-1">
-              <Building2 className="h-3.5 w-3.5 text-primary" /> Processing Times
-            </h4>
-            <p>Payout requests are audited manually by platform administrators and are typically settled within 1 to 2 business banking days.</p>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

@@ -2,265 +2,247 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Wallet as WalletIcon,
-  DollarSign,
-  TrendingUp,
-  Award,
-  History,
+  PlusCircle,
+  ArrowUpRight,
   Loader2,
-  Plus,
-  CheckCircle2,
+  Calendar,
+  Tag,
+  DollarSign,
+  Gift,
+  Users,
 } from 'lucide-react'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { useAuthStore } from '@/stores/authStore'
-import { supabase } from '@/lib/supabase'
+import { WalletTransaction } from '@/types'
 
 export const BuyerWalletPage: React.FC = () => {
   const { user } = useAuthStore()
   const [depositAmount, setDepositAmount] = useState('')
   const [isDepositing, setIsDepositing] = useState(false)
 
-  // Fetch current user wallet details
-  const { data: wallet, isLoading, refetch: refetchWallet } = useQuery({
+  // Fetch Wallet details
+  const {
+    data: wallet,
+    isLoading: isWalletLoading,
+    refetch: refetchWallet,
+  } = useQuery({
     queryKey: ['buyer-wallet', user?.id],
-    queryFn: () => {
-      if (!user?.id) throw new Error('No user authenticated')
-      return walletService.getWallet(user.id)
-    },
+    queryFn: () => (user?.id ? walletService.getWallet(user.id) : null),
     enabled: !!user?.id,
   })
 
   // Fetch transactions list
-  const { data: transactions = [], isLoading: isTxLoading, refetch: refetchTxs } = useQuery({
+  const {
+    data: transactions = [],
+    isLoading: isTxLoading,
+    refetch: refetchTx,
+  } = useQuery({
     queryKey: ['buyer-wallet-transactions', wallet?.id],
-    queryFn: () => {
-      if (!wallet?.id) return []
-      return walletService.getTransactions(wallet.id)
-    },
+    queryFn: () => (wallet?.id ? walletService.getTransactions(wallet.id) : []),
     enabled: !!wallet?.id,
   })
 
-  // Deposit handler
-  const handleDeposit = async (e: React.FormEvent) => {
+  const handleDepositSimulator = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user?.id || !wallet?.id || !depositAmount) return
-    const amt = parseFloat(depositAmount)
-    if (isNaN(amt) || amt <= 0) return
-
+    if (!wallet || !depositAmount || Number(depositAmount) <= 0) return
     setIsDepositing(true)
     try {
-      // Simulate top up payment verification
-      const nextBalance = wallet.available_balance + amt
-
-      // Update available balance
-      const { error } = await supabase
-        .from('wallets')
-        .update({
-          available_balance: nextBalance,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', wallet.id)
-
-      if (error) throw error
-
-      // Log transaction
-      await supabase.from('wallet_transactions').insert([
-        {
-          wallet_id: wallet.id,
-          amount: amt,
-          type: 'deposit',
-          status: 'completed',
-          description: 'Deposited funds via Paystack checkout',
-        }
-      ])
-
-      alert(`Successfully funded wallet with $${amt.toFixed(2)}!`)
+      await walletService.creditWallet(
+        wallet.id,
+        Number(depositAmount),
+        'Simulated credit deposit via credit card',
+        'deposit'
+      )
       setDepositAmount('')
-      refetchWallet()
-      refetchTxs()
+      await refetchWallet()
+      await refetchTx()
+      alert('Deposit processed successfully!')
     } catch {
-      alert('Funding transaction failed.')
+      alert('Failed to simulate deposit')
     } finally {
       setIsDepositing(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  const statCards = [
+    {
+      title: 'Available Balance',
+      amount: wallet?.available_balance || 0,
+      icon: DollarSign,
+      color: 'text-primary bg-primary/10 border-primary/20',
+    },
+    {
+      title: 'Escrow Funds Hold',
+      amount: wallet?.escrow_balance || 0,
+      icon: WalletIcon,
+      color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    },
+    {
+      title: 'Bonus Credits',
+      amount: wallet?.bonus_credits || 0,
+      icon: Gift,
+      color: 'text-green-500 bg-green-500/10 border-green-500/20',
+    },
+    {
+      title: 'Referral Earnings',
+      amount: wallet?.referral_earnings || 0,
+      icon: Users,
+      color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    },
+  ]
 
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="border-b pb-4 border-border/40">
+      <div className="border-border/40 border-b pb-4">
         <h1 className="font-heading text-2xl font-bold text-foreground">
           My Account Wallet
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Manage your platform balances, referral bonus credits, and transaction timeline logs.
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Manage your cash balances, purchase credits, and transactions.
         </p>
       </div>
 
-      {/* Cards Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Available Funds</span>
-            <WalletIcon className="h-4.5 w-4.5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.available_balance.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Ready for marketplace purchases.</p>
-          </div>
+      {isWalletLoading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Escrow Holds</span>
-            <DollarSign className="h-4.5 w-4.5 text-amber-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.escrow_balance.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Secured in active order transactions.</p>
-          </div>
-        </div>
-
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Bonus Credits</span>
-            <Award className="h-4.5 w-4.5 text-emerald-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.bonus_credits.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Promotional platform credits.</p>
-          </div>
-        </div>
-
-        <div className="bg-card border p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Referral Earnings</span>
-            <TrendingUp className="h-4.5 w-4.5 text-indigo-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              ${wallet?.referral_earnings.toFixed(2) || '0.00'}
-            </h2>
-            <p className="text-[10px] text-muted-foreground mt-1">Earned via user referrals.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Transaction History */}
-        <div className="lg:col-span-8 bg-card border rounded-xl shadow-sm overflow-hidden">
-          <div className="p-4 border-b flex items-center gap-2 bg-muted/10">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
-              Transaction Timeline History
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto">
-            {isTxLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {statCards.map((c, i) => (
+              <div
+                key={i}
+                className="space-y-4 rounded-xl border bg-card p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {c.title}
+                  </span>
+                  <div className={`rounded-lg border p-1.5 ${c.color}`}>
+                    <c.icon className="h-4 w-4" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-heading text-2xl font-black text-foreground">
+                    ${Number(c.amount).toFixed(2)}
+                  </h3>
+                </div>
               </div>
-            ) : transactions.length === 0 ? (
-              <div className="text-center py-12 text-xs text-muted-foreground italic bg-background">
-                No recorded transactions.
-              </div>
-            ) : (
-              <table className="w-full text-left text-xs divide-y">
-                <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase">
-                  <tr>
-                    <th className="p-3.5">Type</th>
-                    <th className="p-3.5">Amount</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5">Description</th>
-                    <th className="p-3.5">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y bg-background text-foreground">
-                  {transactions.map((tx) => {
-                    const isCredit = ['deposit', 'escrow_release', 'bonus', 'referral', 'credit'].includes(tx.type)
-                    return (
-                      <tr key={tx.id} className="hover:bg-muted/10">
-                        <td className="p-3.5 capitalize font-bold">{tx.type}</td>
-                        <td className={`p-3.5 font-semibold ${isCredit ? 'text-emerald-600' : 'text-destructive'}`}>
-                          {isCredit ? '+' : '-'}${tx.amount.toFixed(2)}
-                        </td>
-                        <td className="p-3.5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                            tx.status === 'completed'
-                              ? 'bg-emerald-500/10 text-emerald-600'
-                              : tx.status === 'pending'
-                              ? 'bg-amber-500/10 text-amber-600'
-                              : 'bg-destructive/10 text-destructive'
-                          }`}>
-                            {tx.status}
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+            {/* Left Column: Transactions */}
+            <div className="space-y-4 lg:col-span-8">
+              <div className="rounded-xl border bg-card shadow-sm">
+                <div className="border-b p-4">
+                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+                    Transaction Ledger
+                  </h3>
+                </div>
+
+                <div className="divide-border/50 divide-y">
+                  {isTxLoading ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : transactions.length === 0 ? (
+                    <div className="py-12 text-center text-xs italic text-muted-foreground">
+                      No transactions recorded.
+                    </div>
+                  ) : (
+                    transactions.map((tx: WalletTransaction) => (
+                      <div
+                        key={tx.id}
+                        className="hover:bg-muted/10 flex items-center justify-between p-4 text-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border bg-muted font-bold text-muted-foreground">
+                            <Tag className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <p className="font-bold capitalize text-foreground">
+                              {tx.type.replace('_', ' ')}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              {tx.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span
+                            className={`font-mono font-black ${
+                              Number(tx.amount) > 0
+                                ? 'text-green-600'
+                                : 'text-foreground'
+                            }`}
+                          >
+                            {Number(tx.amount) > 0 ? '+' : ''}$
+                            {Number(tx.amount).toFixed(2)}
                           </span>
-                        </td>
-                        <td className="p-3.5 text-muted-foreground max-w-xs truncate">{tx.description || 'N/A'}</td>
-                        <td className="p-3.5 text-muted-foreground">
-                          {new Date(tx.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Deposit Funds Form */}
-        <div className="lg:col-span-4 bg-card border rounded-xl p-5 shadow-sm space-y-4">
-          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-            <Plus className="h-4.5 w-4.5 text-primary" /> Top Up Wallet
-          </h3>
-          <form onSubmit={handleDeposit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-muted-foreground">Amount ($USD)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-muted-foreground font-semibold text-xs">$</span>
-                <input
-                  type="number"
-                  placeholder="e.g. 100.00"
-                  step="0.01"
-                  min="5"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className="w-full pl-7 pr-3 py-2 border rounded-lg bg-background text-xs text-foreground font-bold"
-                  required
-                />
+                          <span className="mt-1 flex items-center justify-end gap-1 text-[9px] text-muted-foreground">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {new Date(tx.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={isDepositing}
-              className="w-full py-2.5 bg-primary hover:bg-primary/95 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-            >
-              {isDepositing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Fund with Paystack'}
-            </button>
-          </form>
 
-          <div className="bg-muted/20 border p-3 rounded-lg text-[9px] text-muted-foreground space-y-1.5 leading-relaxed">
-            <h4 className="font-bold text-foreground flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Secure Wallet Transfers
-            </h4>
-            <p>Wallet deposits are processed instantly via our payment gateway. These credits can be immediately allocated towards purchases of digital assets or escrow handoffs.</p>
+            {/* Right Column: Fund Wallet Deposit Panel */}
+            <div className="space-y-4 lg:col-span-4">
+              <div className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
+                <div>
+                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+                    Fund Simulator
+                  </h3>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Simulate instantly adding platform credits into your wallet.
+                  </p>
+                </div>
+
+                <form onSubmit={handleDepositSimulator} className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                      Deposit Amount ($)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="100.00"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
+                      min="1"
+                      step="any"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isDepositing}
+                    className="hover:bg-primary/95 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-xs font-bold text-white transition-colors disabled:opacity-60"
+                  >
+                    {isDepositing ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <PlusCircle className="h-3.5 w-3.5" /> Deposit Funds
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

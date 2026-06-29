@@ -320,7 +320,15 @@ export interface WalletTransaction {
   id: string
   wallet_id: string
   amount: number
-  type: 'deposit' | 'withdrawal' | 'escrow_hold' | 'escrow_release' | 'bonus' | 'referral' | 'debit' | 'credit'
+  type:
+    | 'deposit'
+    | 'withdrawal'
+    | 'escrow_hold'
+    | 'escrow_release'
+    | 'bonus'
+    | 'referral'
+    | 'debit'
+    | 'credit'
   status: 'pending' | 'completed' | 'failed' | 'cancelled'
   description?: string | null
   reference_id?: string | null
