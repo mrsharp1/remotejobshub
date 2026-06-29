@@ -46,7 +46,9 @@ export const DashboardOverviewPage: React.FC = () => {
     enabled: !!userId,
   })
 
-  const unread = (notifications ?? []).filter((n: Notification) => !n.is_read).length
+  const unread = (notifications ?? []).filter(
+    (n: Notification) => !n.is_read
+  ).length
   const activeOrders = (orders ?? []).filter(
     (o) =>
       o.status !== 'completed' &&
