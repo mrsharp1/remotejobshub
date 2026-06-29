@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { referralService } from '@/services/marketplace/referral.service'
 import { walletService } from '@/services/marketplace/wallet.service'
-import { ReferralReward } from '@/types'
+import { Referral, ReferralReward } from '@/types'
 
 export const AdminReferralsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
