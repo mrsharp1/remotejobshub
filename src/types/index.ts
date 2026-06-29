@@ -35,26 +35,6 @@ export interface Seller {
   isVerified: boolean
   createdAt: string
 }
-export interface Payment {
-  id: string
-  orderId: string
-  amount: number
-  currency: string
-  status: 'pending' | 'success' | 'failed'
-  provider: 'paystack'
-  reference: string
-  createdAt: string
-}
-
-export interface Review {
-  id: string
-  listing_id: string
-  reviewerId: string
-  rating: number
-  comment?: string
-  createdAt: string
-}
-
 export interface Listing {
   id: string
   seller_id: string
