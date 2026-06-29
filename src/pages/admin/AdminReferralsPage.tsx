@@ -77,12 +77,17 @@ export const AdminReferralsPage: React.FC = () => {
       prompt('Enter adjustment description:') || 'Admin Manual Referral Credit'
 
     try {
-      const wallets = await walletService.getUserWallets(userId)
-      if (!wallets || wallets.length === 0) {
+      const wallet = await walletService.getWallet(userId)
+      if (!wallet) {
         alert('No wallet found for this user.')
         return
       }
-      await walletService.adjustBalance(wallets[0].id, Number(amountStr), desc)
+      await walletService.creditWallet(
+        wallet.id,
+        Number(amountStr),
+        desc,
+        'referral'
+      )
       alert('Manual credit completed successfully!')
     } catch {
       alert('Failed to process manual credit')

@@ -112,13 +112,13 @@ export const referralService = {
       const referrerId = referral.referrer_id
 
       // Credit wallet
-      const wallets = await walletService.getUserWallets(referrerId)
-      if (wallets && wallets.length > 0) {
-        const wallet = wallets[0]
-        await walletService.adjustBalance(
+      const wallet = await walletService.getWallet(referrerId)
+      if (wallet) {
+        await walletService.creditWallet(
           wallet.id,
           Number(reward.amount),
-          `Referral Affiliate Reward: Qualified Sign-up Conversion`
+          `Referral Affiliate Reward: Qualified Sign-up Conversion`,
+          'referral'
         )
       }
 
