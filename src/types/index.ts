@@ -24,6 +24,7 @@ export interface Profile {
   seller_verified: boolean
   seller_since: string | null
   subscription_plan: string
+  referral_code?: string | null
 }
 export interface Seller {
   id: string
@@ -391,4 +392,28 @@ export interface SellerRevenueAgreement {
   accepted_at: string
   agreement_version: string
   profile?: Profile
+}
+
+export interface Referral {
+  id: string
+  referrer_id: string
+  referred_id: string
+  referral_code: string
+  status: 'pending' | 'qualified' | 'paid' | 'cancelled'
+  reward_amount: number
+  first_purchase_date?: string | null
+  created_at: string
+  updated_at: string
+  referrer?: Profile
+  referred?: Profile
+}
+
+export interface ReferralReward {
+  id: string
+  referral_id: string
+  amount: number
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  updated_at: string
+  referral?: Referral
 }

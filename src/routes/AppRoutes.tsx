@@ -158,6 +158,21 @@ const NotificationPreferencesPage = lazy(() =>
     default: m.NotificationPreferencesPage,
   }))
 )
+const BuyerReferralPage = lazy(() =>
+  import('@/pages/dashboard/BuyerReferralPage').then((m) => ({
+    default: m.BuyerReferralPage,
+  }))
+)
+const SellerReferralPage = lazy(() =>
+  import('@/pages/seller/SellerReferralPage').then((m) => ({
+    default: m.SellerReferralPage,
+  }))
+)
+const AdminReferralsPage = lazy(() =>
+  import('@/pages/admin/AdminReferralsPage').then((m) => ({
+    default: m.AdminReferralsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -377,6 +392,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/referrals',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerReferralPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/referrals',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerReferralPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -444,6 +475,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminBroadcastsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/referrals',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminReferralsPage />
           </Suspense>
         ),
       },

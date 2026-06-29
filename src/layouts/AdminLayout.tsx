@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Wallet,
   Megaphone,
+  Award,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -49,6 +50,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Messages', to: '/admin/messages', icon: MessageSquare },
     { label: 'Wallets', to: '/admin/wallets', icon: Wallet },
     { label: 'Broadcasts', to: '/admin/broadcasts', icon: Megaphone },
+    { label: 'Referrals', to: '/admin/referrals', icon: Award },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin?view=analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },

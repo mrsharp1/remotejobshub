@@ -9,6 +9,7 @@ import {
   Wallet,
   MessageSquare,
   Bell,
+  Award,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -91,6 +92,24 @@ export const DashboardLayout: React.FC = () => {
             <Bell className="h-5 w-5" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Notifications Settings
+            </span>
+          </Link>
+          <Link
+            to="/dashboard/referrals"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Award className="h-5 w-5" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Buyer Referrals
+            </span>
+          </Link>
+          <Link
+            to="/seller/referrals"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Award className="h-5 w-5 text-amber-500" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Seller Referrals
             </span>
           </Link>
           <Link
