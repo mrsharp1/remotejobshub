@@ -99,8 +99,9 @@ export const AdminReferralsPage: React.FC = () => {
     let csv =
       'Referral ID,Referrer Email,Referred Email,Amount,Status,Created At\n'
     rewards.forEach((r) => {
-      const referrerEmail = (r.referral as any)?.referrer?.email || ''
-      const referredEmail = (r.referral as any)?.referred?.email || ''
+      const referral = r.referral as unknown as Referral
+      const referrerEmail = referral?.referrer?.email || ''
+      const referredEmail = referral?.referred?.email || ''
       csv += `${r.id},${referrerEmail},${referredEmail},${r.amount},${r.status},${r.created_at}\n`
     })
 
@@ -117,8 +118,9 @@ export const AdminReferralsPage: React.FC = () => {
 
   // Filters
   const filteredRewards = rewards.filter((r) => {
-    const referrerEmail = (r.referral as any)?.referrer?.email || ''
-    const referredEmail = (r.referral as any)?.referred?.email || ''
+    const referral = r.referral as unknown as Referral
+    const referrerEmail = referral?.referrer?.email || ''
+    const referredEmail = referral?.referred?.email || ''
     const matchesSearch =
       referrerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
       referredEmail.toLowerCase().includes(searchQuery.toLowerCase())
@@ -243,7 +245,11 @@ export const AdminReferralsPage: React.FC = () => {
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value as ReferralReward['status'] | 'all'
+              )
+            }
             className="rounded-lg border bg-background px-3 py-2 text-xs text-foreground focus:outline-none"
           >
             <option value="all">All Reward Statuses</option>
@@ -277,10 +283,9 @@ export const AdminReferralsPage: React.FC = () => {
               </thead>
               <tbody className="divide-border/50 divide-y">
                 {filteredRewards.map((r: ReferralReward) => {
-                  const referrerEmail =
-                    (r.referral as any)?.referrer?.email || 'N/A'
-                  const referredEmail =
-                    (r.referral as any)?.referred?.email || 'N/A'
+                  const referral = r.referral as unknown as Referral
+                  const referrerEmail = referral?.referrer?.email || 'N/A'
+                  const referredEmail = referral?.referred?.email || 'N/A'
                   const isPending = r.status === 'pending'
 
                   return (
