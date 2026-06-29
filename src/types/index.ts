@@ -451,3 +451,52 @@ export interface VerificationAuditLog {
   created_at: string
   admin_profile?: Profile
 }
+
+export interface Promotion {
+  id: string
+  user_id?: string | null
+  title: string
+  description?: string | null
+  discount_type: 'percentage' | 'fixed'
+  discount_value: number
+  campaign_type: 'seasonal' | 'seller_boost' | 'flash_sale'
+  start_date: string
+  end_date: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Coupon {
+  id: string
+  code: string
+  discount_type: 'percentage' | 'fixed' | 'first_purchase' | 'referral'
+  discount_value: number
+  usage_limit?: number | null
+  remaining_uses?: number | null
+  start_date: string
+  end_date: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CouponRedemption {
+  id: string
+  coupon_id: string
+  buyer_id: string
+  order_id?: string | null
+  discount_applied: number
+  created_at: string
+  coupon?: Coupon
+  buyer?: Profile
+}
+
+export interface PromotionalBanner {
+  id: string
+  title: string
+  image_url: string
+  link_url?: string | null
+  active: boolean
+  created_at: string
+}

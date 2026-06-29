@@ -20,6 +20,7 @@ import {
   Megaphone,
   Award,
   ShieldCheck,
+  Ticket,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -53,6 +54,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Broadcasts', to: '/admin/broadcasts', icon: Megaphone },
     { label: 'Referrals', to: '/admin/referrals', icon: Award },
     { label: 'KYC Center', to: '/admin/verification', icon: ShieldCheck },
+    { label: 'Campaigns & Coupons', to: '/admin/promotions', icon: Ticket },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin/analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },

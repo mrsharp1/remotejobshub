@@ -12,6 +12,7 @@ import {
   Award,
   ShieldCheck,
   BarChart2,
+  Ticket,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -130,6 +131,24 @@ export const DashboardLayout: React.FC = () => {
             <BarChart2 className="h-5 w-5 text-indigo-500" />
             <span className={isSidebarOpen ? 'inline' : 'hidden'}>
               Buyer Analytics
+            </span>
+          </Link>
+          <Link
+            to="/dashboard/promotions"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Ticket className="h-5 w-5 text-indigo-500" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Offers & Coupons
+            </span>
+          </Link>
+          <Link
+            to="/seller/promotions"
+            className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Ticket className="h-5 w-5 text-amber-500" />
+            <span className={isSidebarOpen ? 'inline' : 'hidden'}>
+              Boost Listings
             </span>
           </Link>
           <Link

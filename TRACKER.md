@@ -10,3 +10,4 @@ Track progress of system modules implementations.
 | 018 | Referral & Affiliate System | Completed |
 | 019 | Seller Verification & KYC Center | Completed |
 | 020 | Advanced Admin Analytics & Business Intelligence | Completed |
+| 021 | Coupons, Promotions & Marketing Engine | Completed |

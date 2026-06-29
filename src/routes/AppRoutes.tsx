@@ -198,6 +198,21 @@ const BuyerAnalyticsPage = lazy(() =>
     default: m.BuyerAnalyticsPage,
   }))
 )
+const BuyerPromotionsPage = lazy(() =>
+  import('@/pages/dashboard/BuyerPromotionsPage').then((m) => ({
+    default: m.BuyerPromotionsPage,
+  }))
+)
+const SellerPromotionsPage = lazy(() =>
+  import('@/pages/seller/SellerPromotionsPage').then((m) => ({
+    default: m.SellerPromotionsPage,
+  }))
+)
+const AdminPromotionsPage = lazy(() =>
+  import('@/pages/admin/AdminPromotionsPage').then((m) => ({
+    default: m.AdminPromotionsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -457,6 +472,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/promotions',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerPromotionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/promotions',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerPromotionsPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -548,6 +579,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminAnalyticsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/promotions',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminPromotionsPage />
           </Suspense>
         ),
       },
