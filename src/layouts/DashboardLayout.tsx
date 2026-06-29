@@ -177,7 +177,7 @@ export const DashboardLayout: React.FC = () => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
   const role = profile?.role ?? 'buyer'

@@ -53,6 +53,11 @@ const ForgotPasswordPage = lazy(() =>
     default: m.ForgotPasswordPage,
   }))
 )
+const UpdatePasswordPage = lazy(() =>
+  import('@/pages/auth/UpdatePasswordPage').then((m) => ({
+    default: m.UpdatePasswordPage,
+  }))
+)
 const DashboardOverviewPage = lazy(() =>
   import('@/pages/dashboard/DashboardOverviewPage').then((m) => ({
     default: m.DashboardOverviewPage,
@@ -344,6 +349,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <ForgotPasswordPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'reset-password',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <UpdatePasswordPage />
           </Suspense>
         ),
       },

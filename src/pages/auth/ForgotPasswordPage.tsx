@@ -35,7 +35,7 @@ export const ForgotPasswordPage: React.FC = () => {
     try {
       // Use the window location host to build the site reset redirect URL dynamically
       const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-      const resetUrl = `${siteUrl}/login`
+      const resetUrl = `${siteUrl}/reset-password`
       await authService.sendPasswordResetEmail(data.email, resetUrl)
       setIsSuccess(true)
     } catch (err: unknown) {

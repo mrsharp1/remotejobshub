@@ -19,6 +19,7 @@ Track progress of system modules implementations.
 | 027 | Build Stabilization Sprint (Phase 1) | Completed |
 | 028 | Enterprise Stabilization & QA Sprint | Completed |
 | 029 | Enterprise QA & Full Platform Validation | Completed |
+| 030 | RC QA & End-to-End Functional Testing | Completed |
 
 ## Stabilization & QA Checklist
 ✔ Functional QA completed
@@ -33,3 +34,32 @@ Track progress of system modules implementations.
 ✔ DashboardOverviewPage rebuilt with live data
 ✔ Production build: zero errors
 ✔ ESLint: zero warnings
+
+## RC QA Fixes (Implementation 030)
+
+### Auth Workflow
+✔ AuthLayout: no redirect guard for authenticated users → **Fixed**: redirects to /dashboard
+✔ LoginPage: always redirected to /dashboard → **Fixed**: redirects to state.from (origin page)
+✔ DashboardLayout redirect: did not pass state.from → **Fixed**: passes pathname to login
+✔ ForgotPasswordPage: reset link pointed to /login → **Fixed**: points to /reset-password
+✔ Missing /reset-password route → **Fixed**: created UpdatePasswordPage with full validation
+
+### Navigation & UX
+✔ MainLayout nav: no auth-aware CTA → **Fixed**: shows Dashboard+Logout when logged in
+✔ MainLayout nav: no active link highlighting → **Fixed**: uses useLocation for active states
+✔ MainLayout nav: mobile menu didn't close on click → **Fixed**: closeMobile() on every link
+✔ MainLayout header: not sticky → **Fixed**: sticky top-0 with backdrop-blur
+✔ MainLayout footer: bare single line → **Fixed**: responsive multi-column footer with nav
+
+### Error Handling
+✔ NotFoundPage: bare 3-line stub → **Fixed**: premium 404 with ghost text, icons, 3 action buttons
+✔ ErrorBoundary: minimal reload button → **Fixed**: premium error UI with message, reload + home
+
+### Security
+✔ Auth routes accessible when logged in → **Fixed**: AuthLayout redirects authenticated users
+✔ Deep links preserve intent → **Fixed**: state.from roundtrip through login
+
+### Build Status
+✔ TypeScript: 0 errors
+✔ ESLint: 0 warnings
+✔ Production build: clean

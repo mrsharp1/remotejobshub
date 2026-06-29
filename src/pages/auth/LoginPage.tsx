@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
@@ -20,6 +20,9 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const navigate = useNavigate()
+  const location = useLocation()
+  const from =
+    (location.state as { from?: string } | null)?.from ?? '/dashboard'
 
   const {
     register,
@@ -39,7 +42,7 @@ export const LoginPage: React.FC = () => {
     setErrorMsg(null)
     try {
       await authService.signIn(data.email, data.password)
-      navigate('/dashboard')
+      navigate(from, { replace: true })
     } catch (err: unknown) {
       const error = err as Error
       setErrorMsg(error.message || 'Invalid email or password.')
