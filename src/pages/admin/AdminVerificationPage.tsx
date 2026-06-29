@@ -101,7 +101,11 @@ export const AdminVerificationPage: React.FC = () => {
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as SellerVerification['status'] | 'all'
+                )
+              }
               className="rounded-lg border bg-background px-3 py-2 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All KYC Statuses</option>

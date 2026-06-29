@@ -174,7 +174,11 @@ export const SellerVerificationPage: React.FC = () => {
                   </label>
                   <select
                     value={docType}
-                    onChange={(e) => setDocType(e.target.value as any)}
+                    onChange={(e) =>
+                      setDocType(
+                        e.target.value as SellerVerification['document_type']
+                      )
+                    }
                     className="w-full rounded-lg border bg-background p-2.5 text-foreground"
                     disabled={
                       verification?.status === 'approved' ||
