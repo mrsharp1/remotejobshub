@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Ticket,
   ShieldAlert,
+  Activity,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -58,6 +59,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Campaigns & Coupons', to: '/admin/promotions', icon: Ticket },
     { label: 'Risk Control', to: '/admin/risk', icon: ShieldAlert },
     { label: 'AI Insights', to: '/admin/ai-insights', icon: Shield },
+    { label: 'Automation', to: '/admin/automation', icon: Activity },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin/analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },

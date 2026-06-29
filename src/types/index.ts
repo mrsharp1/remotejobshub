@@ -575,3 +575,25 @@ export interface AIInsight {
   metric_value: string
   metric_change: string
 }
+
+export interface AutomationJob {
+  id: string
+  name: string
+  description?: string | null
+  last_run?: string | null
+  next_run?: string | null
+  status: 'idle' | 'running' | 'success' | 'failed'
+  created_at: string
+  updated_at: string
+}
+
+export interface AutomationAuditLog {
+  id: string
+  job_id: string
+  job_name: string
+  status: 'success' | 'failed'
+  log_message?: string | null
+  executed_by?: string | null
+  created_at: string
+  admin_profile?: Profile
+}
