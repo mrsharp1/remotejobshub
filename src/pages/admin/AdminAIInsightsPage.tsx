@@ -1,6 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2, TrendingUp, Activity } from 'lucide-react'
+import { Loader2, Activity } from 'lucide-react'
 import { recommendationService } from '@/services/marketplace/recommendation.service'
 
 export const AdminAIInsightsPage: React.FC = () => {

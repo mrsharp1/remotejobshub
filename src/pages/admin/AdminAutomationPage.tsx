@@ -1,15 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Play,
-  Loader2,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  History,
-  Activity,
-  Terminal,
-} from 'lucide-react'
+import { Play, Loader2, Activity, Terminal } from 'lucide-react'
 import { automationService } from '@/services/marketplace/automation.service'
 import { useAuthStore } from '@/stores/authStore'
 import { AutomationJob, AutomationAuditLog } from '@/types'
@@ -48,8 +39,8 @@ export const AdminAutomationPage: React.FC = () => {
       alert('Job executed successfully!')
       refetchJobs()
       refetchLogs()
-    } catch (err: any) {
-      alert(err.message || 'Execution failed.')
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Execution failed.')
     } finally {
       setRunningJobId(null)
     }

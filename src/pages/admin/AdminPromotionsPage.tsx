@@ -4,9 +4,6 @@ import {
   Plus,
   Loader2,
   Trash2,
-  AlertTriangle,
-  Play,
-  Copy,
   TrendingUp,
   Percent,
   Sparkles,
@@ -256,8 +253,11 @@ export const AdminPromotionsPage: React.FC = () => {
                   </label>
                   <select
                     value={couponDiscType}
-                    onChange={(e) => setCouponDiscType(e.target.value as any)}
-                    className="w-full rounded-lg border bg-background p-2.5 text-foreground"
+                    onChange={(e) =>
+                      setCouponDiscType(
+                        e.target.value as Coupon['discount_type']
+                      )
+                    }
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount (₦)</option>
@@ -325,7 +325,9 @@ export const AdminPromotionsPage: React.FC = () => {
                   </label>
                   <select
                     value={promoType}
-                    onChange={(e) => setPromoType(e.target.value as any)}
+                    onChange={(e) =>
+                      setPromoType(e.target.value as Promotion['campaign_type'])
+                    }
                     className="w-full rounded-lg border bg-background p-2.5 text-foreground"
                   >
                     <option value="seasonal">Seasonal Discount</option>
@@ -340,7 +342,11 @@ export const AdminPromotionsPage: React.FC = () => {
                   </label>
                   <select
                     value={promoDiscType}
-                    onChange={(e) => setPromoDiscType(e.target.value as any)}
+                    onChange={(e) =>
+                      setPromoDiscType(
+                        e.target.value as Promotion['discount_type']
+                      )
+                    }
                     className="w-full rounded-lg border bg-background p-2.5 text-foreground"
                   >
                     <option value="percentage">Percentage (%)</option>

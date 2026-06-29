@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { promotionService } from '@/services/marketplace/promotion.service'
 import { useAuthStore } from '@/stores/authStore'
-import { Coupon, CouponRedemption, Promotion } from '@/types'
+import { Coupon, Promotion } from '@/types'
 
 export const BuyerPromotionsPage: React.FC = () => {
   const { user } = useAuthStore()

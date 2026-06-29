@@ -1,17 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ShieldAlert,
-  Loader2,
-  Lock,
-  Unlock,
-  Trash2,
-  Cpu,
-  UserCheck,
-  AlertTriangle,
-  History,
-  CheckCircle,
-} from 'lucide-react'
+import { ShieldAlert, Loader2, Lock } from 'lucide-react'
 import { riskService } from '@/services/marketplace/risk.service'
 import { useAuthStore } from '@/stores/authStore'
 import { FraudFlag, RiskScore, BlockedDevice } from '@/types'
@@ -33,11 +22,7 @@ export const AdminRiskPage: React.FC = () => {
   })
 
   // Fetch Risk Scores
-  const {
-    data: riskScores = [],
-    isLoading: loadingScores,
-    refetch: refetchScores,
-  } = useQuery({
+  const { data: riskScores = [], isLoading: loadingScores } = useQuery({
     queryKey: ['admin-risk-scores'],
     queryFn: () => riskService.getRiskScores(),
   })

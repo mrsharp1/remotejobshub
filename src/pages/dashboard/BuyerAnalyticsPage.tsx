@@ -1,15 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  TrendingUp,
-  DollarSign,
-  Activity,
-  Award,
-  Users,
-  Compass,
-  CheckCircle,
-  Loader2,
-} from 'lucide-react'
+import { DollarSign, Compass, CheckCircle, Loader2 } from 'lucide-react'
 import { analyticsService } from '@/services/marketplace/analytics.service'
 import { useAuthStore } from '@/stores/authStore'
 

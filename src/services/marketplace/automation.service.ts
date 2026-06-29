@@ -76,9 +76,12 @@ export const automationService = {
             `Execution routine for job "${job.name}" is not registered.`
           )
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       success = false
-      message = err.message || 'Execution encountered an unexpected error.'
+      message =
+        err instanceof Error
+          ? err.message
+          : 'Execution encountered an unexpected error.'
     }
 
     // 3. Log results and update job status

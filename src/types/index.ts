@@ -564,7 +564,7 @@ export interface SavedSearch {
   id: string
   user_id: string
   query: string
-  filters?: any
+  filters?: Record<string, unknown> | null
   created_at: string
 }
 
