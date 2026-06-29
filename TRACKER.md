@@ -11,3 +11,4 @@ Track progress of system modules implementations.
 | 019 | Seller Verification & KYC Center | Completed |
 | 020 | Advanced Admin Analytics & Business Intelligence | Completed |
 | 021 | Coupons, Promotions & Marketing Engine | Completed |
+| 022 | Fraud Detection & Risk Management Engine | Completed |

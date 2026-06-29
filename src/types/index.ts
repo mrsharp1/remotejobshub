@@ -500,3 +500,54 @@ export interface PromotionalBanner {
   active: boolean
   created_at: string
 }
+
+export interface FraudFlag {
+  id: string
+  user_id: string
+  reason: string
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+  status: 'pending' | 'under_review' | 'resolved' | 'dismissed'
+  created_at: string
+  updated_at: string
+  profile?: Profile
+}
+
+export interface RiskScore {
+  id: string
+  user_id: string
+  score: number
+  factors: string[]
+  updated_at: string
+  profile?: Profile
+}
+
+export interface LoginHistory {
+  id: string
+  user_id: string
+  ip_address?: string | null
+  device_fingerprint?: string | null
+  browser?: string | null
+  os?: string | null
+  country?: string | null
+  risk_level?: string | null
+  created_at: string
+  profile?: Profile
+}
+
+export interface SuspiciousActivity {
+  id: string
+  user_id: string
+  activity_type: string
+  description?: string | null
+  ip_address?: string | null
+  created_at: string
+  profile?: Profile
+}
+
+export interface BlockedDevice {
+  id: string
+  device_fingerprint: string
+  reason?: string | null
+  blocked_by?: string | null
+  created_at: string
+}

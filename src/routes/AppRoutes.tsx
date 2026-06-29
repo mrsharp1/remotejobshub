@@ -213,6 +213,21 @@ const AdminPromotionsPage = lazy(() =>
     default: m.AdminPromotionsPage,
   }))
 )
+const BuyerSecurityPage = lazy(() =>
+  import('@/pages/dashboard/BuyerSecurityPage').then((m) => ({
+    default: m.BuyerSecurityPage,
+  }))
+)
+const SellerSecurityPage = lazy(() =>
+  import('@/pages/seller/SellerSecurityPage').then((m) => ({
+    default: m.SellerSecurityPage,
+  }))
+)
+const AdminRiskPage = lazy(() =>
+  import('@/pages/admin/AdminRiskPage').then((m) => ({
+    default: m.AdminRiskPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -488,6 +503,22 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/security',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BuyerSecurityPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/security',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerSecurityPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -587,6 +618,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminPromotionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/risk',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminRiskPage />
           </Suspense>
         ),
       },
