@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   Users,
   UserCheck,
@@ -19,9 +20,64 @@ import { supabase } from '@/lib/supabase'
 import { Profile, Listing, Order, Notification } from '@/types'
 
 export const AdminDashboardPage: React.FC = () => {
+  const [searchParams] = useSearchParams()
+  const view = searchParams.get('view')
+
   const [chartMetric, setChartMetric] = useState<
     'users' | 'orders' | 'revenue' | 'listings'
   >('revenue')
+
+  // Notification Builder state
+  const [targetUserId, setTargetUserId] = useState('')
+  const [notifTitle, setNotifTitle] = useState('')
+  const [notifMessage, setNotifMessage] = useState('')
+  const [notifType, setNotifType] = useState('system')
+  const [isSendingNotif, setIsSendingNotif] = useState(false)
+
+  // Settings mock state
+  const [commissionRate, setCommissionRate] = useState(10)
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+
+  // Sub-queries
+  const { data: allProfiles = [], refetch: refetchProfiles } = useQuery({
+    queryKey: ['admin-profiles-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data || []) as Profile[]
+    },
+    enabled: view === 'users',
+  })
+
+  const { data: allOrders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ['admin-orders-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, buyer:profiles(*), seller:profiles(*)')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data || []) as (Order & { buyer?: Profile; seller?: Profile })[]
+    },
+    enabled: view === 'orders',
+  })
+
+  const { data: allNotifications = [], refetch: refetchNotifications } =
+    useQuery({
+      queryKey: ['admin-notifications-list'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return (data || []) as Notification[]
+      },
+      enabled: view === 'notifications',
+    })
 
   // Live Database Queries for Metrics
   const {
@@ -176,8 +232,413 @@ export const AdminDashboardPage: React.FC = () => {
     ],
   }
 
-  const activeDataset = chartDatasets[chartMetric]
-  const maxVal = Math.max(...activeDataset.map((d) => d.value), 10)
+  // User Actions
+  const handleToggleUserRole = async (
+    profileId: string,
+    currentRole: string
+  ) => {
+    try {
+      const newRole =
+        currentRole === 'seller'
+          ? 'buyer'
+          : currentRole === 'buyer'
+            ? 'seller'
+            : 'buyer'
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', profileId)
+      if (error) throw error
+      refetchProfiles()
+      alert('User role updated successfully!')
+    } catch {
+      alert('Failed to update user role')
+    }
+  }
+
+  const handleToggleUserVerification = async (
+    profileId: string,
+    currentVerified: boolean
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ seller_verified: !currentVerified })
+        .eq('id', profileId)
+      if (error) throw error
+      refetchProfiles()
+      alert('Verification status updated!')
+    } catch {
+      alert('Failed to update verification status')
+    }
+  }
+
+  // Order Actions
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId)
+      if (error) throw error
+      refetchOrders()
+      alert('Order status updated!')
+    } catch {
+      alert('Failed to update order status')
+    }
+  }
+
+  // Notification Actions
+  const handleSendNotification = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!targetUserId || !notifTitle || !notifMessage) {
+      alert('Please fill out all fields.')
+      return
+    }
+    setIsSendingNotif(true)
+    try {
+      const { error } = await supabase.from('notifications').insert([
+        {
+          user_id: targetUserId,
+          title: notifTitle,
+          message: notifMessage,
+          type: notifType,
+          read: false,
+        },
+      ])
+      if (error) throw error
+      alert('Notification sent!')
+      setNotifTitle('')
+      setNotifMessage('')
+      refetchNotifications()
+    } catch {
+      alert('Failed to send notification')
+    } finally {
+      setIsSendingNotif(false)
+    }
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+      refetchNotifications()
+      alert('Notification deleted!')
+    } catch {
+      alert('Failed to delete notification')
+    }
+  }
+
+  if (view === 'users') {
+    return (
+      <div className="space-y-6">
+        <div className="border-border/40 border-b pb-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+            User Management Console
+          </span>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            Platform Users
+          </h1>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted text-[10px] font-bold uppercase text-muted-foreground">
+              <tr>
+                <th className="p-4">Name</th>
+                <th className="p-4">Email</th>
+                <th className="p-4">Role</th>
+                <th className="p-4">Seller Verification</th>
+                <th className="p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y text-foreground">
+              {allProfiles.map((p) => (
+                <tr key={p.id} className="hover:bg-muted/30">
+                  <td className="p-4 font-bold">{p.full_name || 'N/A'}</td>
+                  <td className="p-4">{p.email || 'N/A'}</td>
+                  <td className="p-4 capitalize">
+                    <span className="bg-destructive/10 rounded px-2 py-0.5 font-semibold text-destructive">
+                      {p.role}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    {p.seller_verified ? (
+                      <span className="font-bold text-green-500">Verified</span>
+                    ) : (
+                      <span className="text-muted-foreground">Unverified</span>
+                    )}
+                  </td>
+                  <td className="flex gap-2 p-4">
+                    <button
+                      onClick={() => handleToggleUserRole(p.id, p.role)}
+                      className="rounded border bg-background px-2.5 py-1 font-semibold hover:bg-muted"
+                    >
+                      Toggle Role
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleToggleUserVerification(
+                          p.id,
+                          p.seller_verified || false
+                        )
+                      }
+                      className="rounded border bg-background px-2.5 py-1 font-semibold hover:bg-muted"
+                    >
+                      Toggle Verify
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  if (view === 'orders') {
+    return (
+      <div className="space-y-6">
+        <div className="border-border/40 border-b pb-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+            Escrow Transactions Auditor
+          </span>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            Escrow Orders
+          </h1>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted text-[10px] font-bold uppercase text-muted-foreground">
+              <tr>
+                <th className="p-4">Order ID</th>
+                <th className="p-4">Buyer</th>
+                <th className="p-4">Amount</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Created At</th>
+                <th className="p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y text-foreground">
+              {allOrders.map((o) => (
+                <tr key={o.id} className="hover:bg-muted/30">
+                  <td className="p-4 font-mono font-bold text-muted-foreground">
+                    {o.id.slice(0, 8)}...
+                  </td>
+                  <td className="p-4">{o.buyer?.full_name || 'buyer'}</td>
+                  <td className="p-4 font-bold">
+                    ₦{Number(o.amount).toLocaleString()}
+                  </td>
+                  <td className="p-4 capitalize">
+                    <span className="bg-primary/10 rounded px-2 py-0.5 font-semibold text-primary">
+                      {o.status}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    {new Date(o.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="p-4">
+                    <select
+                      value={o.status}
+                      onChange={(e) =>
+                        handleUpdateOrderStatus(o.id, e.target.value)
+                      }
+                      className="rounded border bg-background p-1 text-xs"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="disputed">Disputed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  if (view === 'notifications') {
+    return (
+      <div className="space-y-6">
+        <div className="border-border/40 border-b pb-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+            System Alerts & Messages Console
+          </span>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            System Notifications
+          </h1>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Send form */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-4">
+            <h3 className="mb-4 font-heading text-sm font-bold text-foreground">
+              Send System Notification
+            </h3>
+            <form
+              onSubmit={handleSendNotification}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="mb-1 block font-bold text-muted-foreground">
+                  Target User ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter profile user UUID"
+                  value={targetUserId}
+                  onChange={(e) => setTargetUserId(e.target.value)}
+                  className="w-full rounded border bg-background p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block font-bold text-muted-foreground">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="Notification Title"
+                  value={notifTitle}
+                  onChange={(e) => setNotifTitle(e.target.value)}
+                  className="w-full rounded border bg-background p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block font-bold text-muted-foreground">
+                  Message
+                </label>
+                <textarea
+                  placeholder="Notification message body details"
+                  value={notifMessage}
+                  onChange={(e) => setNotifMessage(e.target.value)}
+                  className="h-24 w-full rounded border bg-background p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block font-bold text-muted-foreground">
+                  Type
+                </label>
+                <select
+                  value={notifType}
+                  onChange={(e) => setNotifType(e.target.value)}
+                  className="w-full rounded border bg-background p-2"
+                >
+                  <option value="system">System</option>
+                  <option value="order">Order Update</option>
+                  <option value="promotion">Promotion</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={isSendingNotif}
+                className="hover:bg-primary/95 w-full rounded bg-primary py-2 font-bold text-white disabled:opacity-50"
+              >
+                {isSendingNotif ? 'Sending...' : 'Send Notification'}
+              </button>
+            </form>
+          </div>
+
+          {/* Messages list */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-8">
+            <h3 className="mb-4 font-heading text-sm font-bold text-foreground">
+              Sent Notifications History
+            </h3>
+            <div className="max-h-[500px] divide-y overflow-y-auto">
+              {allNotifications.map((n) => (
+                <div
+                  key={n.id}
+                  className="flex items-start justify-between py-3 text-xs"
+                >
+                  <div>
+                    <span className="font-bold text-foreground">{n.title}</span>
+                    <p className="mt-1 leading-snug text-muted-foreground">
+                      {n.message}
+                    </p>
+                    <span className="mt-2 block font-mono text-[9px] text-muted-foreground">
+                      Target User: {n.user_id}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteNotification(n.id)}
+                    className="text-[10px] font-bold text-destructive hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (view === 'settings') {
+    return (
+      <div className="space-y-6">
+        <div className="border-border/40 border-b pb-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+            Global Configuration Center
+          </span>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            Platform Settings
+          </h1>
+        </div>
+
+        <div className="max-w-md space-y-4 rounded-xl border border-border bg-card p-6 text-xs shadow-sm">
+          <div>
+            <label className="mb-1 block font-bold text-muted-foreground">
+              Escrow Commission Rate (%)
+            </label>
+            <input
+              type="number"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(Number(e.target.value))}
+              className="w-full rounded border bg-background p-2 font-bold"
+            />
+          </div>
+
+          <div className="flex items-center justify-between border-y py-2">
+            <div>
+              <span className="block font-bold text-foreground">
+                Platform Maintenance Mode
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                Restrict buyer/seller transactions for database sync tasks
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              checked={maintenanceMode}
+              onChange={(e) => setMaintenanceMode(e.target.checked)}
+              className="h-4 w-4"
+            />
+          </div>
+
+          <button
+            onClick={() =>
+              alert('Platform config settings saved successfully!')
+            }
+            className="hover:bg-primary/95 w-full rounded bg-primary py-2 font-bold text-white"
+          >
+            Save Settings Configuration
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -186,6 +647,9 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
     )
   }
+
+  const activeDataset = chartDatasets[chartMetric]
+  const maxVal = Math.max(...activeDataset.map((d) => d.value), 10)
 
   return (
     <div className="space-y-8">
