@@ -6,10 +6,8 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  AlertTriangle,
   Clock,
   ShieldCheck,
-  Check,
 } from 'lucide-react'
 import { kycService } from '@/services/marketplace/kyc.service'
 import { SellerVerification } from '@/types'

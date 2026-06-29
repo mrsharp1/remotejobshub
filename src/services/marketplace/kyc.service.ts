@@ -1,9 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import {
-  SellerVerification,
-  VerificationDocument,
-  VerificationAuditLog,
-} from '@/types'
+import { SellerVerification } from '@/types'
 
 export const kycService = {
   async getVerification(userId: string): Promise<SellerVerification | null> {
