@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Wallet as WalletIcon,
-  PlusCircle,
   ArrowDownLeft,
   Loader2,
   Calendar,
@@ -85,8 +84,12 @@ export const SellerWalletPage: React.FC = () => {
       await refetchWallet()
       await refetchWithdrawals()
       alert('Withdrawal request submitted successfully!')
-    } catch (err: any) {
-      alert(err.message || 'Failed to submit withdrawal request')
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : 'Failed to submit withdrawal request'
+      )
     } finally {
       setIsSubmitting(false)
     }

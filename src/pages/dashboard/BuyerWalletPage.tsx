@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Wallet as WalletIcon,
   PlusCircle,
-  ArrowUpRight,
   Loader2,
   Calendar,
   Tag,

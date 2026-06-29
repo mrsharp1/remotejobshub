@@ -3,12 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Search,
   Loader2,
-  DollarSign,
   CheckCircle,
   XCircle,
   ShieldAlert,
   ArrowUpRight,
-  TrendingUp,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { walletService } from '@/services/marketplace/wallet.service'
@@ -90,8 +88,8 @@ export const AdminWalletsPage: React.FC = () => {
       setAdjustDesc('')
       await refetchWallets()
       alert('Wallet balance adjusted successfully!')
-    } catch (err: any) {
-      alert(err.message || 'Failed to adjust balance')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to adjust balance')
     } finally {
       setIsAdjusting(false)
     }
@@ -106,8 +104,8 @@ export const AdminWalletsPage: React.FC = () => {
       await refetchWithdrawals()
       await refetchWallets()
       alert('Withdrawal approved and paid!')
-    } catch (err: any) {
-      alert(err.message || 'Failed to approve withdrawal')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to approve withdrawal')
     }
   }
 
@@ -120,8 +118,8 @@ export const AdminWalletsPage: React.FC = () => {
       await refetchWithdrawals()
       await refetchWallets()
       alert('Withdrawal request rejected.')
-    } catch (err: any) {
-      alert(err.message || 'Failed to reject withdrawal')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to reject withdrawal')
     }
   }
 
