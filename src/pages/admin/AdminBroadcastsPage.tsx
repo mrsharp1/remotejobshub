@@ -1,15 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Send,
-  Loader2,
-  Megaphone,
-  Users,
-  Eye,
-  CheckCircle,
-  Clock,
-  PlusCircle,
-} from 'lucide-react'
+import { Send, Loader2, Megaphone, Users, Eye, CheckCircle } from 'lucide-react'
 import { broadcastService } from '@/services/marketplace/broadcast.service'
 import { Broadcast } from '@/types'
 
@@ -104,7 +95,9 @@ export const AdminBroadcastsPage: React.FC = () => {
               </label>
               <select
                 value={audience}
-                onChange={(e) => setAudience(e.target.value as any)}
+                onChange={(e) =>
+                  setAudience(e.target.value as Broadcast['audience_filter'])
+                }
                 className="w-full rounded-lg border bg-background p-2 text-xs text-foreground"
               >
                 <option value="everyone">Everyone (All Profiles)</option>

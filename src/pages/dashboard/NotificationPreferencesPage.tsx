@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2, Save, BellRing } from 'lucide-react'
 import { broadcastService } from '@/services/marketplace/broadcast.service'
 import { useAuthStore } from '@/stores/authStore'
-import { NotificationPreferences } from '@/types'
 
 export const NotificationPreferencesPage: React.FC = () => {
   const { user } = useAuthStore()
