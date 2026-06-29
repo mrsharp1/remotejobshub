@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Listing, Profile, ListingView, SavedSearch, AIInsight } from '@/types'
+import { Listing, Profile, SavedSearch, AIInsight } from '@/types'
 
 export interface AICoachFeedback {
   score: number
@@ -30,8 +30,8 @@ export const recommendationService = {
 
       if (error) throw error
       return (data || [])
-        .map((v: any) => v.listing)
-        .filter(Boolean) as Listing[]
+        .map((v: { listing: Listing | null }) => v.listing)
+        .filter((l): l is Listing => !!l)
     } catch (err) {
       console.error('Error fetching recently viewed:', err)
       return []
@@ -224,7 +224,7 @@ export const recommendationService = {
   async saveSearch(
     userId: string,
     query: string,
-    filters: any = {}
+    filters: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

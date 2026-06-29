@@ -63,7 +63,12 @@ export const SellerDashboardPage: React.FC = () => {
     }
   }, [profile?.id])
 
-  const [coachFeedback, setCoachFeedback] = useState<any>(null)
+  const [coachFeedback, setCoachFeedback] = useState<{
+    score: number
+    saleProbability: string
+    pricingSuggestions: string
+    warnings: string[]
+  } | null>(null)
 
   useEffect(() => {
     fetchListings()

@@ -1,14 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ShieldCheck,
-  ShieldAlert,
-  Cpu,
-  Globe,
-  Key,
-  Loader2,
-  Sparkles,
-} from 'lucide-react'
+import { ShieldCheck, ShieldAlert, Cpu, Loader2 } from 'lucide-react'
 import { riskService } from '@/services/marketplace/risk.service'
 import { useAuthStore } from '@/stores/authStore'
 

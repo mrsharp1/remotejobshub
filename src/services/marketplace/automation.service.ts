@@ -72,7 +72,9 @@ export const automationService = {
           message = await this.cleanUploadsAndDrafts()
           break
         default:
-          throw new Error(`Execution routine for job "${job.name}" is not registered.`)
+          throw new Error(
+            `Execution routine for job "${job.name}" is not registered.`
+          )
       }
     } catch (err: any) {
       success = false
@@ -86,7 +88,7 @@ export const automationService = {
       .update({
         status: statusVal,
         updated_at: new Date().toISOString(),
-        next_run: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), -- set next cycle
+        next_run: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // set next cycle
       })
       .eq('id', jobId)
 
@@ -103,8 +105,13 @@ export const automationService = {
 
   // Task 1: Wallet & Escrow Reconciler
   async reconcileWalletAndEscrow(): Promise<string> {
-    const { data: wallets = [] } = await supabase.from('wallets').select('id, pending_balance, available_balance')
-    const totalEscrow = wallets.reduce((sum, w) => sum + Number(w.pending_balance || 0), 0)
+    const { data: wallets = [] } = await supabase
+      .from('wallets')
+      .select('id, pending_balance, available_balance')
+    const totalEscrow = wallets.reduce(
+      (sum, w) => sum + Number(w.pending_balance || 0),
+      0
+    )
     return `Double-ledger reconciliation complete. Audited ${wallets.length} wallets. Total escrow balance validated: ₦${totalEscrow.toLocaleString()}. Status: Ledger balance integrity verified.`
   },
 
@@ -116,7 +123,9 @@ export const automationService = {
 
   // Task 3: Inactive listings archiver
   async archiveStaleListings(): Promise<string> {
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+    const ninetyDaysAgo = new Date(
+      Date.now() - 90 * 24 * 60 * 60 * 1000
+    ).toISOString()
     const { error } = await supabase
       .from('listings')
       .update({ status: 'archived', updated_at: new Date().toISOString() })
@@ -129,15 +138,23 @@ export const automationService = {
 
   // Task 4: Recalculate Seller Scores
   async recalculateSellerScores(): Promise<string> {
-    const { data: sellers = [] } = await supabase.from('profiles').select('id').eq('role', 'seller')
+    const { data: sellers = [] } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'seller')
     return `Recomputed trust safety ratings and badges credentials across ${sellers.length} seller profiles. Recalculated index mappings complete.`
   },
 
   // Task 5: Cleanup drafts
   async cleanUploadsAndDrafts(): Promise<string> {
     // Purge notifications older than 30 days
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('notifications').delete().lt('created_at', thirtyDaysAgo)
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000
+    ).toISOString()
+    await supabase
+      .from('notifications')
+      .delete()
+      .lt('created_at', thirtyDaysAgo)
     return 'Purged read notifications logs older than 30 days. Temporary files storage space successfully cleared.'
   },
 }

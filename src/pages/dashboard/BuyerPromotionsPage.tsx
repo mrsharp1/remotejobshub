@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Ticket,
   Loader2,
   Sparkles,
   AlertCircle,
@@ -78,10 +77,13 @@ export const BuyerPromotionsPage: React.FC = () => {
         setValidationResult(null)
         refetchHistory()
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setValidationResult({
         type: 'error',
-        message: err.message || 'Failed to validate coupon code.',
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Failed to validate coupon code.',
       })
     } finally {
       setIsValidating(false)

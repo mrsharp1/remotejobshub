@@ -1,14 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Sparkles,
-  Loader2,
-  Play,
-  Flame,
-  ShieldAlert,
-  Award,
-  BarChart2,
-} from 'lucide-react'
+import { Sparkles, Loader2, Flame, ShieldAlert, BarChart2 } from 'lucide-react'
 import { promotionService } from '@/services/marketplace/promotion.service'
 import { listingService } from '@/services/marketplace/listing.service'
 import { walletService } from '@/services/marketplace/wallet.service'

@@ -4,13 +4,9 @@ import {
   TrendingUp,
   DollarSign,
   Activity,
-  Award,
-  Users,
-  Calendar,
   Download,
   Percent,
   Clock,
-  Heart,
   Loader2,
 } from 'lucide-react'
 import { analyticsService } from '@/services/marketplace/analytics.service'

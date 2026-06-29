@@ -4,8 +4,6 @@ import {
   TrendingUp,
   DollarSign,
   Activity,
-  Award,
-  Users,
   Eye,
   Heart,
   Loader2,
