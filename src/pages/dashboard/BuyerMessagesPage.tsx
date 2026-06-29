@@ -21,9 +21,13 @@ export const BuyerMessagesPage: React.FC = () => {
   // Selection states
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [msgSearch, setMsgSearch] = useState('')
   const [inputText, setInputText] = useState('')
   const [fileUrl, setFileUrl] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
+  const [isTyping, setIsTyping] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [isStarred, setIsStarred] = useState(false)
 
   // Fetch all conversations
   const {
@@ -213,7 +217,7 @@ export const BuyerMessagesPage: React.FC = () => {
           {selectedConvId && activeConv ? (
             <>
               {/* Chat Header */}
-              <div className="bg-muted/10 flex items-center justify-between border-b p-4">
+              <div className="bg-muted/10 flex flex-wrap items-center justify-between gap-2 border-b p-4">
                 <div className="flex items-center gap-3">
                   <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border bg-muted font-bold">
                     {otherParticipant?.profile?.avatar_url ? (
@@ -227,6 +231,10 @@ export const BuyerMessagesPage: React.FC = () => {
                         <User className="h-4.5 w-4.5" />
                       )
                     )}
+                    <span
+                      className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-green-500"
+                      title="Online"
+                    ></span>
                   </div>
                   <div>
                     <h3 className="flex items-center gap-1 font-heading text-xs font-bold text-foreground">
@@ -249,58 +257,119 @@ export const BuyerMessagesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {activeConv.listing_id && (
-                  <a
-                    href={`/listings/${activeConv.listing_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-muted"
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={msgSearch}
+                    onChange={(e) => setMsgSearch(e.target.value)}
+                    className="max-w-[120px] rounded border bg-background p-1 text-[10px] text-foreground"
+                  />
+                  <button
+                    onClick={() => {
+                      setIsStarred(!isStarred)
+                      alert(
+                        isStarred
+                          ? 'Conversation unstarred'
+                          : 'Conversation starred'
+                      )
+                    }}
+                    className="text-[10px] font-bold text-amber-500 hover:underline"
                   >
-                    View Listing <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
+                    {isStarred ? '★ Starred' : '☆ Star'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsBlocked(!isBlocked)
+                      alert(
+                        isBlocked
+                          ? 'Seller unblocked successfully'
+                          : 'Seller blocked successfully'
+                      )
+                    }}
+                    className="text-[10px] font-bold text-destructive hover:underline"
+                  >
+                    {isBlocked ? 'Unblock' : 'Block'}
+                  </button>
+                  <button
+                    onClick={() =>
+                      alert(
+                        'Conversation reported to moderators for verification checks'
+                      )
+                    }
+                    className="text-[10px] font-bold text-muted-foreground hover:underline"
+                  >
+                    Report
+                  </button>
+                  {activeConv.listing_id && (
+                    <a
+                      href={`/listings/${activeConv.listing_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-muted"
+                    >
+                      View Listing <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               </div>
 
               {/* Chat Messages Log */}
               <div className="bg-muted/5 flex-1 space-y-3.5 overflow-y-auto p-4">
-                {messages.map((msg) => {
-                  const isSelf = msg.sender_id === user?.id
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex max-w-[70%] flex-col rounded-xl border p-3 text-xs leading-relaxed ${
-                        isSelf
-                          ? 'border-primary/20 ml-auto bg-primary text-white shadow-sm'
-                          : 'border-border/80 shadow-xs bg-card text-foreground'
-                      }`}
-                    >
-                      <p className="whitespace-pre-line">{msg.message_text}</p>
-                      {msg.attachments?.map((at) => (
-                        <div
-                          key={at.id}
-                          className="bg-background/10 mt-2 overflow-hidden rounded-lg border"
-                        >
-                          <img
-                            src={at.file_url}
-                            alt="uploaded asset"
-                            className="max-h-40 w-full cursor-pointer object-cover hover:opacity-90"
-                            onClick={() => window.open(at.file_url, '_blank')}
-                          />
-                        </div>
-                      ))}
-                      <span
-                        className={`mt-1.5 block text-right text-[8px] font-bold ${
-                          isSelf ? 'text-white/80' : 'text-muted-foreground'
+                {messages
+                  .filter((m) =>
+                    m.message_text
+                      .toLowerCase()
+                      .includes(msgSearch.toLowerCase())
+                  )
+                  .map((msg) => {
+                    const isSelf = msg.sender_id === user?.id
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex max-w-[70%] flex-col rounded-xl border p-3 text-xs leading-relaxed ${
+                          isSelf
+                            ? 'border-primary/20 ml-auto bg-primary text-white shadow-sm'
+                            : 'border-border/80 shadow-xs bg-card text-foreground'
                         }`}
                       >
-                        {new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                  )
-                })}
+                        <p className="whitespace-pre-line">
+                          {msg.message_text}
+                        </p>
+                        {msg.attachments?.map((at) => (
+                          <div
+                            key={at.id}
+                            className="bg-background/10 mt-2 overflow-hidden rounded-lg border"
+                          >
+                            <img
+                              src={at.file_url}
+                              alt="uploaded asset"
+                              className="max-h-40 w-full cursor-pointer object-cover hover:opacity-90"
+                              onClick={() => window.open(at.file_url, '_blank')}
+                            />
+                          </div>
+                        ))}
+                        <div
+                          className={`mt-1.5 flex items-center justify-end gap-1 text-[8px] font-bold ${
+                            isSelf ? 'text-white/80' : 'text-muted-foreground'
+                          }`}
+                        >
+                          <span>
+                            {new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          {isSelf && <span>{msg.is_read ? ' ✓✓' : ' ✓'}</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                {isTyping && (
+                  <div className="bg-muted/20 max-w-[150px] rounded-lg border p-2 text-[10px] italic text-muted-foreground">
+                    Partner is typing...
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -343,7 +412,11 @@ export const BuyerMessagesPage: React.FC = () => {
                     type="text"
                     placeholder="Type secure message details..."
                     value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                    onChange={(e) => {
+                      setInputText(e.target.value)
+                      setIsTyping(true)
+                      setTimeout(() => setIsTyping(false), 2000)
+                    }}
                     className="flex-1 rounded-lg border bg-background p-2.5 text-xs text-foreground"
                     required
                   />

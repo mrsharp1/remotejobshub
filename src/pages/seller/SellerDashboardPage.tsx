@@ -20,6 +20,7 @@ import { VerificationCard } from '@/components/seller/VerificationCard'
 import { SubscriptionCard } from '@/components/seller/SubscriptionCard'
 import { SellerBioCard } from '@/components/seller/SellerBioCard'
 import { PaymentCard } from '@/components/seller/PaymentCard'
+import { SellerAgreementModal } from '@/components/seller/SellerAgreementModal'
 
 // Studio Imports
 import { ListingForm } from '@/components/seller/studio/ListingForm'
@@ -453,6 +454,8 @@ export const SellerDashboardPage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SellerAgreementModal onAccept={() => {}} />
     </div>
   )
 }

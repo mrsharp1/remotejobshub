@@ -148,6 +148,16 @@ const AdminWalletsPage = lazy(() =>
     default: m.AdminWalletsPage,
   }))
 )
+const AdminBroadcastsPage = lazy(() =>
+  import('@/pages/admin/AdminBroadcastsPage').then((m) => ({
+    default: m.AdminBroadcastsPage,
+  }))
+)
+const NotificationPreferencesPage = lazy(() =>
+  import('@/pages/dashboard/NotificationPreferencesPage').then((m) => ({
+    default: m.NotificationPreferencesPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -359,6 +369,14 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'dashboard/settings/notifications',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <NotificationPreferencesPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -418,6 +436,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminWalletsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/broadcasts',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminBroadcastsPage />
           </Suspense>
         ),
       },

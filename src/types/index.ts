@@ -348,3 +348,47 @@ export interface WithdrawalRequest {
   updated_at: string
   profile?: Profile
 }
+
+export interface Broadcast {
+  id: string
+  title: string
+  message: string
+  audience_filter:
+    | 'everyone'
+    | 'buyers'
+    | 'sellers'
+    | 'verified_sellers'
+    | 'no_purchase'
+    | 'active_orders'
+    | 'completed_orders'
+  image_url?: string | null
+  link_url?: string | null
+  scheduled_at?: string | null
+  sent_count: number
+  delivered_count: number
+  read_count: number
+  created_at: string
+}
+
+export interface NotificationPreferences {
+  id: string
+  user_id: string
+  orders_enabled: boolean
+  payments_enabled: boolean
+  messages_enabled: boolean
+  promotions_enabled: boolean
+  updates_enabled: boolean
+  announcements_enabled: boolean
+  updated_at: string
+}
+
+export interface SellerRevenueAgreement {
+  id: string
+  user_id: string
+  revenue_plan: 'OptionA' | 'OptionB'
+  percentage: number
+  bonus_eligible: boolean
+  accepted_at: string
+  agreement_version: string
+  profile?: Profile
+}
