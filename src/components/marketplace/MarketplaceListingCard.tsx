@@ -51,8 +51,23 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
             {listing.platform}
           </span>
           {isSellerVerified && (
-            <span className="inline-flex items-center gap-0.5 rounded bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-              <ShieldCheck className="h-3 w-3" /> Verified Seller
+            <>
+              <span className="inline-flex items-center gap-0.5 rounded bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground">
+                <ShieldCheck className="h-3 w-3" /> Verified Seller
+              </span>
+              <span className="inline-flex items-center gap-0.5 rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white">
+                🛡 Identity Verified
+              </span>
+            </>
+          )}
+          {listing.seller?.subscription_plan === 'pro' && (
+            <span className="inline-flex items-center gap-0.5 rounded bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white">
+              ⭐ Gold Seller
+            </span>
+          )}
+          {listing.seller?.subscription_plan === 'enterprise' && (
+            <span className="inline-flex items-center gap-0.5 rounded bg-indigo-600 px-2 py-0.5 text-[9px] font-bold text-white">
+              💎 Premium Seller
             </span>
           )}
         </div>

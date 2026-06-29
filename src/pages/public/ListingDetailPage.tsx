@@ -585,9 +585,31 @@ export const ListingDetailPage: React.FC = () => {
                     <ShieldCheck className="h-4 w-4 text-primary" />
                   )}
                 </h4>
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  {listing.seller?.subscription_plan || 'Free'} Plan Member
-                </span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase text-muted-foreground">
+                    {listing.seller?.subscription_plan || 'Free'} Plan
+                  </span>
+                  {isSellerVerified && (
+                    <>
+                      <span className="bg-primary/10 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                        <ShieldCheck className="h-2.5 w-2.5" /> Verified Seller
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-500">
+                        🛡 Identity Verified
+                      </span>
+                    </>
+                  )}
+                  {listing.seller?.subscription_plan === 'pro' && (
+                    <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-500">
+                      ⭐ Gold Seller
+                    </span>
+                  )}
+                  {listing.seller?.subscription_plan === 'enterprise' && (
+                    <span className="inline-flex items-center gap-0.5 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-500">
+                      💎 Premium Seller
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

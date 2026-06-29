@@ -417,3 +417,37 @@ export interface ReferralReward {
   updated_at: string
   referral?: Referral
 }
+
+export interface SellerVerification {
+  id: string
+  user_id: string
+  status: 'pending' | 'under_review' | 'approved' | 'rejected'
+  document_type:
+    'government_id' | 'passport' | 'drivers_license' | 'national_id'
+  selfie_url: string
+  proof_of_address_url: string
+  notes?: string | null
+  created_at: string
+  updated_at: string
+  profile?: Profile
+  documents?: VerificationDocument[]
+  audit_logs?: VerificationAuditLog[]
+}
+
+export interface VerificationDocument {
+  id: string
+  verification_id: string
+  file_url: string
+  file_type: string
+  created_at: string
+}
+
+export interface VerificationAuditLog {
+  id: string
+  verification_id: string
+  admin_id?: string | null
+  action: 'submit' | 'review' | 'approve' | 'reject' | 'resubmit'
+  notes?: string | null
+  created_at: string
+  admin_profile?: Profile
+}

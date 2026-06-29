@@ -173,6 +173,16 @@ const AdminReferralsPage = lazy(() =>
     default: m.AdminReferralsPage,
   }))
 )
+const SellerVerificationPage = lazy(() =>
+  import('@/pages/seller/SellerVerificationPage').then((m) => ({
+    default: m.SellerVerificationPage,
+  }))
+)
+const AdminVerificationPage = lazy(() =>
+  import('@/pages/admin/AdminVerificationPage').then((m) => ({
+    default: m.AdminVerificationPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -408,6 +418,14 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'seller/verification',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerVerificationPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
@@ -483,6 +501,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminReferralsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/verification',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminVerificationPage />
           </Suspense>
         ),
       },

@@ -167,6 +167,16 @@ export const MarketplacePage: React.FC = () => {
       result.sort((a, b) => Number(b.price) - Number(a.price))
     }
 
+    // Boost Verified Sellers search rankings
+    result.sort((a, b) => {
+      const aVerified = a.seller?.seller_verified ? 1 : 0
+      const bVerified = b.seller?.seller_verified ? 1 : 0
+      if (aVerified !== bVerified) {
+        return bVerified - aVerified
+      }
+      return 0
+    })
+
     return result
   }, [
     rawListings,
