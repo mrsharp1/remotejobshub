@@ -24,19 +24,22 @@ export const analyticsService = {
   async getAdminAnalytics(): Promise<AdminAnalyticsSummary> {
     try {
       // 1. Fetch orders
-      const { data: orders = [] } = await supabase
+      const { data: ordersRaw } = await supabase
         .from('orders')
         .select('amount, status, created_at')
+      const orders = ordersRaw || []
 
       // 2. Fetch users
-      const { data: users = [] } = await supabase
+      const { data: usersRaw } = await supabase
         .from('profiles')
         .select('id, full_name, email, role, created_at')
+      const users = usersRaw || []
 
       // 3. Fetch wallets
-      const { data: wallets = [] } = await supabase
+      const { data: walletsRaw } = await supabase
         .from('wallets')
         .select('available_balance, pending_balance')
+      const wallets = walletsRaw || []
 
       // Calculations
       const completedOrders = orders.filter((o) => o.status === 'completed')
@@ -165,10 +168,11 @@ export const analyticsService = {
   async getSellerAnalytics(sellerId: string) {
     try {
       // Mock metrics targeting single seller profile
-      const { data: listings = [] } = await supabase
+      const { data: listingsRaw } = await supabase
         .from('listings')
         .select('*')
-        .eq('user_id', sellerId)
+        .eq('seller_id', sellerId)
+      const listings = listingsRaw || []
 
       const listingCount = listings.length
       const views = listingCount * 142
@@ -208,10 +212,11 @@ export const analyticsService = {
 
   async getBuyerAnalytics(buyerId: string) {
     try {
-      const { data: orders = [] } = await supabase
+      const { data: ordersRaw } = await supabase
         .from('orders')
         .select('*')
         .eq('buyer_id', buyerId)
+      const orders = ordersRaw || []
 
       const purchases = orders.length
       const spending = orders.reduce((sum, o) => sum + Number(o.amount), 0)

@@ -12,6 +12,7 @@ import {
 import { analyticsService } from '@/services/marketplace/analytics.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { listingService } from '@/services/marketplace/listing.service'
+import { Order } from '@/types'
 
 export const AdminAnalyticsPage: React.FC = () => {
   const [refreshCountdown, setRefreshCountdown] = useState(30)
@@ -334,7 +335,7 @@ export const AdminAnalyticsPage: React.FC = () => {
               Activity Feed
             </h3>
             <div className="divide-border/40 max-h-56 space-y-2 divide-y overflow-y-auto text-[11px]">
-              {recentOrders.slice(0, 3).map((o) => (
+              {recentOrders.slice(0, 3).map((o: Order) => (
                 <div
                   key={o.id}
                   className="flex items-center justify-between pt-2"

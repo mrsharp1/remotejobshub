@@ -312,4 +312,19 @@ export const orderService = {
       return []
     }
   },
+
+  async getAllOrders(): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, listing:listings(*), buyer:profiles(*), seller:profiles(*)')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return (data || []) as Order[]
+    } catch (err) {
+      console.error('Error in getAllOrders:', err)
+      return []
+    }
+  },
 }

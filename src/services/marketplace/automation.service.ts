@@ -108,9 +108,10 @@ export const automationService = {
 
   // Task 1: Wallet & Escrow Reconciler
   async reconcileWalletAndEscrow(): Promise<string> {
-    const { data: wallets = [] } = await supabase
+    const { data: walletsRaw } = await supabase
       .from('wallets')
       .select('id, pending_balance, available_balance')
+    const wallets = walletsRaw || []
     const totalEscrow = wallets.reduce(
       (sum, w) => sum + Number(w.pending_balance || 0),
       0
@@ -141,10 +142,11 @@ export const automationService = {
 
   // Task 4: Recalculate Seller Scores
   async recalculateSellerScores(): Promise<string> {
-    const { data: sellers = [] } = await supabase
+    const { data: sellersRaw } = await supabase
       .from('profiles')
       .select('id')
       .eq('role', 'seller')
+    const sellers = sellersRaw || []
     return `Recomputed trust safety ratings and badges credentials across ${sellers.length} seller profiles. Recalculated index mappings complete.`
   },
 

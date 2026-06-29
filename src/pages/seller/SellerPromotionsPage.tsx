@@ -20,7 +20,7 @@ export const SellerPromotionsPage: React.FC = () => {
   })
 
   // Filter listings owned by this user
-  const sellerListings = listings.filter((l) => l.user_id === user?.id)
+  const sellerListings = listings.filter((l) => l.seller_id === user?.id)
 
   // Handle Listing Boost purchase (₦1,000 per day)
   const handlePurchaseBoost = async (e: React.FormEvent) => {

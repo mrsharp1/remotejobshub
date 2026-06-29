@@ -132,10 +132,11 @@ export const riskService = {
   async calculateRiskScore(userId: string): Promise<number> {
     try {
       // Fetch user login list & activity counts
-      const { data: logins = [] } = await supabase
+      const { data: loginsRaw } = await supabase
         .from('login_history')
         .select('ip_address, device_fingerprint, country')
         .eq('user_id', userId)
+      const logins = loginsRaw || []
 
       const factors: string[] = []
       let score = 10 // starting base trust score offset

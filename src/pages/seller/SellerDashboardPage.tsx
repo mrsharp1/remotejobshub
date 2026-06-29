@@ -519,9 +519,9 @@ export const SellerDashboardPage: React.FC = () => {
                 listing={
                   {
                     ...formData,
-                    images: formImages.map((img) => ({ image_url: img })),
-                    tags: formTags.map((tg) => ({ tag: tg })),
-                  } as unknown as Listing
+                    images: formImages,
+                    tags: formTags,
+                  } as Partial<Listing> & { images?: string[]; tags?: string[] }
                 }
                 onBack={() => setStudioView('form')}
                 onSubmit={handleConfirmPublish}
