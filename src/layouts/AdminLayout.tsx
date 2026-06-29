@@ -57,6 +57,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'KYC Center', to: '/admin/verification', icon: ShieldCheck },
     { label: 'Campaigns & Coupons', to: '/admin/promotions', icon: Ticket },
     { label: 'Risk Control', to: '/admin/risk', icon: ShieldAlert },
+    { label: 'AI Insights', to: '/admin/ai-insights', icon: Shield },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin/analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },

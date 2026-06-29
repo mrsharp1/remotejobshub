@@ -228,6 +228,11 @@ const AdminRiskPage = lazy(() =>
     default: m.AdminRiskPage,
   }))
 )
+const AdminAIInsightsPage = lazy(() =>
+  import('@/pages/admin/AdminAIInsightsPage').then((m) => ({
+    default: m.AdminAIInsightsPage,
+  }))
+)
 
 const router = createBrowserRouter([
   {
@@ -626,6 +631,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminRiskPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/ai-insights',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminAIInsightsPage />
           </Suspense>
         ),
       },

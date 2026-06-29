@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Profile, Listing, Order, Notification } from '@/types'
@@ -277,6 +278,28 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* AI Fraud & Security Predictions banner */}
+      <div className="bg-primary/5 border-primary/20 flex items-center justify-between rounded-xl border p-4 text-xs">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 animate-pulse text-primary" />
+          <div>
+            <span className="block font-bold text-foreground">
+              AI Smart Fraud Predictor active
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              2 suspicious account listings matched fraud signature logs
+              templates. Audit recommended.
+            </span>
+          </div>
+        </div>
+        <a
+          href="/admin/ai-insights"
+          className="hover:bg-primary/95 rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-white"
+        >
+          Review Predictions
+        </a>
       </div>
 
       {/* Analytics Graph Row */}

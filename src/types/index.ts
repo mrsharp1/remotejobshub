@@ -551,3 +551,27 @@ export interface BlockedDevice {
   blocked_by?: string | null
   created_at: string
 }
+
+export interface ListingView {
+  id: string
+  user_id: string
+  listing_id: string
+  viewed_at: string
+  listing?: Listing
+}
+
+export interface SavedSearch {
+  id: string
+  user_id: string
+  query: string
+  filters?: any
+  created_at: string
+}
+
+export interface AIInsight {
+  id: string
+  title: string
+  description: string
+  metric_value: string
+  metric_change: string
+}

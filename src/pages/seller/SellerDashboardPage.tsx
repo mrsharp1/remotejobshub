@@ -10,10 +10,12 @@ import {
   LayoutDashboard,
   ClipboardList,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Profile, Listing } from '@/types'
 import { listingService } from '@/services/marketplace/listing.service'
+import { recommendationService } from '@/services/marketplace/recommendation.service'
 import { SellerStatsCard } from '@/components/seller/SellerStatsCard'
 import { ProfileCompletionCard } from '@/components/seller/ProfileCompletionCard'
 import { VerificationCard } from '@/components/seller/VerificationCard'
@@ -61,11 +63,21 @@ export const SellerDashboardPage: React.FC = () => {
     }
   }, [profile?.id])
 
+  const [coachFeedback, setCoachFeedback] = useState<any>(null)
+
   useEffect(() => {
-    if (activeTab === 'studio' && studioView === 'list') {
-      fetchListings()
+    fetchListings()
+  }, [fetchListings])
+
+  useEffect(() => {
+    if (sellerListings.length > 0) {
+      recommendationService
+        .getSellerAICoach(sellerListings[0].id)
+        .then((res) => {
+          setCoachFeedback(res)
+        })
     }
-  }, [activeTab, studioView, fetchListings])
+  }, [sellerListings])
 
   // Profile completion calculations
   const checklistItems = [
@@ -312,6 +324,59 @@ export const SellerDashboardPage: React.FC = () => {
             {/* Layout details */}
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
               <div className="space-y-8 lg:col-span-8">
+                {/* AI Seller Coach Feedback Widget */}
+                {coachFeedback && (
+                  <div className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+                      <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />{' '}
+                      AI Seller Coach Recommendations
+                    </h3>
+                    <div className="flex items-center gap-4 border-b pb-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-3xl font-extrabold text-primary">
+                          {coachFeedback.score}%
+                        </span>
+                        <span className="text-[9px] font-bold uppercase text-muted-foreground">
+                          Listing Score
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 text-xs">
+                        <div className="flex gap-1.5">
+                          <span className="text-muted-foreground">
+                            Sale Probability:
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {coachFeedback.saleProbability}
+                          </span>
+                        </div>
+                        <p className="text-[11px] leading-tight text-muted-foreground">
+                          {coachFeedback.pricingSuggestions}
+                        </p>
+                      </div>
+                    </div>
+
+                    {coachFeedback.warnings.length > 0 ? (
+                      <div className="space-y-2 text-xs">
+                        <span className="block font-bold text-foreground">
+                          Improvement Checklist:
+                        </span>
+                        <ul className="list-disc space-y-1 pl-4 text-muted-foreground">
+                          {coachFeedback.warnings.map(
+                            (w: string, i: number) => (
+                              <li key={i}>{w}</li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-xs font-semibold text-green-500">
+                        ✓ Your active listings are fully optimized for maximum
+                        conversion potential!
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <ProfileCompletionCard
                   profile={profile}
                   onAvatarUpdated={(url) =>

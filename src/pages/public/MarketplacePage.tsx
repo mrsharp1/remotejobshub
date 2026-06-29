@@ -8,8 +8,10 @@ import {
   ChevronDown,
   ChevronUp,
   UserCheck,
+  Sparkles,
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
+import { recommendationService } from '@/services/marketplace/recommendation.service'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
 
@@ -46,6 +48,26 @@ export const MarketplacePage: React.FC = () => {
   } = useQuery({
     queryKey: ['public-listings'],
     queryFn: () => listingService.getListings(),
+  })
+
+  // AI queries
+  const { data: trendingList = [] } = useQuery({
+    queryKey: ['trending-listings'],
+    queryFn: () => recommendationService.getTrendingListings(),
+  })
+
+  const { data: recommendedList = [] } = useQuery({
+    queryKey: ['recommended-listings', user?.id],
+    queryFn: () =>
+      user?.id ? recommendationService.getRecommendedListings(user.id) : [],
+    enabled: !!user?.id,
+  })
+
+  const { data: recentlyViewed = [] } = useQuery({
+    queryKey: ['recently-viewed-listings', user?.id],
+    queryFn: () =>
+      user?.id ? recommendationService.getRecentlyViewed(user.id) : [],
+    enabled: !!user?.id,
   })
 
   // Fetch initial favorites list if authenticated
@@ -238,6 +260,78 @@ export const MarketplacePage: React.FC = () => {
             }
           }}
         />
+
+        {/* AI Recommendations Section */}
+        {user?.id && recommendedList.length > 0 && (
+          <div className="space-y-4 border-t pt-6">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />
+              <h3 className="font-heading text-lg font-bold text-foreground">
+                Recommended For You
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {recommendedList.slice(0, 3).map((listing) => (
+                <MarketplaceListingCard
+                  key={`recommended-${listing.id}`}
+                  listing={listing}
+                  isFavorited={favorites.includes(listing.id)}
+                  onToggleFavorite={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleToggleFavorite(listing.id)
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {trendingList.length > 0 && (
+          <div className="space-y-4 border-t pt-6">
+            <h3 className="font-heading text-lg font-bold text-foreground">
+              Trending Accounts
+            </h3>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {trendingList.slice(0, 3).map((listing) => (
+                <MarketplaceListingCard
+                  key={`trending-${listing.id}`}
+                  listing={listing}
+                  isFavorited={favorites.includes(listing.id)}
+                  onToggleFavorite={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleToggleFavorite(listing.id)
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Continue Browsing / Recently Viewed */}
+        {user?.id && recentlyViewed.length > 0 && (
+          <div className="bg-muted/10 space-y-4 rounded-xl border border-t border-dashed p-4 pt-6">
+            <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
+              Continue Browsing / Recently Viewed
+            </h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {recentlyViewed.slice(0, 4).map((listing) => (
+                <div
+                  key={`recent-view-${listing.id}`}
+                  className="space-y-1 rounded-lg border bg-card p-3 text-xs"
+                >
+                  <span className="block truncate font-bold text-foreground">
+                    {listing.title}
+                  </span>
+                  <span className="block font-mono text-primary">
+                    ₦{Number(listing.price).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Featured Listings Carousel/Grid */}
         {featuredListings.length > 0 && (

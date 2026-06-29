@@ -14,8 +14,10 @@ import {
   ChevronRight,
   MessageSquare,
   Star,
+  Sparkles,
 } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
+import { recommendationService } from '@/services/marketplace/recommendation.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { paymentService } from '@/services/marketplace/payment.service'
 import { reviewService } from '@/services/marketplace/review.service'
@@ -55,8 +57,18 @@ export const ListingDetailPage: React.FC = () => {
   useEffect(() => {
     if (listing?.id) {
       listingService.incrementViews(listing.id)
+      if (user?.id) {
+        recommendationService.recordListingView(user.id, listing.id)
+      }
     }
-  }, [listing?.id])
+  }, [listing?.id, user?.id])
+
+  // AI Similar Listings query
+  const { data: similarList = [] } = useQuery({
+    queryKey: ['similar-listings', id],
+    queryFn: () => (id ? recommendationService.getSimilarListings(id) : []),
+    enabled: !!id,
+  })
 
   // Fetch initial favorites list if authenticated
   useEffect(() => {
@@ -829,6 +841,44 @@ export const ListingDetailPage: React.FC = () => {
                         isFav
                           ? [...prev, related.id]
                           : prev.filter((fid) => fid !== related.id)
+                      )
+                    })
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Similar Listings Section */}
+      {similarList.length > 0 && (
+        <div className="border-border/50 space-y-4 border-t pt-8">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />
+            <h3 className="font-heading text-lg font-bold text-foreground">
+              AI Similar Picks
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {similarList.map((sim) => (
+              <MarketplaceListingCard
+                key={`similar-ai-${sim.id}`}
+                listing={sim}
+                isFavorited={favorites.includes(sim.id)}
+                onToggleFavorite={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (!user?.id) {
+                    alert('Please log in to add listings to your favorites.')
+                    return
+                  }
+                  listingService
+                    .toggleFavorite(user.id, sim.id)
+                    .then((isFav) => {
+                      setFavorites((prev) =>
+                        isFav
+                          ? [...prev, sim.id]
+                          : prev.filter((fid) => fid !== sim.id)
                       )
                     })
                 }}
