@@ -5,11 +5,9 @@ import {
   Users,
   Award,
   DollarSign,
-  Share2,
   CheckCircle2,
   AlertCircle,
   QrCode,
-  Send,
   Loader2,
 } from 'lucide-react'
 import { referralService } from '@/services/marketplace/referral.service'

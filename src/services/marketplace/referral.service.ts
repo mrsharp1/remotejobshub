@@ -217,7 +217,7 @@ export const referralService = {
 
       if (error) throw error
       return (data || []).filter(
-        (r: any) => r.referral?.referrer_id === userId
+        (r) => (r.referral as unknown as Referral)?.referrer_id === userId
       ) as ReferralReward[]
     } catch (err) {
       console.error('Error in getReferralRewards:', err)
