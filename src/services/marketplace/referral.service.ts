@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { Referral, ReferralReward } from '@/types'
-import { walletService } from '@/services/marketplace/wallet.service'
 import { notificationService } from '@/services/marketplace/notification.service'
 
 export const referralService = {
@@ -34,7 +33,7 @@ export const referralService = {
             referred_id: referredId,
             referral_code: referralCode.toUpperCase(),
             status: 'pending',
-            reward_amount: 1000.0, // ₦1,000 / $10
+            reward_amount: 1000.0, // ₦1,000
           },
         ])
         .select()
@@ -97,52 +96,38 @@ export const referralService = {
 
   async approveReward(rewardId: string): Promise<void> {
     try {
-      // Fetch reward
-      const { data: reward, error } = await supabase
+      const { data, error } = await supabase.rpc(
+        'rpc_approve_referral_reward',
+        { p_reward_id: rewardId }
+      )
+
+      if (error) throw error
+      if (!data.success) {
+        throw new Error(data.message)
+      }
+
+      // We still need to notify the user, which is safe client-side logic
+      // But we need the amount. Let's just fetch it quickly if not returned by RPC,
+      // or we can just fetch the reward first to get the amount.
+      const { data: reward } = await supabase
         .from('referral_rewards')
         .select('*, referral:referrals(*)')
         .eq('id', rewardId)
         .single()
 
-      if (error) throw error
-      if (reward.status !== 'pending') return
+      if (reward) {
+        const referral = reward.referral as unknown as Referral
+        const referrerId = referral.referrer_id
 
-      // Select targets
-      const referral = reward.referral as unknown as Referral
-      const referrerId = referral.referrer_id
-
-      // Credit wallet
-      const wallet = await walletService.getWallet(referrerId)
-      if (wallet) {
-        await walletService.creditWallet(
-          wallet.id,
-          Number(reward.amount),
-          `Referral Affiliate Reward: Qualified Sign-up Conversion`,
-          'referral'
-        )
+        await notificationService.createNotification({
+          user_id: referrerId,
+          title: '🎉 Referral Bonus Credited!',
+          message: `Your referral bonus of ₦${Number(reward.amount).toLocaleString()} has been credited to your available wallet balance.`,
+          type: 'system',
+          reference_type: 'order',
+          reference_id: referral.id,
+        })
       }
-
-      // Update reward status to approved
-      await supabase
-        .from('referral_rewards')
-        .update({ status: 'approved', updated_at: new Date().toISOString() })
-        .eq('id', rewardId)
-
-      // Update referral status to paid
-      await supabase
-        .from('referrals')
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
-        .eq('id', referral.id)
-
-      // Dispatch notifications
-      await notificationService.createNotification({
-        user_id: referrerId,
-        title: '🎉 Referral Bonus Credited!',
-        message: `Your referral bonus of ₦${Number(reward.amount).toLocaleString()} has been credited to your available wallet balance.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: referral.id,
-      })
     } catch (err) {
       console.error('Error in approveReward:', err)
       throw err

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Sparkles, Loader2, Flame, ShieldAlert, BarChart2 } from 'lucide-react'
 import { promotionService } from '@/services/marketplace/promotion.service'
 import { listingService } from '@/services/marketplace/listing.service'
-import { walletService } from '@/services/marketplace/wallet.service'
 import { useAuthStore } from '@/stores/authStore'
 import { Listing } from '@/types'
 
@@ -41,42 +40,11 @@ export const SellerPromotionsPage: React.FC = () => {
 
     setIsProcessingBoost(true)
     try {
-      const wallet = await walletService.getWallet(user.id)
-      if (Number(wallet.available_balance) < totalCost) {
-        alert(
-          'Insufficient wallet balance to purchase this listing boost. Please top up first.'
-        )
-        return
-      }
-
-      // Debit wallet for the boost
-      await walletService.debitWallet(
-        wallet.id,
-        totalCost,
-        `Listing Boost Purchase: Listing ID ${selectedListing} for ${boostDays} Days`,
-        'debit'
-      )
-
-      // Create promotion record
-      const listing = sellerListings.find((l) => l.id === selectedListing)
-      await promotionService.createPromotion({
-        user_id: user.id,
-        title: `FEATURED BOOST: ${listing?.title || 'Seller Listing'}`,
-        description: `Premium listing visibility boost.`,
-        discount_type: 'percentage',
-        discount_value: 10, // dummy default discount parameter
-        campaign_type: 'seller_boost',
-        start_date: new Date().toISOString(),
-        end_date: new Date(
-          Date.now() + boostDays * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        active: true,
-      })
-
+      await promotionService.purchasePromotion(selectedListing, boostDays)
       alert('Listing boost purchased and active successfully!')
       setSelectedListing('')
-    } catch {
-      alert('Failed to process listing boost purchase.')
+    } catch (err: any) {
+      alert(err.message || 'Failed to process listing boost purchase.')
     } finally {
       setIsProcessingBoost(false)
     }

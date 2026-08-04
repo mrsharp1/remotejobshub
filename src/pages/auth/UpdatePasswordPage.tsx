@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { zodResolver } from '@/utils/resolver'
+import { springs } from '@/lib/framer-physics'
 
 const schema = z
   .object({
@@ -108,34 +109,38 @@ export const UpdatePasswordPage: React.FC = () => {
         </motion.div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 mt-8">
         {/* New Password */}
         <div>
           <label
             htmlFor="password"
-            className="mb-1 block text-sm font-medium text-foreground"
+            className="mb-1.5 block text-sm font-medium text-foreground"
           >
             New Password
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-muted-foreground">
               <Lock className="h-5 w-5" />
             </span>
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              className={`block w-full rounded-lg border bg-background py-2.5 pl-10 pr-10 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+              aria-invalid={errors.password ? "true" : "false"}
+              aria-describedby={errors.password ? "password-error" : undefined}
+              className={`focus:ring-primary/20 block w-full rounded-xl border bg-background py-4 pl-11 pr-12 text-base sm:text-sm text-foreground placeholder-muted-foreground transition-all focus:border-primary focus:outline-none focus:ring-4 ${
                 errors.password ? 'border-destructive' : 'border-input'
               }`}
               placeholder="Min 8 chars, 1 uppercase, 1 number"
+              disabled={isLoading}
               {...register('password')}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-              aria-label="Toggle password visibility"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground hover:text-foreground focus:outline-none focus:text-primary disabled:opacity-50"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              disabled={isLoading}
             >
               {showPassword ? (
                 <EyeOff className="h-5 w-5" />
@@ -145,7 +150,7 @@ export const UpdatePasswordPage: React.FC = () => {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-xs text-destructive">
+            <p id="password-error" className="mt-1.5 text-xs font-medium text-destructive">
               {errors.password.message}
             </p>
           )}
@@ -155,29 +160,33 @@ export const UpdatePasswordPage: React.FC = () => {
         <div>
           <label
             htmlFor="confirmPassword"
-            className="mb-1 block text-sm font-medium text-foreground"
+            className="mb-1.5 block text-sm font-medium text-foreground"
           >
             Confirm Password
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-muted-foreground">
               <Lock className="h-5 w-5" />
             </span>
             <input
               id="confirmPassword"
               type={showConfirm ? 'text' : 'password'}
               autoComplete="new-password"
-              className={`block w-full rounded-lg border bg-background py-2.5 pl-10 pr-10 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+              aria-invalid={errors.confirmPassword ? "true" : "false"}
+              aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
+              className={`focus:ring-primary/20 block w-full rounded-xl border bg-background py-4 pl-11 pr-12 text-base sm:text-sm text-foreground placeholder-muted-foreground transition-all focus:border-primary focus:outline-none focus:ring-4 ${
                 errors.confirmPassword ? 'border-destructive' : 'border-input'
               }`}
               placeholder="Repeat your password"
+              disabled={isLoading}
               {...register('confirmPassword')}
             />
             <button
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-              aria-label="Toggle confirm password visibility"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground hover:text-foreground focus:outline-none focus:text-primary disabled:opacity-50"
+              aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+              disabled={isLoading}
             >
               {showConfirm ? (
                 <EyeOff className="h-5 w-5" />
@@ -187,23 +196,32 @@ export const UpdatePasswordPage: React.FC = () => {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-xs text-destructive">
+            <p id="confirmPassword-error" className="mt-1.5 text-xs font-medium text-destructive">
               {errors.confirmPassword.message}
             </p>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            'Update Password'
-          )}
-        </button>
+        <div className="pt-2">
+          <motion.button
+            whileHover={!isLoading ? { scale: 1.02 } : {}}
+            whileTap={!isLoading ? { scale: 0.98 } : {}}
+            transition={springs.snappy}
+            type="submit"
+            disabled={isLoading}
+            aria-busy={isLoading}
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-4 text-base font-bold text-white shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Updating Password...</span>
+              </>
+            ) : (
+              'Update Password'
+            )}
+          </motion.button>
+        </div>
       </form>
     </motion.div>
   )

@@ -47,23 +47,23 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
           const Icon = cat.icon
           const isActive = activeCategory === cat.name
           return (
-            <motion.button
-              key={cat.name}
-              whileHover={{ y: -2 }}
-              onClick={() => onSelectCategory(isActive ? '' : cat.name)}
-              className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 text-center transition-all ${
-                isActive
-                  ? 'bg-primary/5 border-primary shadow-md'
-                  : 'hover:bg-muted/30 hover:border-border/80 border-border bg-card'
-              }`}
-            >
-              <div className={`rounded-full p-2.5 ${cat.color}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <span className="line-clamp-1 text-xs font-bold tracking-tight text-foreground">
-                {cat.name}
-              </span>
-            </motion.button>
+            <motion.div key={cat.name} whileHover={{ y: -4 }}>
+              <button
+                onClick={() => onSelectCategory(isActive ? '' : cat.name)}
+                className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border p-5 text-center transition-all duration-300 ${
+                  isActive
+                    ? 'border-primary/50 bg-primary/5 shadow-primary/10 shadow-md'
+                    : 'border-border/60 hover:border-primary/20 dark:bg-card/50 bg-white/50 backdrop-blur-sm hover:bg-white hover:shadow-xl dark:hover:bg-card'
+                }`}
+              >
+                <div className={`rounded-full p-2.5 ${cat.color}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="line-clamp-1 text-xs font-bold tracking-tight text-foreground">
+                  {cat.name}
+                </span>
+              </button>
+            </motion.div>
           )
         })}
       </div>

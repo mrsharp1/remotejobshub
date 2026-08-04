@@ -40,28 +40,39 @@ export const kycService = {
   async submitVerification(
     userId: string,
     docType: 'government_id' | 'passport' | 'drivers_license' | 'national_id',
-    selfieUrl: string,
-    proofOfAddressUrl: string,
-    documentsList: { file_url: string; file_type: string }[]
+    documentsList: { file_url: string; file_type: string }[],
+    profileData?: {
+      full_name: string
+      phone: string
+      country: string
+      address: string
+    }
   ): Promise<SellerVerification> {
     try {
       // 1. Insert or update verification records
       const { data: sv, error } = await supabase
         .from('seller_verifications')
-        .upsert([
+        .upsert(
+          [
+            {
+              user_id: userId,
+              document_type: docType,
+              status: 'pending',
+              updated_at: new Date().toISOString(),
+            },
+          ],
           {
-            user_id: userId,
-            document_type: docType,
-            selfie_url: selfieUrl,
-            proof_of_address_url: proofOfAddressUrl,
-            status: 'pending',
-            updated_at: new Date().toISOString(),
-          },
-        ])
+            onConflict: 'user_id',
+          }
+        )
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error("FULL KYC ERROR", error)
+        alert(JSON.stringify(error, null, 2))
+        throw error
+      }
 
       // 2. Clear old documents and upload new ones
       await supabase
@@ -79,11 +90,15 @@ export const kycService = {
           .from('verification_documents')
           .insert(docs)
 
-        if (docErr) throw docErr
+        if (docErr) {
+          console.error("FULL KYC ERROR", docErr)
+          alert(JSON.stringify(docErr, null, 2))
+          throw docErr
+        }
       }
 
       // 3. Log submit action to verification audit logs
-      await supabase.from('verification_audit_logs').insert([
+      const { error: auditErr } = await supabase.from('verification_audit_logs').insert([
         {
           verification_id: sv.id,
           action: 'submit',
@@ -91,6 +106,29 @@ export const kycService = {
             'KYC Verification documents uploaded and submitted for review.',
         },
       ])
+      
+      if (auditErr) {
+        console.error("FULL KYC ERROR", auditErr)
+        alert(JSON.stringify(auditErr, null, 2))
+        throw auditErr
+      }
+
+      // 4. Update seller profile fields
+      if (profileData) {
+        const { error: profileErr } = await supabase.from('profiles').update({
+          full_name: profileData.full_name,
+          phone: profileData.phone,
+          country: profileData.country,
+          address: profileData.address,
+        }).eq('id', userId)
+        
+        if (profileErr) {
+          console.error("FULL KYC ERROR", profileErr)
+          alert(JSON.stringify(profileErr, null, 2))
+          console.warn('Failed to update seller profile during KYC submission:', profileErr)
+          throw profileErr
+        }
+      }
 
       return sv as SellerVerification
     } catch (err) {
@@ -101,7 +139,7 @@ export const kycService = {
 
   async updateVerificationStatus(
     verificationId: string,
-    status: 'pending' | 'under_review' | 'approved' | 'rejected',
+    status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_more_info',
     notes: string,
     adminId: string
   ): Promise<void> {
@@ -118,13 +156,35 @@ export const kycService = {
 
       if (error) throw error
 
+      // Synchronize to profiles
+      if (status === 'approved' || status === 'rejected' || status === 'requires_more_info') {
+        const { data: vRecord } = await supabase
+          .from('seller_verifications')
+          .select('user_id')
+          .eq('id', verificationId)
+          .single()
+
+        if (vRecord?.user_id) {
+          await supabase
+            .from('profiles')
+            .update({
+              seller_verified: status === 'approved',
+              role: status === 'approved' ? 'seller' : 'buyer',
+              status: status === 'approved' ? 'active' : 'pending',
+            })
+            .eq('id', vRecord.user_id)
+        }
+      }
+
       // Log action to audits
       const action =
         status === 'approved'
           ? 'approve'
           : status === 'rejected'
             ? 'reject'
-            : 'review'
+            : status === 'requires_more_info'
+              ? 'request_documents'
+              : 'review'
       await supabase.from('verification_audit_logs').insert([
         {
           verification_id: verificationId,

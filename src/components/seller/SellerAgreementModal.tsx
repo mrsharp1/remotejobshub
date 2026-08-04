@@ -43,8 +43,13 @@ export const SellerAgreementModal: React.FC<Props> = ({ onAccept }) => {
       setIsOpen(false)
       onAccept()
       alert('Revenue share plan accepted successfully!')
-    } catch {
-      alert('Failed to submit agreement')
+    } catch (error) {
+      console.error('SELLER AGREEMENT ERROR:', error)
+      alert(
+          error instanceof Error
+              ? error.message
+              : JSON.stringify(error, null, 2)
+      )
     } finally {
       setIsSubmitting(false)
     }

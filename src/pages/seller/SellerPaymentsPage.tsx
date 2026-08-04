@@ -106,7 +106,7 @@ export const SellerPaymentsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-border/40 divide-y text-muted-foreground">
-                {payments.map((pay) => (
+                {payments.map((pay: any) => (
                   <tr
                     key={pay.id}
                     className="hover:bg-muted/10 transition-colors"
@@ -118,7 +118,7 @@ export const SellerPaymentsPage: React.FC = () => {
                       {pay.order?.listing?.title || 'Account Asset'}
                     </td>
                     <td className="p-4 font-bold text-foreground">
-                      ${Number(pay.amount).toLocaleString()} {pay.currency}
+                      ₦{Number(pay.amount).toLocaleString()} {pay.currency || 'NGN'}
                     </td>
                     <td className="p-4">
                       <span

@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { Dispute, DisputeMessage, DisputeEvidence } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
 
 export const disputeService = {
   async createDispute(disputeData: {
@@ -40,24 +39,6 @@ export const disputeService = {
           },
         ])
 
-        // 3. Notify Buyer and Seller
-        await notificationService.createNotification({
-          user_id: order.buyer_id,
-          title: 'Dispute Case Opened ⚠️',
-          message: `A dispute has been opened for Order #${order.id.slice(0, 8)}. A moderator will review it.`,
-          type: 'system',
-          reference_type: 'order',
-          reference_id: order.id,
-        })
-
-        await notificationService.createNotification({
-          user_id: order.seller_id,
-          title: 'Order Dispute Opened ⚠️',
-          message: `A dispute has been opened for Order #${order.id.slice(0, 8)}. Please submit evidence.`,
-          type: 'system',
-          reference_type: 'order',
-          reference_id: order.id,
-        })
       }
 
       return dispute as Dispute
@@ -176,28 +157,7 @@ export const disputeService = {
 
       if (error) throw error
 
-      // Notify other participants of evidence submissions
-      const { data: dispute } = await supabase
-        .from('disputes')
-        .select('*, order:orders(*)')
-        .eq('id', evidenceData.dispute_id)
-        .single()
-
-      if (dispute && dispute.order) {
-        const notifyTarget =
-          evidenceData.submitted_by === dispute.order.buyer_id
-            ? dispute.order.seller_id
-            : dispute.order.buyer_id
-
-        await notificationService.createNotification({
-          user_id: notifyTarget,
-          title: 'Evidence Submitted 📁',
-          message: `The counterparty has uploaded evidence regarding order #${dispute.order.id.slice(0, 8)}.`,
-          type: 'system',
-          reference_type: 'order',
-          reference_id: dispute.order.id,
-        })
-      }
+      // Notify other participants of evidence submissions handled by DB trigger
 
       return data as DisputeEvidence
     } catch (err) {
@@ -231,24 +191,7 @@ export const disputeService = {
         const isSenderAdmin = messageData.sender_id === dispute.admin_id
 
         if (isSenderAdmin) {
-          // Notify both buyer and seller of Admin response
-          await notificationService.createNotification({
-            user_id: dispute.order.buyer_id,
-            title: 'Moderator Responded ⚖️',
-            message: `A dispute moderator sent a message regarding order #${dispute.order.id.slice(0, 8)}.`,
-            type: 'system',
-            reference_type: 'order',
-            reference_id: dispute.order.id,
-          })
-
-          await notificationService.createNotification({
-            user_id: dispute.order.seller_id,
-            title: 'Moderator Responded ⚖️',
-            message: `A dispute moderator sent a message regarding order #${dispute.order.id.slice(0, 8)}.`,
-            type: 'system',
-            reference_type: 'order',
-            reference_id: dispute.order.id,
-          })
+          // Notifications handled by DB triggers
         }
       }
 
@@ -298,25 +241,6 @@ export const disputeService = {
           notes: `Dispute resolved in favor of buyer. Refund processed. Notes: ${notes}`,
         },
       ])
-
-      // 5. Notify both buyer and seller
-      await notificationService.createNotification({
-        user_id: dispute.order.buyer_id,
-        title: 'Dispute Resolved - Refunded 🎉',
-        message: `Dispute for order #${dispute.order.id.slice(0, 8)} resolved in your favor. Refund processed.`,
-        type: 'payment',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
-
-      await notificationService.createNotification({
-        user_id: dispute.order.seller_id,
-        title: 'Dispute Resolved - Refunded',
-        message: `Dispute for order #${dispute.order.id.slice(0, 8)} resolved in favor of buyer. Funds refunded.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
     } catch (err) {
       console.error('Error in resolveBuyer:', err)
       throw err
@@ -362,25 +286,6 @@ export const disputeService = {
           notes: `Dispute resolved in favor of seller. Payout released. Notes: ${notes}`,
         },
       ])
-
-      // 5. Notify both buyer and seller
-      await notificationService.createNotification({
-        user_id: dispute.order.seller_id,
-        title: 'Dispute Resolved - Funds Released 🎉',
-        message: `Dispute for order #${dispute.order.id.slice(0, 8)} resolved in your favor. Payout released.`,
-        type: 'payment',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
-
-      await notificationService.createNotification({
-        user_id: dispute.order.buyer_id,
-        title: 'Dispute Resolved - Funds Released',
-        message: `Dispute for order #${dispute.order.id.slice(0, 8)} resolved in favor of seller. Payout released.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
     } catch (err) {
       console.error('Error in resolveSeller:', err)
       throw err
@@ -406,25 +311,6 @@ export const disputeService = {
         .eq('id', id)
 
       if (disputeError) throw disputeError
-
-      // Notify parties
-      await notificationService.createNotification({
-        user_id: dispute.order.buyer_id,
-        title: 'Dispute Case Closed',
-        message: `Dispute case for order #${dispute.order.id.slice(0, 8)} has been closed.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
-
-      await notificationService.createNotification({
-        user_id: dispute.order.seller_id,
-        title: 'Dispute Case Closed',
-        message: `Dispute case for order #${dispute.order.id.slice(0, 8)} has been closed.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: dispute.order_id,
-      })
     } catch (err) {
       console.error('Error in closeDispute:', err)
       throw err

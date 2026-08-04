@@ -1,59 +1,125 @@
 import { supabase } from '@/lib/supabase'
-import { Conversation, Message } from '@/types'
+import { Message, ConversationViewModel } from '@/types'
 import { notificationService } from '@/services/marketplace/notification.service'
+
+const mapToViewModel = (conv: any, authUid: string): ConversationViewModel => {
+  const parts = conv.participants || conv.conversation_participants_v2 || []
+  let otherParticipant = parts.find((p: any) => p.user_id !== authUid)
+  if (!otherParticipant && parts.length > 0) {
+    otherParticipant = parts[0]
+  }
+
+  console.log("===== MAP TO VIEW MODEL =====")
+  console.log("AUTH UID:", authUid)
+  console.log("RAW CONVERSATION:", conv)
+  console.log("PARTICIPANTS:", parts)
+  console.log("OTHER PARTICIPANT:", otherParticipant)
+  console.log("PROFILE:", otherParticipant?.profile)
+  console.log("=============================")
+
+  const profile = otherParticipant?.profile || null
+  const isSupport = conv.type === 'support' || profile?.role === 'admin'
+  const name = isSupport 
+    ? 'Support Team' 
+    : (profile?.full_name || profile?.username || profile?.email || 'Deleted User')
+
+  return {
+    id: conv.id,
+    type: conv.type,
+    otherUser: {
+      id: otherParticipant?.user_id || 'unknown',
+      full_name: name,
+      username: profile?.username || null,
+      email: profile?.email || null,
+      avatar_url: profile?.avatar_url || null,
+      role: profile?.role || 'user',
+      online: profile?.online ?? false
+    },
+    lastMessage: conv.messages?.[0] || null,
+    unreadCount: 0,
+    listing: conv.listing,
+    order: conv.order,
+    dispute: conv.dispute,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at
+  }
+}
 
 export const messageService = {
   async createConversation(
-    listingId: string | null,
-    buyerId: string,
-    sellerId: string
-  ): Promise<Conversation> {
+    type: 'listing' | 'order' | 'dispute' | 'support',
+    referenceId: string | null,
+    initiatorId: string,
+    participantId: string
+  ): Promise<ConversationViewModel> {
     try {
-      // 1. Check if conversation already exists for this listing and buyer/seller
-      const { data: existingParticipant } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id, conversation:conversations(*)')
-        .eq('user_id', buyerId)
+      // 1. Check if conversation already exists for this reference and participants
+      let query = supabase.from('conversations_v2').select('id, *, participants:conversation_participants_v2(*, profile:profiles!conversation_participants_v2_user_id_fkey(*)), listing:listings(*), order:orders(*), dispute:disputes(*)').eq('type', type)
+      
+      if (type === 'listing' && referenceId) query = query.eq('listing_id', referenceId)
+      if (type === 'order' && referenceId) query = query.eq('order_id', referenceId)
+      if (type === 'dispute' && referenceId) query = query.eq('dispute_id', referenceId)
 
-      if (existingParticipant) {
-        for (const p of existingParticipant) {
-          const conv = p.conversation as unknown as Conversation
-          if (conv && conv.listing_id === listingId) {
-            // Check if seller is also in this conversation
-            const { data: sellerPart } = await supabase
-              .from('conversation_participants')
-              .select('id')
-              .eq('conversation_id', p.conversation_id)
-              .eq('user_id', sellerId)
-              .maybeSingle()
+      const { data: existingConvs } = await query
 
-            if (sellerPart) {
-              return conv as Conversation
-            }
+      if (existingConvs && existingConvs.length > 0) {
+        for (const conv of existingConvs) {
+          const parts = conv.participants || []
+          const hasInitiator = parts.some((p: any) => p.user_id === initiatorId)
+          const hasParticipant = parts.some((p: any) => p.user_id === participantId)
+          if (hasInitiator && hasParticipant) {
+            return mapToViewModel(conv, initiatorId)
           }
         }
       }
 
       // 2. Insert new conversation
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .insert([{ listing_id: listingId }])
-        .select()
-        .single()
+      const convPayload: any = { type, created_by: initiatorId }
+      if (type === 'listing' && referenceId) convPayload.listing_id = referenceId
+      if (type === 'order' && referenceId) convPayload.order_id = referenceId
+      if (type === 'dispute' && referenceId) convPayload.dispute_id = referenceId
+
+      convPayload.id = crypto.randomUUID();
+      const { error: convError } = await supabase
+        .from('conversations_v2')
+        .insert([convPayload])
+
+      const conversation = { id: convPayload.id }
 
       if (convError) throw convError
 
-      // 3. Add participants
-      const { error: partError } = await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: conversation.id, user_id: buyerId },
-          { conversation_id: conversation.id, user_id: sellerId },
-        ])
+      // 3. Add participants sequentially to avoid RLS race condition
+      const { data: { user } } = await supabase.auth.getUser()
+      const authUid = user?.id
 
-      if (partError) throw partError
+      const firstUserId = authUid === participantId ? participantId : initiatorId
+      const secondUserId = authUid === participantId ? initiatorId : participantId
 
-      return conversation as Conversation
+      const { error: firstPartError } = await supabase
+        .from('conversation_participants_v2')
+        .insert([{ conversation_id: conversation.id, user_id: firstUserId, role: 'participant' }])
+
+      if (firstPartError) {
+        await supabase.from('conversations_v2').delete().eq('id', conversation.id)
+        throw firstPartError
+      }
+
+      const { error: secondPartError } = await supabase
+        .from('conversation_participants_v2')
+        .insert([{ conversation_id: conversation.id, user_id: secondUserId, role: 'participant' }])
+
+      if (secondPartError) {
+        await supabase.from('conversations_v2').delete().eq('id', conversation.id)
+        throw secondPartError
+      }
+
+      const { data: newConv } = await supabase
+        .from('conversations_v2')
+        .select('*, participants:conversation_participants_v2(*, profile:profiles!conversation_participants_v2_user_id_fkey(*)), listing:listings(*), order:orders(*), dispute:disputes(*)')
+        .eq('id', conversation.id)
+        .single()
+
+      return mapToViewModel(newConv, initiatorId)
     } catch (err) {
       console.error('Error in createConversation:', err)
       throw err
@@ -67,14 +133,15 @@ export const messageService = {
     fileUrl?: string | null
   ): Promise<Message> {
     try {
-      // 1. Insert message
       const { data: message, error } = await supabase
-        .from('messages')
+        .from('messages_v2')
         .insert([
           {
             conversation_id: conversationId,
             sender_id: senderId,
             message_text: text,
+            message_type: fileUrl ? 'image' : 'text',
+            is_system: false
           },
         ])
         .select()
@@ -82,9 +149,8 @@ export const messageService = {
 
       if (error) throw error
 
-      // 2. Insert attachment if exists
       if (fileUrl) {
-        await supabase.from('message_attachments').insert([
+        await supabase.from('message_attachments_v2').insert([
           {
             message_id: message.id,
             file_url: fileUrl,
@@ -93,10 +159,12 @@ export const messageService = {
           },
         ])
       }
+      
+      // Update last_message_id on conversation safely
+      await supabase.from('conversations_v2').update({ last_message_id: message.id }).eq('id', conversationId)
 
-      // 3. Notify other participants
       const { data: participants } = await supabase
-        .from('conversation_participants')
+        .from('conversation_participants_v2')
         .select('user_id')
         .eq('conversation_id', conversationId)
         .neq('user_id', senderId)
@@ -108,7 +176,7 @@ export const messageService = {
             title: 'New Message Received 💬',
             message: text.slice(0, 60) + (text.length > 60 ? '...' : ''),
             type: 'system',
-            reference_type: 'order', // default order reference or placeholder
+            reference_type: 'conversation',
             reference_id: conversationId,
           })
         }
@@ -121,27 +189,68 @@ export const messageService = {
     }
   },
 
-  async getConversation(id: string): Promise<Conversation | null> {
+  async createSystemMessage(
+    conversationId: string,
+    targetUserId: string | null,
+    eventType: string,
+    payload: any
+  ): Promise<Message> {
+    try {
+      let text = `System Event: ${eventType}`
+      if (eventType === 'PAYMENT_RECEIVED') text = `Payment of ${payload.amount} securely received in Escrow.`
+      if (eventType === 'ESCROW_LOCKED') text = `Escrow locked. Seller is preparing credentials.`
+      if (eventType === 'CREDENTIALS_UPLOADED') text = `Credentials securely uploaded to the vault.`
+      if (eventType === 'VERIFICATION_STARTED') text = `Security verification started on credentials.`
+      if (eventType === 'VERIFICATION_COMPLETED') text = `Security verification completed successfully.`
+      if (eventType === 'ESCROW_RELEASED') text = `Escrow funds of ${payload.amount} successfully released to Seller.`
+      
+      const { data: message, error } = await supabase
+        .from('messages_v2')
+        .insert([{
+          conversation_id: conversationId,
+          sender_id: targetUserId,
+          message_text: text,
+          message_type: 'system',
+          is_system: true,
+          event_type: eventType,
+          event_payload: payload
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      await supabase.from('conversations_v2').update({ last_message_id: message.id }).eq('id', conversationId)
+
+      return message as Message
+    } catch (err) {
+      console.error('Error in createSystemMessage:', err)
+      throw err
+    }
+  },
+
+  async getConversation(id: string, userId: string): Promise<ConversationViewModel | null> {
     try {
       const { data, error } = await supabase
-        .from('conversations')
-        .select('*, listing:listings(*)')
+        .from('conversations_v2')
+        .select('*, listing:listings(*), order:orders(*), dispute:disputes(*), participants:conversation_participants_v2(*, profile:profiles!conversation_participants_v2_user_id_fkey(*))')
         .eq('id', id)
         .single()
 
       if (error) throw error
-      return data as Conversation
+      if (!data) return null
+      
+      return mapToViewModel(data, userId)
     } catch (err) {
       console.error('Error in getConversation:', err)
       return null
     }
   },
 
-  async getConversations(userId: string): Promise<Conversation[]> {
+  async getConversations(userId: string): Promise<ConversationViewModel[]> {
     try {
-      // Fetch participant connections
       const { data: participations, error } = await supabase
-        .from('conversation_participants')
+        .from('conversation_participants_v2')
         .select('conversation_id')
         .eq('user_id', userId)
 
@@ -150,29 +259,17 @@ export const messageService = {
 
       const conversationIds = participations.map((p) => p.conversation_id)
 
-      // Fetch conversations details with participants and profiles
       const { data: convs } = await supabase
-        .from('conversations')
-        .select('*, listing:listings(*)')
+        .from('conversations_v2')
+        .select('*, listing:listings(*), order:orders(*), dispute:disputes(*), participants:conversation_participants_v2(*, profile:profiles!conversation_participants_v2_user_id_fkey(*))')
         .in('id', conversationIds)
         .order('updated_at', { ascending: false })
 
-      const conversationsWithParticipants: Conversation[] = []
-      if (convs) {
-        for (const c of convs) {
-          const { data: parts } = await supabase
-            .from('conversation_participants')
-            .select('*, profile:profiles(*)')
-            .eq('conversation_id', c.id)
+      if (!convs) return []
 
-          conversationsWithParticipants.push({
-            ...c,
-            participants: parts || [],
-          } as Conversation)
-        }
-      }
+      const viewModels = convs.map(c => mapToViewModel(c, userId))
 
-      return conversationsWithParticipants
+      return viewModels
     } catch (err) {
       console.error('Error in getConversations:', err)
       return []
@@ -182,19 +279,18 @@ export const messageService = {
   async getMessages(conversationId: string): Promise<Message[]> {
     try {
       const { data, error } = await supabase
-        .from('messages')
+        .from('messages_v2')
         .select('*, sender:profiles(*)')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
       if (error) throw error
 
-      // Append attachments
       const messagesWithAttachments: Message[] = []
       if (data) {
         for (const m of data) {
           const { data: attachs } = await supabase
-            .from('message_attachments')
+            .from('message_attachments_v2')
             .select('*')
             .eq('message_id', m.id)
 
@@ -214,19 +310,11 @@ export const messageService = {
 
   async markAsRead(conversationId: string, userId: string): Promise<void> {
     try {
-      // 1. Clear unread counts for current participant
       await supabase
-        .from('conversation_participants')
-        .update({ unread_count: 0, last_read_at: new Date().toISOString() })
+        .from('conversation_participants_v2')
+        .update({ last_read_at: new Date().toISOString() })
         .eq('conversation_id', conversationId)
         .eq('user_id', userId)
-
-      // 2. Mark messages as read where sender is not current user
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', userId)
     } catch (err) {
       console.error('Error in markAsRead:', err)
     }
@@ -243,19 +331,22 @@ export const messageService = {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'messages_v2',
           filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload) => {
-          const { data: sender } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', payload.new.sender_id)
-            .single()
+          let sender = null
+          if (payload.new.sender_id) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', payload.new.sender_id)
+              .single()
+            sender = data
+          }
 
-          // Check attachments
           const { data: attachs } = await supabase
-            .from('message_attachments')
+            .from('message_attachments_v2')
             .select('*')
             .eq('message_id', payload.new.id)
 
@@ -269,3 +360,4 @@ export const messageService = {
       .subscribe()
   },
 }
+

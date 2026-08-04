@@ -174,7 +174,7 @@ export const BuyerReferralPage: React.FC = () => {
                 type="text"
                 readOnly
                 value={referralLink}
-                className="bg-muted/40 flex-1 rounded-lg border p-2 font-mono text-xs text-foreground focus:outline-none"
+                className="premium-input flex-1 p-2 font-mono text-xs text-foreground focus:outline-none"
               />
               <button
                 onClick={handleCopyLink}

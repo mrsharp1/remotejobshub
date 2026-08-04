@@ -101,7 +101,7 @@ export const LoginPage: React.FC = () => {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  className={`block w-full rounded-lg border bg-background py-2.5 pl-10 pr-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                  className={`block w-full min-h-[48px] text-[16px] rounded-lg border bg-background py-2.5 pl-10 pr-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                     errors.email ? 'border-destructive' : 'border-input'
                   }`}
                   placeholder="name@company.com"
@@ -138,7 +138,7 @@ export const LoginPage: React.FC = () => {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  className={`block w-full rounded-lg border bg-background py-2.5 pl-10 pr-10 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                  className={`block w-full min-h-[48px] text-[16px] rounded-lg border bg-background py-2.5 pl-10 pr-10 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                     errors.password ? 'border-destructive' : 'border-input'
                   }`}
                   placeholder="••••••••"
@@ -169,12 +169,12 @@ export const LoginPage: React.FC = () => {
               <input
                 id="rememberMe"
                 type="checkbox"
-                className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                className="h-5 w-5 rounded border-input text-primary focus:ring-ring"
                 {...register('rememberMe')}
               />
               <label
                 htmlFor="rememberMe"
-                className="ml-2 block text-sm text-muted-foreground"
+                className="ml-3 block text-sm text-muted-foreground"
               >
                 Remember me
               </label>
@@ -185,7 +185,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              className="flex w-full min-h-[48px] items-center justify-center rounded-lg bg-primary py-2.5 text-base font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 transition-transform active:scale-[0.98]"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

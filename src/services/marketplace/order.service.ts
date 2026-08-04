@@ -1,72 +1,28 @@
 import { supabase } from '@/lib/supabase'
 import { Order, OrderTimeline, OrderMessage } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
+
+const PROFILE_SELECT = 'id, full_name, avatar_url, seller_verified'
 
 export const orderService = {
-  async createOrder(
-    orderData: {
-      buyer_id: string
-      seller_id: string
-      listing_id: string
-      amount: number
-    },
-    initialNotes = 'Order created. Payment processing details pending.'
-  ): Promise<Order> {
+  async checkoutWithWallet(listingId: string): Promise<any> {
     try {
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert([
-          {
-            ...orderData,
-            status: 'pending',
-            currency: 'USD',
-          },
-        ])
-        .select()
-        .single()
+      const { data, error } = await supabase.rpc('rpc_checkout_with_wallet', {
+        p_listing_id: listingId,
+      })
 
-      if (error) throw error
-
-      // Insert initial timeline step
-      const { error: timelineError } = await supabase
-        .from('order_timeline')
-        .insert([
-          {
-            order_id: order.id,
-            status: 'pending',
-            notes: initialNotes,
-          },
-        ])
-
-      if (timelineError) throw timelineError
-
-      // Dispatch notifications
-      try {
-        await notificationService.createNotification({
-          user_id: orderData.seller_id,
-          title: 'New Order Received',
-          message: `A buyer has placed an escrow order for your listing.`,
-          type: 'order',
-          reference_type: 'order',
-          reference_id: order.id,
-        })
-
-        await notificationService.createNotification({
-          user_id: orderData.buyer_id,
-          title: 'Escrow Order Created',
-          message: `Your escrow transaction has been initiated. Awaiting payment details.`,
-          type: 'order',
-          reference_type: 'order',
-          reference_id: order.id,
-        })
-      } catch (notifErr) {
-        console.error('Failed to create order notifications:', notifErr)
+      if (error) {
+        console.error('Checkout error:', error)
+        throw new Error(error.message || 'Failed to complete checkout')
       }
 
-      return order as Order
-    } catch (err) {
-      console.error('Error in createOrder:', err)
-      throw err
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to complete checkout')
+      }
+
+      return data
+    } catch (err: any) {
+      console.error('Error in checkoutWithWallet:', err)
+      throw new Error(err.message || 'Checkout failed')
     }
   },
 
@@ -74,7 +30,7 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, listing:listings(*), seller:profiles(*)')
+        .select(`*, listing:listings(*), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
         .eq('buyer_id', buyerId)
         .order('created_at', { ascending: false })
 
@@ -90,7 +46,7 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, listing:listings(*), buyer:profiles(*)')
+        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT})`)
         .eq('seller_id', sellerId)
         .order('created_at', { ascending: false })
 
@@ -106,7 +62,7 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, listing:listings(*), buyer:profiles(*), seller:profiles(*)')
+        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
         .eq('id', id)
         .single()
 
@@ -121,136 +77,76 @@ export const orderService = {
     }
   },
 
-  async updateOrderStatus(
-    orderId: string,
-    status: Order['status'],
-    notes?: string
-  ): Promise<void> {
+  async markSellerProcessing(orderId: string, sellerId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', orderId)
+      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      if (fetchErr) throw fetchErr
+      if (!order) throw new Error('Order not found')
+      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'payment_received') throw new Error('Invalid state transition: order must be payment_received')
 
-      if (error) throw error
+      const { error: updateErr } = await supabase.from('orders').update({ status: 'seller_processing' }).eq('id', orderId)
+      if (updateErr) throw updateErr
 
-      // Insert timeline tracking step
-      const { error: timelineError } = await supabase
-        .from('order_timeline')
-        .insert([
-          {
-            order_id: orderId,
-            status,
-            notes: notes || `Order status updated to ${status}.`,
-          },
-        ])
-
-      if (timelineError) throw timelineError
-
-      // Dispatch automatic state change notifications
-      try {
-        const { data: orderDetails } = await supabase
-          .from('orders')
-          .select('buyer_id, seller_id, amount')
-          .eq('id', orderId)
-          .single()
-
-        if (orderDetails) {
-          const { buyer_id, seller_id, amount } = orderDetails
-
-          if (status === 'payment_received') {
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Escrow Payment Secured',
-              message: `Your payment of $${amount} was received and is held in escrow.`,
-              type: 'payment',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-            await notificationService.createNotification({
-              user_id: seller_id,
-              title: 'Buyer Payment Secured',
-              message: `Payment has been secured in escrow. Please release account credentials.`,
-              type: 'order',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          } else if (status === 'seller_processing') {
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Seller Delivering Credentials',
-              message: `The seller has accepted and is processing your account transfer.`,
-              type: 'order',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          } else if (status === 'buyer_review') {
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Account Credentials Delivered',
-              message: `The seller has marked details as delivered. Please verify and confirm receipt.`,
-              type: 'order',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          } else if (status === 'completed') {
-            await notificationService.createNotification({
-              user_id: seller_id,
-              title: 'Escrow Payment Released',
-              message: `The buyer confirmed delivery. Your payout of $${amount} has been released.`,
-              type: 'payment',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Escrow Complete',
-              message: `Escrow release completed. Thank you for buying with Remote Jobs Hub!`,
-              type: 'order',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          } else if (status === 'cancelled') {
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Escrow Cancelled',
-              message: `The order reference #${orderId.slice(0, 8)} has been cancelled.`,
-              type: 'system',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-            await notificationService.createNotification({
-              user_id: seller_id,
-              title: 'Escrow Cancelled',
-              message: `The order reference #${orderId.slice(0, 8)} has been cancelled.`,
-              type: 'system',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          } else if (status === 'disputed') {
-            await notificationService.createNotification({
-              user_id: buyer_id,
-              title: 'Escrow Dispute Opened',
-              message: `A dispute was opened for order #${orderId.slice(0, 8)}. A moderator will review shortly.`,
-              type: 'system',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-            await notificationService.createNotification({
-              user_id: seller_id,
-              title: 'Escrow Dispute Opened',
-              message: `A dispute was opened for order #${orderId.slice(0, 8)}. A moderator will review shortly.`,
-              type: 'system',
-              reference_type: 'order',
-              reference_id: orderId,
-            })
-          }
-        }
-      } catch (err) {
-        console.error('Failed to trigger order state notifications:', err)
-      }
+      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'seller_processing', notes: 'Seller has accepted and is processing your account transfer.' }])
     } catch (err) {
-      console.error('Error in updateOrderStatus:', err)
+      console.error('Error in markSellerProcessing:', err)
+      throw err
+    }
+  },
+
+  async markBuyerReview(orderId: string, sellerId: string): Promise<void> {
+    try {
+      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      if (fetchErr) throw fetchErr
+      if (!order) throw new Error('Order not found')
+      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'seller_processing') throw new Error('Invalid state transition: order must be seller_processing')
+
+      const { error: updateErr } = await supabase.from('orders').update({ status: 'buyer_review' }).eq('id', orderId)
+      if (updateErr) throw updateErr
+
+      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'buyer_review', notes: 'Listing details submitted for final review.' }])
+    } catch (err) {
+      console.error('Error in markBuyerReview:', err)
+      throw err
+    }
+  },
+
+  async markDisputed(orderId: string, userId: string, notes: string): Promise<void> {
+    try {
+      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      if (fetchErr) throw fetchErr
+      if (!order) throw new Error('Order not found')
+      if (order.buyer_id !== userId && order.seller_id !== userId) throw new Error('Unauthorized: only participants can dispute')
+      if (['completed', 'cancelled', 'disputed'].includes(order.status)) throw new Error('Invalid state transition: order is already in a terminal state')
+
+      const { error: updateErr } = await supabase.from('orders').update({ status: 'disputed' }).eq('id', orderId)
+      if (updateErr) throw updateErr
+
+      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'disputed', notes }])
+    } catch (err) {
+      console.error('Error in markDisputed:', err)
+      throw err
+    }
+  },
+
+  async cancelOrder(orderId: string, userId: string, notes: string): Promise<void> {
+    try {
+      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      if (fetchErr) throw fetchErr
+      if (!order) throw new Error('Order not found')
+      if (order.seller_id !== userId && order.buyer_id !== userId) throw new Error('Unauthorized: only participants can cancel')
+      if (order.status !== 'pending' && order.status !== 'payment_pending') {
+        throw new Error('Order has already been funded or processed. Please contact support to cancel.')
+      }
+
+      const { error: updateErr } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
+      if (updateErr) throw updateErr
+
+      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'cancelled', notes }])
+    } catch (err) {
+      console.error('Error in cancelOrder:', err)
       throw err
     }
   },
@@ -286,7 +182,7 @@ export const orderService = {
             message_text: messageText,
           },
         ])
-        .select('*, sender:profiles(*)')
+        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
         .single()
 
       if (error) throw error
@@ -301,7 +197,7 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('order_messages')
-        .select('*, sender:profiles(*)')
+        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
         .eq('order_id', orderId)
         .order('created_at', { ascending: true })
 
@@ -317,7 +213,7 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, listing:listings(*), buyer:profiles(*), seller:profiles(*)')
+        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
         .order('created_at', { ascending: false })
 
       if (error) throw error

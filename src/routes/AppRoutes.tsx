@@ -1,11 +1,13 @@
 import React, { lazy, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { LoadingScreen } from '@/components/shared/LoadingScreen'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { DeveloperConsole } from '@/components/shared/DeveloperConsole'
+import { DebugPanel } from '@/components/shared/DebugPanel'
 
 const HomePage = lazy(() =>
   import('@/pages/public/HomePage').then((m) => ({ default: m.HomePage }))
@@ -18,6 +20,11 @@ const MarketplacePage = lazy(() =>
 const ListingDetailPage = lazy(() =>
   import('@/pages/public/ListingDetailPage').then((m) => ({
     default: m.ListingDetailPage,
+  }))
+)
+const CheckoutPage = lazy(() =>
+  import('@/pages/public/CheckoutPage').then((m) => ({
+    default: m.CheckoutPage,
   }))
 )
 const AboutPage = lazy(() =>
@@ -42,6 +49,33 @@ const NotFoundPage = lazy(() =>
     default: m.NotFoundPage,
   }))
 )
+
+// --- Trust & Knowledge Center ---
+const TrustCenterPage = lazy(() => import('@/pages/public/TrustCenterPage').then(m => ({ default: m.TrustCenterPage })))
+const HelpCenterPage = lazy(() => import('@/pages/public/HelpCenterPage').then(m => ({ default: m.HelpCenterPage })))
+const KnowledgeBasePage = lazy(() => import('@/pages/public/KnowledgeBasePage').then(m => ({ default: m.KnowledgeBasePage })))
+const InteractiveJourneyPage = lazy(() => import('@/pages/public/InteractiveJourneyPage').then(m => ({ default: m.InteractiveJourneyPage })))
+const PlatformStatusPage = lazy(() => import('@/pages/public/PlatformStatusPage').then(m => ({ default: m.PlatformStatusPage })))
+const DownloadCenterPage = lazy(() => import('@/pages/public/DownloadCenterPage').then(m => ({ default: m.DownloadCenterPage })))
+const GlobalSearchPage = lazy(() => import('@/pages/public/GlobalSearchPage').then(m => ({ default: m.GlobalSearchPage })))
+const EducationHubPage = lazy(() => import('@/pages/public/EducationHubPage').then(m => ({ default: m.EducationHubPage })))
+
+// --- Phase 040 Company Ecosystem ---
+const SuccessWallPro = lazy(() => import('@/pages/public/SuccessWallPro').then(m => ({ default: m.SuccessWallPro })))
+const CustomerStories = lazy(() => import('@/pages/public/CustomerStories').then(m => ({ default: m.CustomerStories })))
+const StoryDetail = lazy(() => import('@/pages/public/StoryDetail').then(m => ({ default: m.StoryDetail })))
+const VideoTestimonialHub = lazy(() => import('@/pages/public/VideoTestimonialHub').then(m => ({ default: m.VideoTestimonialHub })))
+const PhotoTestimonials = lazy(() => import('@/pages/public/PhotoTestimonials').then(m => ({ default: m.PhotoTestimonials })))
+const NewsroomPage = lazy(() => import('@/pages/public/NewsroomPage').then(m => ({ default: m.NewsroomPage })))
+const PressCenterPage = lazy(() => import('@/pages/public/PressCenterPage').then(m => ({ default: m.PressCenterPage })))
+const CareersPage = lazy(() => import('@/pages/public/CareersPage').then(m => ({ default: m.CareersPage })))
+const PartnerProgramPage = lazy(() => import('@/pages/public/PartnerProgramPage').then(m => ({ default: m.PartnerProgramPage })))
+const AffiliateProgramPage = lazy(() => import('@/pages/public/AffiliateProgramPage').then(m => ({ default: m.AffiliateProgramPage })))
+const BrandKitPage = lazy(() => import('@/pages/public/BrandKitPage').then(m => ({ default: m.BrandKitPage })))
+const PublicMediaLibraryPage = lazy(() => import('@/pages/public/PublicMediaLibraryPage').then(m => ({ default: m.PublicMediaLibraryPage })))
+const CompanyTimelinePage = lazy(() => import('@/pages/public/CompanyTimelinePage').then(m => ({ default: m.CompanyTimelinePage })))
+const EventsPage = lazy(() => import('@/pages/public/EventsPage').then(m => ({ default: m.EventsPage })))
+const AwardsPage = lazy(() => import('@/pages/public/AwardsPage').then(m => ({ default: m.AwardsPage })))
 const LoginPage = lazy(() =>
   import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
 )
@@ -76,6 +110,21 @@ const NotificationsPage = lazy(() =>
 const OrderDetailPage = lazy(() =>
   import('@/pages/dashboard/OrderDetailPage').then((m) => ({
     default: m.OrderDetailPage,
+  }))
+)
+const CredentialVaultPage = lazy(() =>
+  import('@/pages/dashboard/CredentialVaultPage').then((m) => ({
+    default: m.CredentialVaultPage,
+  }))
+)
+const VerificationWorkspacePage = lazy(() =>
+  import('@/pages/dashboard/VerificationWorkspacePage').then((m) => ({
+    default: m.VerificationWorkspacePage,
+  }))
+)
+const EscrowSettlementPage = lazy(() =>
+  import('@/pages/dashboard/EscrowSettlementPage').then((m) => ({
+    default: m.EscrowSettlementPage,
   }))
 )
 const SellerDashboardPage = lazy(() =>
@@ -124,23 +173,28 @@ const AdminReviewsPage = lazy(() =>
   }))
 )
 const BuyerMessagesPage = lazy(() =>
-  import('@/pages/dashboard/BuyerMessagesPage').then((m) => ({
-    default: m.BuyerMessagesPage,
+  import('@/pages/dashboard/MessagesPage').then((m) => ({
+    default: m.MessagesPage,
   }))
 )
 const SellerMessagesPage = lazy(() =>
-  import('@/pages/seller/SellerMessagesPage').then((m) => ({
-    default: m.SellerMessagesPage,
+  import('@/pages/dashboard/MessagesPage').then((m) => ({
+    default: m.MessagesPage,
   }))
 )
 const AdminMessagesPage = lazy(() =>
-  import('@/pages/admin/AdminMessagesPage').then((m) => ({
-    default: m.AdminMessagesPage,
+  import('@/pages/dashboard/MessagesPage').then((m) => ({
+    default: m.MessagesPage,
   }))
 )
 const BuyerWalletPage = lazy(() =>
   import('@/pages/dashboard/BuyerWalletPage').then((m) => ({
     default: m.BuyerWalletPage,
+  }))
+)
+const PaymentVerifyPage = lazy(() =>
+  import('@/pages/dashboard/PaymentVerifyPage').then((m) => ({
+    default: m.PaymentVerifyPage,
   }))
 )
 const SellerWalletPage = lazy(() =>
@@ -151,6 +205,11 @@ const SellerWalletPage = lazy(() =>
 const AdminWalletsPage = lazy(() =>
   import('@/pages/admin/AdminWalletsPage').then((m) => ({
     default: m.AdminWalletsPage,
+  }))
+)
+const AdminCMSPage = lazy(() =>
+  import('@/pages/admin/AdminCMSPage').then((m) => ({
+    default: m.AdminCMSPage,
   }))
 )
 const AdminBroadcastsPage = lazy(() =>
@@ -233,6 +292,11 @@ const AdminRiskPage = lazy(() =>
     default: m.AdminRiskPage,
   }))
 )
+const AdminSecurityPage = lazy(() =>
+  import('@/pages/admin/AdminSecurityPage').then((m) => ({
+    default: m.AdminSecurityPage,
+  }))
+)
 const AdminAIInsightsPage = lazy(() =>
   import('@/pages/admin/AdminAIInsightsPage').then((m) => ({
     default: m.AdminAIInsightsPage,
@@ -244,11 +308,24 @@ const AdminAutomationPage = lazy(() =>
   }))
 )
 
+const RootLayout: React.FC = () => {
+  return (
+    <>
+      <Outlet />
+      <DeveloperConsole />
+      {import.meta.env.DEV && <DebugPanel />}
+    </>
+  )
+}
+
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <MainLayout />,
-    errorElement: <ErrorBoundary />,
+    element: <RootLayout />,
+    children: [
+      {
+        path: '/',
+        element: <MainLayout />,
+        errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
@@ -271,6 +348,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <ListingDetailPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'checkout/:id',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CheckoutPage />
           </Suspense>
         ),
       },
@@ -311,6 +396,190 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <FaqPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'trust',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <TrustCenterPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'help',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <HelpCenterPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'knowledge',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <KnowledgeBasePage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'journey',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <InteractiveJourneyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'status',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PlatformStatusPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'downloads',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <DownloadCenterPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'search',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <GlobalSearchPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'education',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <EducationHubPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'success',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SuccessWallPro />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'stories',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CustomerStories />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'stories/:slug',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <StoryDetail />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'testimonials/video',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <VideoTestimonialHub />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'testimonials/photos',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PhotoTestimonials />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'newsroom',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <NewsroomPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'press',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PressCenterPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'careers',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CareersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'partners',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PartnerProgramPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'affiliates',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AffiliateProgramPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'brand',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <BrandKitPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'media',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PublicMediaLibraryPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'timeline',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CompanyTimelinePage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'events',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <EventsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'awards',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AwardsPage />
           </Suspense>
         ),
       },
@@ -407,6 +676,30 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: 'vault/:id',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CredentialVaultPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'verification/:id',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <VerificationWorkspacePage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'settlement/:id',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <EscrowSettlementPage />
+          </Suspense>
+        ),
+      },
+      {
         path: 'seller/orders',
         element: (
           <Suspense fallback={<LoadingScreen />}>
@@ -451,6 +744,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <BuyerWalletPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'dashboard/payment/verify',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PaymentVerifyPage />
           </Suspense>
         ),
       },
@@ -653,6 +954,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: 'admin/security',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminSecurityPage />
+          </Suspense>
+        ),
+      },
+      {
         path: 'admin/ai-insights',
         element: (
           <Suspense fallback={<LoadingScreen />}>
@@ -668,8 +977,18 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: 'admin/cms',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminCMSPage />
+          </Suspense>
+        ),
+      },
     ],
   },
+]
+  }
 ])
 
 export const AppRoutes: React.FC = () => <RouterProvider router={router} />

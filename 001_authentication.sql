@@ -68,32 +68,39 @@ CREATE POLICY "Users can update own profile" ON public.profiles
 --         )
 --     );
 
--- SECTION: Functions
+ -- SECTION: Functions
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, role, status)
-    VALUES (new.id, new.email, 'buyer', 'active')
+    VALUES (NEW.id, NEW.email, 'buyer', 'active')
     ON CONFLICT (id) DO NOTHING;
-    RETURN new;
+
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS trigger AS $$
 BEGIN
-    new.updated_at = timezone('utc'::text, now());
-    RETURN new;
+    NEW.updated_at = timezone('utc'::text, now());
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 -- SECTION: Triggers
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
-CREATE OR REPLACE TRIGGER set_profiles_updated_at
-    BEFORE UPDATE ON public.profiles
-    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_new_user();
+
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
+
+CREATE TRIGGER set_profiles_updated_at
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at_column();

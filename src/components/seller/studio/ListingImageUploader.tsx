@@ -120,7 +120,7 @@ export const ListingImageUploader: React.FC<ListingImageUploaderProps> = ({
           type="file"
           multiple
           accept="image/jpeg,image/png,image/webp"
-          className="absolute inset-0 cursor-pointer opacity-0"
+          className="premium-input absolute inset-0 cursor-pointer opacity-0"
           onChange={handleFileSelect}
         />
         <div className="bg-primary/10 rounded-full p-3 text-primary">

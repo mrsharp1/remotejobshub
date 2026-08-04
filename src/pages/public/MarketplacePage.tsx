@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -22,19 +23,60 @@ import { CategoryGrid } from '@/components/marketplace/CategoryGrid'
 import { FilterSidebar } from '@/components/marketplace/FilterSidebar'
 import { ListingGrid } from '@/components/marketplace/ListingGrid'
 import { MarketplaceListingCard } from '@/components/marketplace/MarketplaceListingCard'
+import { TrustBar } from '@/components/marketplace/TrustBar'
+import { useDebounce } from '@/hooks/useDebounce'
+import { BuyerProtectionBanner } from '@/components/shared/BuyerProtectionBanner'
+import {
+  ListingComparison,
+  ComparisonBar,
+} from '@/components/marketplace/intelligence/ListingComparison'
+import { MarketplaceHighlights } from '@/components/marketplace/conversion/MarketplaceHighlights'
+import { RecentlyViewedSection } from '@/components/marketplace/conversion/RecentlyViewedSection'
+import { WrittenReviews } from '@/components/home/WrittenReviews'
+import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 
 export const MarketplacePage: React.FC = () => {
   const { user } = useAuthStore()
-  const [keyword, setKeyword] = useState('')
-  const [platform, setPlatform] = useState('')
-  const [country, setCountry] = useState('')
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [sellerVerified, setSellerVerified] = useState(false)
-  const [sortBy, setSortBy] = useState('newest')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '')
+  const [platform, setPlatform] = useState(searchParams.get('platform') || '')
+  const [country, setCountry] = useState(searchParams.get('country') || '')
+  
+  const platformsParam = searchParams.get('platforms')
+  const initialPlatforms = platformsParam ? platformsParam.split(',') : []
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialPlatforms)
+  
+  const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '')
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '')
+  const [sellerVerified, setSellerVerified] = useState(searchParams.get('seller_verified') === 'true')
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest')
+  const [featured, setFeatured] = useState(searchParams.get('featured') === 'true')
+  
   const [favorites, setFavorites] = useState<string[]>([])
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
+
+  // Sync state back to URL
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (keyword) params.set('keyword', keyword)
+    if (platform) params.set('platform', platform)
+    if (country) params.set('country', country)
+    if (selectedPlatforms.length > 0) params.set('platforms', selectedPlatforms.join(','))
+    if (minPrice) params.set('minPrice', minPrice)
+    if (maxPrice) params.set('maxPrice', maxPrice)
+    if (sellerVerified) params.set('seller_verified', 'true')
+    if (sortBy !== 'newest') params.set('sort', sortBy)
+    if (featured) params.set('featured', 'true')
+    
+    // Only update if params actually changed to prevent infinite loops
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true })
+    }
+  }, [keyword, platform, country, selectedPlatforms, minPrice, maxPrice, sellerVerified, sortBy, featured, setSearchParams, searchParams])
+
+  const debouncedKeyword = useDebounce(keyword, 400)
+  const debouncedCountry = useDebounce(country, 400)
 
   // FAQ Accordion State
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null)
@@ -107,6 +149,7 @@ export const MarketplacePage: React.FC = () => {
     setMaxPrice('')
     setSellerVerified(false)
     setSortBy('newest')
+    setFeatured(false)
   }
 
   // Toggle favorite trigger
@@ -143,8 +186,8 @@ export const MarketplacePage: React.FC = () => {
     }
 
     // Search keywords
-    if (keyword) {
-      const query = keyword.toLowerCase()
+    if (debouncedKeyword) {
+      const query = debouncedKeyword.toLowerCase()
       result = result.filter(
         (l) =>
           l.title.toLowerCase().includes(query) ||
@@ -154,9 +197,9 @@ export const MarketplacePage: React.FC = () => {
     }
 
     // Country
-    if (country) {
+    if (debouncedCountry) {
       result = result.filter((l) =>
-        l.country.toLowerCase().includes(country.toLowerCase())
+        l.country.toLowerCase().includes(debouncedCountry.toLowerCase())
       )
     }
 
@@ -173,6 +216,11 @@ export const MarketplacePage: React.FC = () => {
       result = result.filter((l) => l.seller?.seller_verified === true)
     }
 
+    // Featured check
+    if (featured) {
+      result = result.filter((l) => l.is_featured === true)
+    }
+
     // Sorting Modes
     if (sortBy === 'newest') {
       result.sort(
@@ -187,6 +235,27 @@ export const MarketplacePage: React.FC = () => {
       result.sort((a, b) => Number(a.price) - Number(b.price))
     } else if (sortBy === 'price-desc') {
       result.sort((a, b) => Number(b.price) - Number(a.price))
+    } else if (sortBy === 'best-value') {
+      result.sort((a, b) => {
+        const aROI = a.price > 0 ? Number(a.monthly_income || 0) / Number(a.price) : 0
+        const bROI = b.price > 0 ? Number(b.monthly_income || 0) / Number(b.price) : 0
+        return bROI - aROI
+      })
+    } else if (sortBy === 'rating') {
+      // Sort by seller rating if available. Fallback to featured or price.
+      // Currently `Listing` lacks direct rating field, so we prioritize verified sellers and featured status.
+      result.sort((a, b) => {
+        const aScore = (a.seller?.seller_verified ? 2 : 0) + (a.is_featured ? 1 : 0)
+        const bScore = (b.seller?.seller_verified ? 2 : 0) + (b.is_featured ? 1 : 0)
+        return bScore - aScore
+      })
+    } else if (sortBy === 'recommended') {
+      // Prioritize featured, high income, verified
+      result.sort((a, b) => {
+        const aScore = (a.is_featured ? 100 : 0) + (a.seller?.seller_verified ? 50 : 0) + Number(a.monthly_income || 0) / 10
+        const bScore = (b.is_featured ? 100 : 0) + (b.seller?.seller_verified ? 50 : 0) + Number(b.monthly_income || 0) / 10
+        return bScore - aScore
+      })
     }
 
     // Boost Verified Sellers search rankings
@@ -202,13 +271,14 @@ export const MarketplacePage: React.FC = () => {
     return result
   }, [
     rawListings,
-    keyword,
+    debouncedKeyword,
     platform,
-    country,
+    debouncedCountry,
     selectedPlatforms,
     minPrice,
     maxPrice,
     sellerVerified,
+    featured,
     sortBy,
   ])
 
@@ -234,7 +304,7 @@ export const MarketplacePage: React.FC = () => {
   ]
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="min-h-screen space-y-12 bg-slate-950 pb-16 text-slate-300 selection:bg-indigo-500/30">
       {/* Hero section */}
       <MarketplaceHero
         onBrowseClick={() => {
@@ -243,10 +313,20 @@ export const MarketplacePage: React.FC = () => {
         }}
       />
 
+      <TrustBar />
+
+      {/* Buyer Protection Banner */}
+      <BuyerProtectionBanner
+        variant="horizontal"
+        className="mx-auto max-w-7xl px-4"
+      />
+
       <div
         id="search-grid-section"
         className="mx-auto max-w-7xl space-y-10 px-4"
       >
+        <MarketplaceHighlights />
+
         {/* Live categories grid selection */}
         <CategoryGrid
           activeCategory={platform}
@@ -264,9 +344,9 @@ export const MarketplacePage: React.FC = () => {
         {/* AI Recommendations Section */}
         {user?.id && recommendedList.length > 0 && (
           <div className="space-y-4 border-t pt-6">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />
-              <h3 className="font-heading text-lg font-bold text-foreground">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 animate-pulse text-indigo-400" />
+              <h3 className="font-heading text-xl font-black text-white">
                 Recommended For You
               </h3>
             </div>
@@ -289,7 +369,7 @@ export const MarketplacePage: React.FC = () => {
 
         {trendingList.length > 0 && (
           <div className="space-y-4 border-t pt-6">
-            <h3 className="font-heading text-lg font-bold text-foreground">
+            <h3 className="font-heading text-xl font-black text-white">
               Trending Accounts
             </h3>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -336,7 +416,7 @@ export const MarketplacePage: React.FC = () => {
         {/* Featured Listings Carousel/Grid */}
         {featuredListings.length > 0 && (
           <div className="space-y-4">
-            <h3 className="font-heading text-lg font-bold text-foreground">
+            <h3 className="font-heading text-xl font-black text-white">
               Featured Asset Opportunities
             </h3>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -357,22 +437,24 @@ export const MarketplacePage: React.FC = () => {
         )}
 
         {/* Search Control elements */}
-        <MarketplaceSearch
-          keyword={keyword}
-          onKeywordChange={setKeyword}
-          platform={platform}
-          onPlatformChange={(plat) => {
-            setPlatform(plat)
-            if (plat) {
-              setSelectedPlatforms([plat])
-            } else {
-              setSelectedPlatforms([])
-            }
-          }}
-          country={country}
-          onCountryChange={setCountry}
-          onToggleFilterDrawer={() => setIsFilterDrawerOpen(true)}
-        />
+        <div className="sticky top-0 z-40 -mx-4 bg-slate-950/80 px-4 py-4 backdrop-blur-2xl">
+          <MarketplaceSearch
+            keyword={keyword}
+            onKeywordChange={setKeyword}
+            platform={platform}
+            onPlatformChange={(plat) => {
+              setPlatform(plat)
+              if (plat) {
+                setSelectedPlatforms([plat])
+              } else {
+                setSelectedPlatforms([])
+              }
+            }}
+            country={country}
+            onCountryChange={setCountry}
+            onToggleFilterDrawer={() => setIsFilterDrawerOpen(true)}
+          />
+        </div>
 
         {/* Search Results / Main Filter Grid */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
@@ -398,13 +480,13 @@ export const MarketplacePage: React.FC = () => {
           {/* Listings List grid */}
           <div className="space-y-6 md:col-span-9">
             {isError ? (
-              <div className="border-destructive/20 bg-destructive/10 rounded-xl border p-6 text-center text-destructive">
+              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-center text-rose-400 backdrop-blur-md">
                 <p className="font-semibold">
                   Failed to load marketplace listings.
                 </p>
                 <button
                   onClick={() => refetch()}
-                  className="mt-3 rounded bg-destructive px-4 py-1.5 text-xs font-bold text-destructive-foreground"
+                  className="mt-4 rounded-xl bg-rose-500/20 px-6 py-2 text-sm font-bold text-rose-300 transition-colors hover:bg-rose-500/30"
                 >
                   Retry Loading
                 </button>
@@ -416,23 +498,33 @@ export const MarketplacePage: React.FC = () => {
                 onToggleFavorite={handleToggleFavorite}
                 loading={isLoading}
                 onResetFilters={handleClearFilters}
+                onTryAnotherPlatform={() => {
+                  setPlatform('')
+                  setSelectedPlatforms([])
+                  setKeyword('')
+                }}
+                onTryAnotherCountry={() => {
+                  setCountry('')
+                  setKeyword('')
+                }}
               />
             )}
           </div>
         </div>
 
         {/* Verified Sellers spotlight section */}
-        <div className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <div className="mx-auto max-w-xl space-y-2 text-center">
-            <h3 className="font-heading text-xl font-bold text-foreground">
+        <div className="relative space-y-8 rounded-[2rem] border border-white/5 bg-slate-900/40 p-8 shadow-2xl backdrop-blur-xl md:p-12">
+          <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/5 to-transparent opacity-50" />
+          <div className="relative z-10 mx-auto max-w-xl space-y-3 text-center">
+            <h3 className="font-heading text-3xl font-black text-white">
               Verified Sellers Spotlight
             </h3>
-            <p className="text-sm text-muted-foreground">
-              Buyers deal with trustworthy professionals who undergo
-              verification checks.
+            <p className="text-base text-slate-400">
+              Buyers deal with trustworthy professionals who undergo strict
+              KYC verification checks.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="relative z-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
               {
                 name: 'Alex K.',
@@ -452,17 +544,17 @@ export const MarketplacePage: React.FC = () => {
             ].map((seller, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 rounded-xl border border-border bg-background p-4"
+                className="flex items-center gap-4 rounded-2xl border border-white/5 bg-slate-950/60 p-5 shadow-lg transition-colors hover:border-white/10 hover:bg-slate-900"
               >
-                <div className="bg-primary/10 rounded-full p-2 text-primary">
-                  <UserCheck className="h-5 w-5" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 shadow-inner">
+                  <UserCheck className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground">
+                  <h4 className="text-base font-bold text-white">
                     {seller.name}
                   </h4>
-                  <p className="text-[10px] font-semibold text-muted-foreground">
-                    {seller.sales} • {seller.rate}
+                  <p className="text-xs font-semibold text-slate-400">
+                    {seller.sales} <br /> {seller.rate}
                   </p>
                 </div>
               </div>
@@ -471,43 +563,42 @@ export const MarketplacePage: React.FC = () => {
         </div>
 
         {/* Safe Escrow / Buyer protection banner */}
-        <div className="to-primary-hover flex flex-col items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-primary p-8 text-primary-foreground shadow-lg md:flex-row">
-          <div className="space-y-2 text-center md:text-left">
-            <h3 className="flex items-center justify-center gap-2 font-heading text-xl font-extrabold md:justify-start">
-              <ShieldCheck className="h-6 w-6" /> Escrow Buyer Protection
-              Guaranteed
+        <div className="group relative flex flex-col items-center justify-between gap-8 rounded-[2rem] border border-indigo-500/20 bg-gradient-to-br from-indigo-900/60 to-purple-900/40 p-10 shadow-2xl backdrop-blur-xl md:flex-row md:p-12">
+          <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+          <div className="relative z-10 space-y-4 text-center md:text-left">
+            <h3 className="flex items-center justify-center gap-3 font-heading text-3xl font-black text-white md:justify-start">
+              <ShieldCheck className="h-8 w-8 text-indigo-400" /> Escrow Buyer Protection
             </h3>
-            <p className="max-w-xl text-sm opacity-90">
-              We hold the purchase funds in escrow until the account ownership
-              has been safely completed. Zero risk, verified transactions.
+            <p className="max-w-xl text-base leading-relaxed text-indigo-200/80">
+              We hold the purchase funds in a secure smart escrow vault until the account ownership
+              has been safely verified and completed. Zero risk, 100% guaranteed.
             </p>
           </div>
-          <CheckCircle className="hidden h-12 w-12 opacity-80 md:block" />
+          <CheckCircle className="relative z-10 hidden h-20 w-20 text-indigo-500/40 transition-transform duration-700 group-hover:scale-110 md:block" />
         </div>
 
         {/* FAQs section */}
-        <div className="space-y-4">
-          <h3 className="flex items-center gap-2 font-heading text-lg font-bold text-foreground">
-            <HelpCircle className="h-5 w-5 text-primary" /> Buyer Protection
-            FAQs
+        <div className="space-y-8 pt-8">
+          <h3 className="flex items-center gap-3 font-heading text-2xl font-black text-white">
+            <HelpCircle className="h-6 w-6 text-indigo-400" /> Buyer Protection FAQs
           </h3>
-          <div className="max-w-3xl space-y-2">
+          <div className="max-w-3xl space-y-3">
             {faqs.map((faq, idx) => {
               const isOpen = openFaqIdx === idx
               return (
                 <div
                   key={idx}
-                  className="overflow-hidden rounded-lg border border-border bg-card"
+                  className="overflow-hidden rounded-2xl border border-white/5 bg-slate-900/40 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-900/60"
                 >
                   <button
                     onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
-                    className="hover:bg-muted/30 flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
+                    className="flex w-full items-center justify-between px-6 py-5 text-left text-base font-bold text-white transition-colors"
                   >
                     <span>{faq.q}</span>
                     {isOpen ? (
-                      <ChevronUp className="h-4 w-4" />
+                      <ChevronUp className="h-5 w-5 text-indigo-400" />
                     ) : (
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-5 w-5 text-slate-500" />
                     )}
                   </button>
                   <AnimatePresence>
@@ -516,7 +607,7 @@ export const MarketplacePage: React.FC = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="border-border/40 border-t px-4 pb-3 pt-2 text-xs leading-relaxed text-muted-foreground"
+                        className="border-t border-white/5 px-6 pb-6 pt-2 text-sm leading-relaxed text-slate-400"
                       >
                         {faq.a}
                       </motion.div>
@@ -527,7 +618,20 @@ export const MarketplacePage: React.FC = () => {
             })}
           </div>
         </div>
+
+        <RecentlyViewedSection />
+        
+        {/* Marketplace Reviews Section */}
+        <div className="space-y-4">
+          <WrittenReviews location="marketplace" />
+          <VideoTestimonials location="marketplace" />
+        </div>
       </div>
+
+      {/* Comparison Bar (sticky bottom) */}
+      <ComparisonBar />
+      {/* Comparison Modal */}
+      <ListingComparison />
     </div>
   )
 }

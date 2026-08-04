@@ -12,6 +12,7 @@ import {
 import { disputeService } from '@/services/marketplace/dispute.service'
 import { useAuthStore } from '@/stores/authStore'
 import { DisputeMessage, DisputeEvidence } from '@/types'
+import { EventEngine } from '@/lib/events/EventEngine'
 
 export const AdminDisputesPage: React.FC = () => {
   const { user } = useAuthStore()
@@ -122,6 +123,12 @@ export const AdminDisputesPage: React.FC = () => {
       } else if (actionTarget === 'release') {
         await disputeService.resolveSeller(selectedDisputeId, resolutionNotes)
       }
+      
+      EventEngine.publish('DISPUTE_RESOLVED', {
+        orderId: disputeDetails?.order_id || selectedDisputeId,
+        resolution: actionTarget === 'refund' ? 'Buyer Refunded' : 'Funds Released to Seller'
+      })
+      
       refetch()
       refetchDetails()
       setActionTarget(null)
@@ -323,7 +330,7 @@ export const AdminDisputesPage: React.FC = () => {
                       Escrow Price
                     </span>
                     <div className="text-sm font-bold text-foreground">
-                      $
+                      ₦
                       {Number(
                         disputeDetails.order?.amount || 0
                       ).toLocaleString()}

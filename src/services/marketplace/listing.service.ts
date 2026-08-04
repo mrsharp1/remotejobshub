@@ -34,7 +34,11 @@ export const listingService = {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error("LISTING INSERT ERROR:", error);
+        alert(JSON.stringify(error, null, 2));
+        throw error;
+      }
 
       if (images && images.length > 0) {
         const imageData = images.map((url, idx) => ({
@@ -160,7 +164,7 @@ export const listingService = {
       const { data, error } = await supabase
         .from('listings')
         .select(
-          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles(*)'
+          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
         )
         .eq('id', id)
         .single()
@@ -186,7 +190,7 @@ export const listingService = {
       let query = supabase
         .from('listings')
         .select(
-          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles(*)'
+          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
         )
         .eq('approval_status', 'approved')
         .eq('status', 'published')
@@ -317,34 +321,40 @@ export const listingService = {
   },
 
   async approveListing(id: string, adminId: string): Promise<void> {
+    const { data: listing, error } = await supabase
+      .from('listings')
+      .update({
+        approval_status: 'approved',
+        status: 'published',
+        approved_by: adminId,
+        approved_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("APPROVE LISTING ERROR:", error);
+      alert(JSON.stringify(error, null, 2));
+      throw error;
+    }
+
+    console.log("Listing approved successfully:", listing);
+
     try {
-      const { data: listing, error } = await supabase
-        .from('listings')
-        .update({
-          approval_status: 'approved',
-          status: 'published',
-          approved_by: adminId,
-          approved_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Notify seller
       await notificationService.createNotification({
         user_id: listing.seller_id,
-        title: 'Listing Approved 🎉',
+        title: "Listing Approved 🎉",
         message: `Your listing "${listing.title}" has been approved and is now live on the marketplace.`,
-        type: 'listing',
-        reference_type: 'listing',
+        type: "listing",
+        reference_type: "listing",
         reference_id: id,
-      })
-    } catch (err) {
-      console.error('Error in approveListing:', err)
-      throw err
+      });
+    } catch (notificationError) {
+      console.warn("Notification failed:", notificationError);
     }
+
+    return;
   },
 
   async rejectListing(

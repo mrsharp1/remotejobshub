@@ -121,9 +121,9 @@ export const AdminRiskPage: React.FC = () => {
                   No active fraud flags recorded. Platform is secure.
                 </div>
               ) : (
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-muted/30 border-b text-[10px] font-bold uppercase text-muted-foreground">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                    <tr>
                       <th className="p-3">User</th>
                       <th className="p-3">Reason</th>
                       <th className="p-3">Risk Level</th>
@@ -131,9 +131,12 @@ export const AdminRiskPage: React.FC = () => {
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/50 divide-y text-foreground">
+                  <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                     {fraudFlags.map((f: FraudFlag) => (
-                      <tr key={f.id} className="hover:bg-muted/10">
+                      <tr
+                        key={f.id}
+                        className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      >
                         <td className="p-3">
                           <span className="block font-bold text-foreground">
                             {f.profile?.full_name || 'System User'}
@@ -207,17 +210,20 @@ export const AdminRiskPage: React.FC = () => {
                   No risk scores computed.
                 </div>
               ) : (
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-muted/30 border-b text-[10px] font-bold uppercase text-muted-foreground">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                    <tr>
                       <th className="p-3">Account User</th>
                       <th className="p-3">Trust Score Rating</th>
                       <th className="p-3 text-right">Risk Factor Tags</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/50 divide-y text-foreground">
+                  <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                     {riskScores.map((s: RiskScore) => (
-                      <tr key={s.id} className="hover:bg-muted/10">
+                      <tr
+                        key={s.id}
+                        className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      >
                         <td className="p-3 font-semibold">
                           {s.profile?.full_name || 'System User'}
                         </td>

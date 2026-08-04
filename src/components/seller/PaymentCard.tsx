@@ -99,7 +99,7 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
             <input
               type="text"
               required
-              className="mt-1 w-full rounded-lg border border-input bg-background p-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
               placeholder="e.g. Access Bank"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
@@ -113,7 +113,7 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
             <input
               type="text"
               required
-              className="mt-1 w-full rounded-lg border border-input bg-background p-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
               placeholder="e.g. John Doe"
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
@@ -128,7 +128,7 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
               type="text"
               required
               pattern="[0-9]*"
-              className="mt-1 w-full rounded-lg border border-input bg-background p-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
               placeholder="e.g. 0123456789"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}

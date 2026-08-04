@@ -13,9 +13,11 @@ export interface Profile {
   email: string
   phone: string | null
   country: string | null
+  address?: string | null
   avatar_url: string | null
   role: 'buyer' | 'seller' | 'admin'
   status: 'active' | 'suspended' | 'pending' | 'deleted'
+  online?: boolean
   created_at: string
   updated_at: string
   bio: string | null
@@ -131,13 +133,27 @@ export interface Notification {
   user_id: string
   title: string
   message: string
-  type: 'order' | 'payment' | 'listing' | 'system'
+  type:
+    | 'order'
+    | 'payment'
+    | 'listing'
+    | 'system'
+    | 'escrow'
+    | 'marketplace'
+    | 'verification'
+    | 'wallet'
+    | 'security'
+    | 'disputes'
+    | 'reviews'
+    | 'announcements'
   reference_type?: string | null
   reference_id?: string | null
   is_read: boolean
   created_at: string
   updated_at: string
 }
+
+export type NotificationPriority = 'critical' | 'high' | 'normal' | 'low'
 
 export interface Dispute {
   id: string
@@ -242,9 +258,12 @@ export interface SellerRating {
 
 export interface Conversation {
   id: string
+  type: 'listing' | 'order' | 'dispute' | 'support'
   listing_id?: string | null
-  last_message_text?: string | null
-  last_message_sent_at?: string | null
+  order_id?: string | null
+  dispute_id?: string | null
+  created_by: string
+  last_message_id?: string | null
   created_at: string
   updated_at: string
   listing?: Listing
@@ -252,14 +271,33 @@ export interface Conversation {
   messages?: Message[]
 }
 
+export interface ConversationViewModel {
+  id: string
+  type: 'listing' | 'order' | 'dispute' | 'support'
+  otherUser: {
+    id: string
+    full_name: string | null
+    username?: string | null
+    email?: string | null
+    avatar_url: string | null
+    role: string
+    online?: boolean
+  }
+  lastMessage?: Message | null
+  unreadCount: number
+  listing?: Listing
+  order?: Order
+  dispute?: Dispute
+  created_at: string
+  updated_at: string
+}
+
 export interface ConversationParticipant {
   id: string
   conversation_id: string
   user_id: string
-  unread_count: number
-  is_archived: boolean
-  is_starred: boolean
-  is_blocked: boolean
+  role: string
+  joined_at: string
   last_read_at?: string | null
   profile?: Profile
 }
@@ -267,10 +305,14 @@ export interface ConversationParticipant {
 export interface Message {
   id: string
   conversation_id: string
-  sender_id: string
+  sender_id?: string | null
   message_text: string
+  message_type: 'text' | 'image' | 'system'
+  is_system: boolean
+  event_type?: string | null
+  event_payload?: Record<string, unknown> | null
   created_at: string
-  is_read: boolean
+  updated_at: string
   sender?: Profile
   attachments?: MessageAttachment[]
 }
@@ -281,6 +323,7 @@ export interface MessageAttachment {
   file_url: string
   file_name?: string | null
   file_type?: string | null
+  file_size?: number | null
   created_at: string
 }
 
@@ -288,10 +331,11 @@ export interface Wallet {
   id: string
   user_id: string
   available_balance: number
-  pending_balance: number
   escrow_balance: number
-  bonus_credits: number
-  referral_earnings: number
+  bonus_balance: number
+  referral_balance: number
+  // Added by migration 20260726000002 — tracks withdrawal-pending funds
+  pending_balance: number
   created_at: string
   updated_at: string
   profile?: Profile
@@ -300,19 +344,21 @@ export interface Wallet {
 export interface WalletTransaction {
   id: string
   wallet_id: string
+  user_id: string
   amount: number
   type:
     | 'deposit'
+    | 'purchase'
+    | 'refund'
     | 'withdrawal'
     | 'escrow_hold'
     | 'escrow_release'
     | 'bonus'
-    | 'referral'
-    | 'debit'
-    | 'credit'
-  status: 'pending' | 'completed' | 'failed' | 'cancelled'
+  status: 'pending' | 'success' | 'failed'
+  payment_gateway?: string | null
+  payment_reference?: string | null
   description?: string | null
-  reference_id?: string | null
+  metadata?: Record<string, unknown> | null
   created_at: string
 }
 
@@ -401,11 +447,11 @@ export interface ReferralReward {
 export interface SellerVerification {
   id: string
   user_id: string
-  status: 'pending' | 'under_review' | 'approved' | 'rejected'
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_more_info'
   document_type:
     'government_id' | 'passport' | 'drivers_license' | 'national_id'
-  selfie_url: string
-  proof_of_address_url: string
+  selfie_url?: string | null
+  proof_of_address_url?: string | null
   notes?: string | null
   created_at: string
   updated_at: string

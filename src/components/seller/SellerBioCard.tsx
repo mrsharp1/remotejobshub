@@ -92,7 +92,7 @@ export const SellerBioCard: React.FC<SellerBioCardProps> = ({
       {isEditing ? (
         <div className="space-y-1.5">
           <textarea
-            className="min-h-[120px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="premium-input min-h-[120px] w-full p-3 text-sm text-foreground placeholder-muted-foreground focus:outline-none"
             placeholder="Tell prospective buyers about your remote workspace background, skills and expertise..."
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, maxLength))}

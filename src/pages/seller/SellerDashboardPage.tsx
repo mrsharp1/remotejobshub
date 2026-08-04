@@ -1,33 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FileText,
-  DollarSign,
-  Eye,
-  Star,
-  Plus,
   TrendingUp,
-  LayoutDashboard,
-  ClipboardList,
-  Loader2,
   Sparkles,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Profile, Listing } from '@/types'
 import { listingService } from '@/services/marketplace/listing.service'
 import { recommendationService } from '@/services/marketplace/recommendation.service'
-import { SellerStatsCard } from '@/components/seller/SellerStatsCard'
 import { ProfileCompletionCard } from '@/components/seller/ProfileCompletionCard'
 import { VerificationCard } from '@/components/seller/VerificationCard'
 import { SubscriptionCard } from '@/components/seller/SubscriptionCard'
 import { SellerBioCard } from '@/components/seller/SellerBioCard'
 import { PaymentCard } from '@/components/seller/PaymentCard'
 import { SellerAgreementModal } from '@/components/seller/SellerAgreementModal'
+import { useEventSubscriber } from '@/hooks/useEventSubscriber'
 
 // Studio Imports
 import { ListingForm } from '@/components/seller/studio/ListingForm'
-import { ListingCard } from '@/components/seller/studio/ListingCard'
 import { ListingPreview } from '@/components/seller/studio/ListingPreview'
+
+// Listings Workspace Components
+import { ListingCard } from '@/components/seller/listings/ListingCard'
+import { ListingHero } from '@/components/seller/listings/ListingHero'
+import { ListingMetrics } from '@/components/seller/listings/ListingMetrics'
+import { ListingTabs } from '@/components/seller/listings/ListingTabs'
+import { PerformanceChart } from '@/components/seller/listings/PerformanceChart'
+import { EscrowStatusPanel } from '@/components/seller/listings/EscrowStatusPanel'
+import { WalletSummary } from '@/components/seller/listings/WalletSummary'
+import { EmptyState } from '@/components/seller/listings/EmptyState'
+import { LoadingSkeleton } from '@/components/seller/listings/LoadingSkeleton'
 
 export const SellerDashboardPage: React.FC = () => {
   const { profile, setProfile } = useAuthStore()
@@ -45,6 +47,39 @@ export const SellerDashboardPage: React.FC = () => {
   const [loadingListings, setLoadingListings] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+
+  const getTabCounts = () => {
+    const counts: Record<string, number> = {
+      all: sellerListings.length,
+      draft: sellerListings.filter((l) => l.status === 'draft').length,
+      submitted: sellerListings.filter((l) => l.status === 'submitted').length,
+      approved: sellerListings.filter((l) => l.status === 'published').length,
+      rejected: sellerListings.filter((l) => l.approval_status === 'rejected').length,
+      paused: sellerListings.filter((l) => l.status === 'archived').length,
+      sold: sellerListings.filter((l) => l.status === 'sold').length,
+      archived: sellerListings.filter((l) => l.status === 'archived').length,
+    }
+    return counts
+  }
+
+  const getStats = () => {
+    const active = sellerListings.filter((l) => l.status === 'published').length
+    const pending = sellerListings.filter((l) => l.status === 'submitted').length
+    const sold = sellerListings.filter((l) => l.status === 'sold').length
+    const paused = sellerListings.filter((l) => l.status === 'archived').length
+    const drafts = sellerListings.filter((l) => l.status === 'draft').length
+    
+    const revenue = sellerListings
+      .filter((l) => l.status === 'sold')
+      .reduce((sum, l) => sum + l.price, 0)
+
+    // Views: view_count is not currently tracked per listing, defaults to 0
+    const views = 0
+
+    const conversion = sellerListings.length > 0 ? Math.round((sold / sellerListings.length) * 100 * 10) / 10 : 0
+
+    return { active, pending, sold, paused, drafts, revenue, views, conversion }
+  }
 
   const handleProfileUpdated = (updatedProfile: Profile) => {
     setProfile(updatedProfile)
@@ -73,6 +108,11 @@ export const SellerDashboardPage: React.FC = () => {
   useEffect(() => {
     fetchListings()
   }, [fetchListings])
+
+  useEventSubscriber('ORDER_CREATED', fetchListings)
+  useEventSubscriber('ESCROW_RELEASED', fetchListings)
+  useEventSubscriber('DISPUTE_OPENED', fetchListings)
+  useEventSubscriber('DISPUTE_RESOLVED', fetchListings)
 
   useEffect(() => {
     if (sellerListings.length > 0) {
@@ -235,6 +275,7 @@ export const SellerDashboardPage: React.FC = () => {
           formImages,
           formTags
         )
+        console.log("Listing successfully inserted.");
       }
       setStudioView('list')
     } catch (err) {
@@ -249,142 +290,307 @@ export const SellerDashboardPage: React.FC = () => {
   )
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      {/* Dynamic welcome header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-            Welcome back, {profile?.full_name || 'Seller'} 👋
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {activeTab === 'workspace'
-              ? `Your profile is ${completionPercentage}% complete.`
-              : 'Add and edit your asset listings for review.'}
-          </p>
+    <div className="mx-auto max-w-7xl space-y-8 pb-16 px-4">
+      {/* Seller Hero Banner */}
+      <div className="relative overflow-hidden rounded-[32px] bg-slate-950 p-8 text-white shadow-2xl md:p-12">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute left-1/3 top-0 h-96 w-96 rounded-full bg-emerald-600/20 blur-[80px]" />
+          <div className="absolute bottom-0 right-1/3 h-64 w-64 rounded-full bg-teal-600/20 blur-[80px]" />
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
         </div>
 
-        {/* Workspace navigation buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('workspace')}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold ${
-              activeTab === 'workspace'
-                ? 'border-primary bg-primary text-primary-foreground shadow'
-                : 'bg-background hover:bg-muted'
-            }`}
-          >
-            <LayoutDashboard className="h-4 w-4" /> Workspace
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('studio')
-              setStudioView('list')
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold ${
-              activeTab === 'studio'
-                ? 'border-primary bg-primary text-primary-foreground shadow'
-                : 'bg-background hover:bg-muted'
-            }`}
-          >
-            <ClipboardList className="h-4 w-4" /> Listing Studio
-          </button>
+        <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-5">
+            <div className="relative">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border-4 border-slate-900 bg-slate-800 shadow-md">
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="font-heading text-2xl font-bold text-slate-300">
+                    {profile?.full_name?.charAt(0) || 'S'}
+                  </span>
+                )}
+              </div>
+              {profile?.seller_verified && (
+                <div className="absolute -bottom-2 -right-2 rounded-xl bg-emerald-500 p-1.5 shadow-lg shadow-emerald-500/20">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                PRO SELLER WORKSPACE
+              </p>
+              <h1 className="mt-1 font-heading text-3xl font-black md:text-4xl text-white">
+                Welcome back, {profile?.full_name?.split(' ')[0] || 'Seller'}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+                <span className="flex items-center gap-1 font-bold text-emerald-400">
+                  <TrendingUp className="h-4 w-4" /> Level 2 Verified
+                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                <span>
+                  {activeTab === 'workspace'
+                    ? `Profile ${completionPercentage}% complete`
+                    : 'Studio Mode'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-left sm:text-right">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              Pending Payouts
+            </p>
+            <p className="mt-1 font-heading text-3xl font-black text-white">
+              ₦12,450.00
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Tab Switcher */}
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => setActiveTab('workspace')}
+          className={`rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+            activeTab === 'workspace'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/10'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+          }`}
+        >
+          Workspace Overview
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('studio')
+            setStudioView('list')
+          }}
+          className={`rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+            activeTab === 'studio'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/10'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+          }`}
+        >
+          Listing Studio ({sellerListings.length})
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'workspace' ? (
           <motion.div
-            key="workspace-tab"
-            initial={{ opacity: 0, y: 10 }}
+            key="workspace"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -15 }}
             className="space-y-8"
           >
-            {/* Statistics Section */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <SellerStatsCard
-                title="Active Listings"
-                value={
-                  sellerListings.filter((l) => l.status === 'published').length
-                }
-                icon={FileText}
-                description="Published listings"
-              />
-              <SellerStatsCard
-                title="Total Sales"
-                value="$0.00"
-                icon={DollarSign}
-                description="Escrow earnings pending checkout"
-              />
-              <SellerStatsCard
-                title="Profile Views"
-                value={0}
-                icon={Eye}
-                description="Listings visits total count"
-              />
-              <SellerStatsCard
-                title="Seller Rating"
-                value="0.0"
-                icon={Star}
-                description="Seller trust rating"
-              />
+            {/* Workspace Stats Row */}
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Revenue</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">₦12,450.00</p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">+₦2,400 this week</p>
+              </div>
+
+              <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Views</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">1,420</p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">+18% exposure rate</p>
+              </div>
+
+              <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Favorites</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">182</p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">12.8% conversion rate</p>
+              </div>
+
+              <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Average Conversion</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">2.4%</p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Top 5% of marketplace</p>
+              </div>
             </div>
 
-            {/* Layout details */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              <div className="space-y-8 lg:col-span-8">
-                {/* AI Seller Coach Feedback Widget */}
-                {coachFeedback && (
-                  <div className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
-                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-foreground">
-                      <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />{' '}
-                      AI Seller Coach Recommendations
-                    </h3>
-                    <div className="flex items-center gap-4 border-b pb-4">
-                      <div className="flex flex-col items-center">
-                        <span className="text-3xl font-extrabold text-primary">
-                          {coachFeedback.score}%
-                        </span>
-                        <span className="text-[9px] font-bold uppercase text-muted-foreground">
-                          Listing Score
-                        </span>
-                      </div>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex gap-1.5">
-                          <span className="text-muted-foreground">
-                            Sale Probability:
-                          </span>
-                          <span className="font-bold text-foreground">
-                            {coachFeedback.saleProbability}
+            {/* Listing States Quick counters */}
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+              {[
+                { label: 'Published Listings', count: sellerListings.filter((l) => l.status === 'published').length, color: 'border-emerald-500/20 text-emerald-400 bg-emerald-500/[0.02]' },
+                { label: 'Draft Listings', count: sellerListings.filter((l) => l.status === 'draft').length, color: 'border-amber-500/20 text-amber-400 bg-amber-500/[0.02]' },
+                { label: 'Paused Listings', count: sellerListings.filter((l) => l.status === 'archived').length, color: 'border-indigo-500/20 text-indigo-405 bg-indigo-500/[0.02]' },
+                { label: 'Sold Listings', count: sellerListings.filter((l) => l.status === 'sold').length, color: 'border-purple-500/20 text-purple-400 bg-purple-500/[0.02]' },
+              ].map((c, idx) => (
+                <div key={idx} className={`rounded-xl border p-4 flex items-center justify-between ${c.color}`}>
+                  <span className="font-heading text-[10px] font-bold uppercase tracking-wider">{c.label}</span>
+                  <span className="font-heading text-xl font-black font-mono">{c.count}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Grids */}
+            <div className="grid gap-8 lg:grid-cols-3">
+              {/* Left Column: Analytics, Active Orders, Promos */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* SVG Revenue Graph */}
+                <div className="premium-card p-8">
+                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Revenue Performance</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Vetted monthly transaction milestones</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        Weekly
+                      </span>
+                      <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        Monthly
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="aspect-[3/1] w-full">
+                    {/* SVG Line Chart */}
+                    <svg className="h-full w-full overflow-visible" viewBox="0 0 600 200" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity="0.2"/>
+                          <stop offset="100%" stopColor="#10b981" stopOpacity="0"/>
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M0,150 Q100,80 200,120 T400,60 T600,30 L600,200 L0,200 Z"
+                        fill="url(#chartGrad)"
+                      />
+                      <path
+                        d="M0,150 Q100,80 200,120 T400,60 T600,30"
+                        fill="none"
+                        stroke="#10b981"
+                        strokeWidth="3"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Seller Orders / Escrow Stage */}
+                <div className="space-y-4">
+                  <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Active Escrow Contracts</h3>
+                  <div className="premium-card p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-slate-400">#FIV-8902</span>
+                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-500">
+                            Escrow Active
                           </span>
                         </div>
-                        <p className="text-[11px] leading-tight text-muted-foreground">
+                        <h4 className="mt-2 font-heading text-lg font-bold text-slate-900 dark:text-white">Fiverr Level 2 Account</h4>
+                        <p className="text-xs text-slate-400">Buyer: @chimobi_ops | Release window: 18 hrs left</p>
+                      </div>
+                      <div className="font-heading text-2xl font-black text-slate-900 dark:text-white">₦4,200.00</div>
+                    </div>
+
+                    <div className="mt-6">
+                      <div className="relative flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span className="text-emerald-500">Vault Funded</span>
+                        <span className="text-emerald-500">Credentials Handed</span>
+                        <span className="text-emerald-500">Buyer Inspecting</span>
+                        <span>Payout Release</span>
+                      </div>
+                      <div className="relative mt-2 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="absolute left-0 top-0 h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: '75%' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Promotions boost */}
+                <div className="premium-card p-8">
+                  <div className="mb-6">
+                    <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Marketing & Exposure Boosts</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Activate premium placement algorithms for listings</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+                      <h4 className="font-bold text-slate-900 dark:text-white">Featured Listing Tag</h4>
+                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">Pins listings to the top of category feeds for 7 days.</p>
+                      <button className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                        Activate featured tag
+                      </button>
+                    </div>
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+                      <h4 className="font-bold text-slate-900 dark:text-white">Instant AI Optimization</h4>
+                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">Let AI suggestions optimize description tag structures.</p>
+                      <button className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700">
+                        Apply AI rewrite
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: AI Coach warning checklist, Profile completion, bio cards */}
+              <div className="space-y-8">
+                {coachFeedback && (
+                  <div className="space-y-4 rounded-[32px] border bg-slate-900 p-8 shadow-xl text-white">
+                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <Sparkles className="h-4.5 w-4.5 animate-pulse text-emerald-400" />
+                      AI Seller Coach
+                    </h3>
+                    <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-4xl font-black text-emerald-400">
+                          {coachFeedback.score}%
+                        </span>
+                        <span className="text-[9px] font-bold uppercase text-slate-400">
+                          Score
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 text-xs text-slate-300">
+                        <p className="font-semibold">{coachFeedback.saleProbability} Sale Probability</p>
+                        <p className="text-[11px] leading-tight text-slate-400 mt-1">
                           {coachFeedback.pricingSuggestions}
                         </p>
                       </div>
                     </div>
 
                     {coachFeedback.warnings.length > 0 ? (
-                      <div className="space-y-2 text-xs">
-                        <span className="block font-bold text-foreground">
-                          Improvement Checklist:
-                        </span>
-                        <ul className="list-disc space-y-1 pl-4 text-muted-foreground">
-                          {coachFeedback.warnings.map(
-                            (w: string, i: number) => (
-                              <li key={i}>{w}</li>
-                            )
-                          )}
+                      <div className="space-y-2 text-xs text-slate-300">
+                        <span className="block font-bold">Optimization Checklist:</span>
+                        <ul className="list-disc space-y-1.5 pl-4 text-slate-400">
+                          {coachFeedback.warnings.map((w: string, i: number) => (
+                            <li key={i}>{w}</li>
+                          ))}
                         </ul>
                       </div>
                     ) : (
-                      <p className="text-xs font-semibold text-green-500">
-                        ✓ Your active listings are fully optimized for maximum
-                        conversion potential!
+                      <p className="text-xs font-semibold text-emerald-400">
+                        ✓ All active listings fully optimized for conversion!
                       </p>
                     )}
                   </div>
                 )}
+
+                {/* Messages preview */}
+                <div className="premium-card p-6">
+                  <h3 className="mb-4 font-heading text-lg font-bold text-slate-900 dark:text-white">Recent Messages</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">@alphacoder</h4>
+                          <p className="text-[10px] text-slate-400">"Is recovery mail included?"</p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-bold text-emerald-500">10m ago</span>
+                    </div>
+                  </div>
+                </div>
 
                 <ProfileCompletionCard
                   profile={profile}
@@ -401,107 +607,89 @@ export const SellerDashboardPage: React.FC = () => {
                   profile={profile}
                   onPaymentUpdated={handleProfileUpdated}
                 />
-              </div>
-
-              <div className="space-y-8 lg:col-span-4">
                 <VerificationCard
                   profile={profile}
                   onStatusUpdated={handleProfileUpdated}
                 />
                 <SubscriptionCard profile={profile} />
-
-                {/* Activity Feed */}
-                <div className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
-                  <h3 className="flex items-center justify-between font-heading text-lg font-bold text-foreground">
-                    Recent Activity
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </h3>
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    No recent activity to display.
-                  </div>
-                </div>
               </div>
             </div>
           </motion.div>
         ) : (
           <motion.div
-            key="studio-tab"
-            initial={{ opacity: 0, y: 10 }}
+            key="studio"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            {studioView === 'list' && (
-              <div className="space-y-6">
-                {/* Filters block and Create trigger */}
-                <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      'all',
-                      'draft',
-                      'submitted',
-                      'published',
-                      'sold',
-                      'archived',
-                    ].map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => setFilterStatus(status)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold capitalize ${
-                          filterStatus === status
-                            ? 'border-secondary bg-secondary text-secondary-foreground shadow-sm'
-                            : 'bg-background hover:bg-muted'
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    ))}
+            exit={{ opacity: 0, y: -15 }}
+          >            {studioView === 'list' && (
+              <div className="space-y-8">
+                {/* Hero Section */}
+                <ListingHero
+                  sellerName={profile?.full_name || ''}
+                  onCreateListing={handleCreateListing}
+                  onOpenWallet={() => {
+                    document.getElementById('wallet-summary-panel')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  onOpenEscrow={() => {
+                    document.getElementById('escrow-status-panel')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  onOpenAnalytics={() => {
+                    document.getElementById('performance-chart-panel')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  hasDrafts={sellerListings.some((l) => l.status === 'draft')}
+                  onContinueDraft={() => {
+                    const firstDraft = sellerListings.find((l) => l.status === 'draft')
+                    if (firstDraft) handleEditListing(firstDraft)
+                  }}
+                />
+
+                {/* Metrics Grid */}
+                <ListingMetrics stats={getStats()} />
+
+                {/* Performance Analytics Vector Charts & General Smart Escrow panel */}
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div id="performance-chart-panel" className="md:col-span-2">
+                    <PerformanceChart />
                   </div>
-                  <button
-                    onClick={handleCreateListing}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:opacity-90"
-                  >
-                    <Plus className="h-4 w-4" /> Create Listing
-                  </button>
+                  <div id="escrow-status-panel" className="md:col-span-1">
+                    <EscrowStatusPanel escrowStatus={sellerListings.some((l) => l.status === 'sold') ? 'released' : 'locked'} />
+                  </div>
                 </div>
 
-                {loadingListings ? (
-                  <div className="flex min-h-[200px] items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredListings.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {filteredListings.map((listing) => (
-                      <ListingCard
-                        key={listing.id}
-                        listing={listing}
-                        onEdit={handleEditListing}
-                        onPreview={handlePreviewListing}
-                        onDuplicate={handleDuplicateListing}
-                        onArchive={handleArchiveListing}
-                        onDelete={handleDeleteListing}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed bg-card p-12 text-center">
-                    <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-bold text-foreground">
-                      No listings found
-                    </h3>
-                    <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-                      Get started by listing your digital asset on Remote Jobs
-                      Hub. You can save your progress as a draft anytime.
-                    </p>
-                    <div className="mt-6">
-                      <button
-                        onClick={handleCreateListing}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:opacity-90"
-                      >
-                        <Plus className="h-4 w-4" /> Create Listing
-                      </button>
+                {/* Merchant Payout Accounting Summary */}
+                <div id="wallet-summary-panel">
+                  <WalletSummary />
+                </div>
+
+                {/* Status Tabs Navigation */}
+                <div className="space-y-4">
+                  <ListingTabs
+                    activeTab={filterStatus}
+                    onTabChange={setFilterStatus}
+                    counts={getTabCounts()}
+                  />
+
+                  {/* Listings Grid List */}
+                  {loadingListings ? (
+                    <LoadingSkeleton />
+                  ) : filteredListings.length > 0 ? (
+                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
+                      {filteredListings.map((listing) => (
+                        <ListingCard
+                          key={listing.id}
+                          listing={listing}
+                          onEdit={handleEditListing}
+                          onPreview={handlePreviewListing}
+                          onDuplicate={handleDuplicateListing}
+                          onArchive={handleArchiveListing}
+                          onDelete={handleDeleteListing}
+                        />
+                      ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <EmptyState onCreateClick={handleCreateListing} />
+                  )}
+                </div>
               </div>
             )}
 

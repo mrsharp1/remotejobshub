@@ -115,7 +115,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              className="hidden"
+              className="premium-input hidden"
               onChange={handleFileChange}
               disabled={uploading}
             />

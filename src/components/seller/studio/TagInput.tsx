@@ -52,7 +52,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, onChange }) => {
       <div className="flex gap-2">
         <input
           type="text"
-          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="premium-input flex-1 px-3 py-2 text-sm text-foreground focus:outline-none"
           placeholder="e.g. ad-network (press Enter to add)"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}

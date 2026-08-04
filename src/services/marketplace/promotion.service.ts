@@ -16,6 +16,26 @@ export const promotionService = {
       return []
     }
   },
+  async purchasePromotion(listingId: string, days: number): Promise<void> {
+    try {
+      const idempotencyKey = `PROM-${listingId}-${Date.now()}`
+
+      const { data, error } = await supabase.rpc('rpc_purchase_promotion', {
+        p_listing_id: listingId,
+        p_days: days,
+        p_idempotency_key: idempotencyKey,
+      })
+
+      if (error) throw error
+
+      if (!data.success) {
+        throw new Error(data.message)
+      }
+    } catch (err) {
+      console.error('Error purchasing promotion:', err)
+      throw err
+    }
+  },
 
   async createPromotion(
     promo: Omit<Promotion, 'id' | 'created_at' | 'updated_at'>

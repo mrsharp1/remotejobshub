@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { getOrderStatusDisplayLabel } from '@/utils/OrderStatusMapper'
 import {
   DollarSign,
   TrendingUp,
@@ -16,8 +17,13 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { disputeService } from '@/services/marketplace/dispute.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { Order, OrderTimeline } from '@/types'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { SkeletonList } from '@/components/shared/Skeleton'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { toast } from 'sonner'
 
 const MARKETPLACE_PLATFORMS = [
   'Outlier',
@@ -43,6 +49,23 @@ export const SellerOrdersPage: React.FC = () => {
     'daily' | 'weekly' | 'monthly'
   >('monthly')
 
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    orderId: string | null
+    newStatus: Order['status'] | null
+    notes: string
+    title: string
+    description: string
+  }>({
+    isOpen: false,
+    orderId: null,
+    newStatus: null,
+    notes: '',
+    title: '',
+    description: '',
+  })
+
   // Fetch Seller Orders
   const {
     data: orders = [],
@@ -64,10 +87,25 @@ export const SellerOrdersPage: React.FC = () => {
     notes: string
   ) => {
     try {
-      await orderService.updateOrderStatus(orderId, newStatus, notes)
+      if (!user?.id) throw new Error('User not found')
+
+      if (newStatus === 'seller_processing') {
+        await orderService.markSellerProcessing(orderId, user.id)
+      } else if (newStatus === 'buyer_review') {
+        await orderService.markBuyerReview(orderId, user.id)
+      } else if (newStatus === 'cancelled') {
+        await orderService.cancelOrder(orderId, user.id, notes)
+      } else if (newStatus === 'disputed') {
+        await disputeService.createDispute({ order_id: orderId, opened_by: user.id, reason: notes })
+      } else {
+        throw new Error('Invalid action or transition')
+      }
+
+      toast.success(`Order status updated to ${newStatus.replace('_', ' ')}`)
       refetch()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to change status:', err)
+      toast.error(err.message || 'Failed to change status')
     }
   }
 
@@ -206,8 +244,8 @@ export const SellerOrdersPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-8 p-4">
+        <SkeletonList items={5} />
       </div>
     )
   }
@@ -238,7 +276,7 @@ export const SellerOrdersPage: React.FC = () => {
           },
           {
             title: 'Gross Revenue',
-            value: `$${stats.revenue.toLocaleString()}`,
+            value: `₦${stats.revenue.toLocaleString()}`,
             desc: 'Completed sales only',
             icon: DollarSign,
             color: 'text-emerald-500',
@@ -358,7 +396,7 @@ export const SellerOrdersPage: React.FC = () => {
                   <div className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
                   <div>
                     <span className="font-bold capitalize text-foreground">
-                      {log.status.replace('_', ' ')}
+                      {getOrderStatusDisplayLabel(log.status as any)}
                     </span>
                     <p className="mt-0.5 text-muted-foreground">
                       {log.notes || 'Order log updated.'}
@@ -382,13 +420,13 @@ export const SellerOrdersPage: React.FC = () => {
       <div className="scrollbar-none border-border/40 flex gap-2 overflow-x-auto whitespace-nowrap border-b pb-1">
         {[
           { key: 'all', label: 'All Orders' },
-          { key: 'pending', label: 'Pending' },
-          { key: 'payment_received', label: 'Payment Received' },
-          { key: 'seller_processing', label: 'Processing' },
-          { key: 'buyer_review', label: 'Buyer Review' },
-          { key: 'completed', label: 'Completed' },
-          { key: 'cancelled', label: 'Cancelled' },
-          { key: 'disputed', label: 'Disputed' },
+          { key: 'pending', label: getOrderStatusDisplayLabel('pending') },
+          { key: 'payment_received', label: getOrderStatusDisplayLabel('payment_received') },
+          { key: 'seller_processing', label: getOrderStatusDisplayLabel('seller_processing') },
+          { key: 'buyer_review', label: getOrderStatusDisplayLabel('buyer_review') },
+          { key: 'completed', label: getOrderStatusDisplayLabel('completed') },
+          { key: 'cancelled', label: getOrderStatusDisplayLabel('cancelled') },
+          { key: 'disputed', label: getOrderStatusDisplayLabel('disputed') },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -508,7 +546,7 @@ export const SellerOrdersPage: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Purchase price:</span>
                     <span className="font-bold text-foreground">
-                      ${Number(order.amount).toLocaleString()}
+                      ₦{Number(order.amount).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -516,27 +554,19 @@ export const SellerOrdersPage: React.FC = () => {
 
               {/* Action buttons */}
               <div className="space-y-2 pt-2">
-                {order.status === 'pending' && (
+                {order.status === 'payment_pending' && (
                   <div className="flex gap-2">
                     <button
                       onClick={() =>
-                        handleOrderStatusChange(
-                          order.id,
-                          'seller_processing',
-                          'Seller accepted order. Status updated to processing.'
-                        )
-                      }
-                      className="flex-1 rounded bg-primary py-1.5 text-[10px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                    >
-                      Accept Order
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleOrderStatusChange(
-                          order.id,
-                          'cancelled',
-                          'Seller cancelled order transaction.'
-                        )
+                        setConfirmDialog({
+                          isOpen: true,
+                          orderId: order.id,
+                          newStatus: 'cancelled',
+                          notes: 'Seller cancelled order transaction.',
+                          title: 'Cancel Order?',
+                          description:
+                            'Are you sure you want to cancel this order? This action cannot be undone.',
+                        })
                       }
                       className="hover:bg-destructive/10 flex-1 rounded border border-destructive py-1.5 text-[10px] font-semibold text-destructive transition-colors"
                     >
@@ -548,11 +578,15 @@ export const SellerOrdersPage: React.FC = () => {
                 {order.status === 'payment_pending' && (
                   <button
                     onClick={() =>
-                      handleOrderStatusChange(
-                        order.id,
-                        'cancelled',
-                        'Seller cancelled order transaction.'
-                      )
+                      setConfirmDialog({
+                        isOpen: true,
+                        orderId: order.id,
+                        newStatus: 'cancelled',
+                        notes: 'Seller cancelled order transaction.',
+                        title: 'Cancel Order?',
+                        description:
+                          'Are you sure you want to cancel this order? This action cannot be undone.',
+                      })
                     }
                     className="hover:bg-destructive/10 w-full rounded border border-destructive py-1.5 text-[10px] font-semibold text-destructive transition-colors"
                   >
@@ -602,17 +636,35 @@ export const SellerOrdersPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="mx-auto max-w-md space-y-4 rounded-xl border border-dashed py-16 text-center">
-          <XCircle className="text-muted-foreground/60 mx-auto h-12 w-12" />
-          <h3 className="font-heading text-base font-bold text-foreground">
-            No orders matching filters
-          </h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            There are no customer escrow orders found under this status tab or
-            platform filter settings.
-          </p>
-        </div>
+        <EmptyState
+          icon={XCircle}
+          title="No orders found"
+          description="There are no customer escrow orders found under this status tab or platform filter settings."
+        />
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        isDestructive={
+          confirmDialog.newStatus === 'cancelled' ||
+          confirmDialog.newStatus === 'disputed'
+        }
+        onCancel={() =>
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+        }
+        onConfirm={() => {
+          if (confirmDialog.orderId && confirmDialog.newStatus) {
+            handleOrderStatusChange(
+              confirmDialog.orderId,
+              confirmDialog.newStatus,
+              confirmDialog.notes
+            )
+          }
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+        }}
+      />
     </div>
   )
 }

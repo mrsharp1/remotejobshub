@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { authService } from '@/services/auth/auth.service'
 import { zodResolver } from '@/utils/resolver'
+import { springs } from '@/lib/framer-physics'
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -111,43 +112,53 @@ export const ForgotPasswordPage: React.FC = () => {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-foreground"
+              className="block text-sm font-medium text-foreground mb-1.5"
             >
               Email Address
             </label>
-            <div className="relative mt-1">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-muted-foreground">
                 <Mail className="h-5 w-5" />
               </span>
               <input
                 id="email"
                 type="email"
-                className={`block w-full rounded-lg border bg-background py-2.5 pl-10 pr-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                aria-invalid={errors.email ? "true" : "false"}
+                aria-describedby={errors.email ? "email-error" : undefined}
+                className={`focus:ring-primary/20 block w-full rounded-xl border bg-background py-4 pl-11 pr-4 text-base sm:text-sm text-foreground placeholder-muted-foreground transition-all focus:border-primary focus:outline-none focus:ring-4 ${
                   errors.email ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="name@company.com"
+                disabled={isLoading}
                 {...register('email')}
               />
             </div>
             {errors.email && (
-              <p className="mt-1 text-xs text-destructive">
+              <p id="email-error" className="mt-1.5 text-xs font-medium text-destructive">
                 {errors.email.message}
               </p>
             )}
           </div>
 
           <div className="space-y-4">
-            <button
+            <motion.button
+              whileHover={!isLoading ? { scale: 1.02 } : {}}
+              whileTap={!isLoading ? { scale: 0.98 } : {}}
+              transition={springs.snappy}
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              aria-busy={isLoading}
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-4 text-base font-bold text-white shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Sending Link...</span>
+                </>
               ) : (
                 'Send Reset Link'
               )}
-            </button>
+            </motion.button>
 
             <div className="text-center">
               <Link

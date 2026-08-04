@@ -52,7 +52,7 @@ export default {
         },
       },
       fontFamily: {
-        heading: ['Poppins', 'sans-serif'],
+        heading: ['Outfit', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
       },
       borderRadius: {

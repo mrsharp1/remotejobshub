@@ -1,5 +1,12 @@
 import React, { useState } from 'react'
-import { X, ShieldCheck, Loader2 } from 'lucide-react'
+import {
+  X,
+  ShieldCheck,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  LifeBuoy,
+} from 'lucide-react'
 import { Listing } from '@/types'
 
 interface PurchaseSummaryModalProps {
@@ -63,7 +70,7 @@ export const PurchaseSummaryModal: React.FC<PurchaseSummaryModalProps> = ({
           <div className="border-border/50 flex items-center justify-between border-t pt-3">
             <span className="text-xs text-muted-foreground">List Price:</span>
             <span className="font-heading text-base font-extrabold text-foreground">
-              ${Number(listing.price).toLocaleString()} USD
+              ₦{Number(listing.price).toLocaleString()}
             </span>
           </div>
         </div>
@@ -98,6 +105,48 @@ export const PurchaseSummaryModal: React.FC<PurchaseSummaryModalProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Purchase Confidence Block */}
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-slate-50 p-4 dark:bg-slate-800/50">
+          <div className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
+            <div>
+              <p className="text-xs font-bold text-foreground">
+                Money-Back Guarantee
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Full refund if transfer fails
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <Clock className="mt-0.5 h-4 w-4 text-blue-500" />
+            <div>
+              <p className="text-xs font-bold text-foreground">Fast Delivery</p>
+              <p className="text-[10px] text-muted-foreground">
+                Estimated in 24-48 hours
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
+            <div>
+              <p className="text-xs font-bold text-foreground">Secure Escrow</p>
+              <p className="text-[10px] text-muted-foreground">
+                Funds held until completion
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <LifeBuoy className="mt-0.5 h-4 w-4 text-amber-500" />
+            <div>
+              <p className="text-xs font-bold text-foreground">24/7 Support</p>
+              <p className="text-[10px] text-muted-foreground">
+                Dedicated transfer experts
+              </p>
+            </div>
           </div>
         </div>
 

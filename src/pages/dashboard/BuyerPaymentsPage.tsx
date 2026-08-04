@@ -55,7 +55,7 @@ export const BuyerPaymentsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-border/40 divide-y text-muted-foreground">
-                {payments.map((pay) => (
+                {payments.map((pay: any) => (
                   <tr
                     key={pay.id}
                     className="hover:bg-muted/10 transition-colors"
@@ -67,7 +67,7 @@ export const BuyerPaymentsPage: React.FC = () => {
                       {pay.order?.listing?.title || 'Account Asset'}
                     </td>
                     <td className="p-4 font-bold text-foreground">
-                      ${Number(pay.amount).toLocaleString()} {pay.currency}
+                      ₦{Number(pay.amount).toLocaleString()} {pay.currency || 'NGN'}
                     </td>
                     <td className="p-4">
                       <span
@@ -89,11 +89,28 @@ export const BuyerPaymentsPage: React.FC = () => {
                     </td>
                     <td className="p-4 text-right">
                       <button
-                        onClick={() =>
-                          alert(
-                            `Receipt print logic is coming soon. Reference: ${pay.paystack_reference}`
-                          )
-                        }
+                        onClick={() => {
+                          const w = window.open('', '_blank')
+                          if (w) {
+                            w.document.write(`
+                              <html>
+                                <head><title>Receipt - ${pay.paystack_reference}</title></head>
+                                <body style="font-family: sans-serif; padding: 40px; line-height: 1.6;">
+                                  <h2>Payment Receipt</h2>
+                                  <hr />
+                                  <p><strong>Reference:</strong> ${pay.paystack_reference}</p>
+                                  <p><strong>Amount:</strong> ₦${pay.amount}</p>
+                                  <p><strong>Status:</strong> ${pay.payment_status}</p>
+                                  <p><strong>Date:</strong> ${pay.paid_at ? new Date(pay.paid_at).toLocaleString() : 'Pending'}</p>
+                                  <hr />
+                                  <p>Thank you for choosing Remote Jobs Hub!</p>
+                                  <script>window.print();</script>
+                                </body>
+                              </html>
+                            `)
+                            w.document.close()
+                          }
+                        }}
                         className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold hover:bg-muted"
                       >
                         <Download className="h-3 w-3" /> PDF

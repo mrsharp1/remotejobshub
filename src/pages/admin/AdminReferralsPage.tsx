@@ -82,11 +82,11 @@ export const AdminReferralsPage: React.FC = () => {
         alert('No wallet found for this user.')
         return
       }
-      await walletService.creditWallet(
+      await walletService.adminAdjustWallet(
         wallet.id,
         Number(amountStr),
-        desc,
-        'referral'
+        'credit',
+        desc
       )
       alert('Manual credit completed successfully!')
     } catch {
@@ -270,9 +270,9 @@ export const AdminReferralsPage: React.FC = () => {
               No affiliate rewards logs match filters.
             </div>
           ) : (
-            <table className="w-full border-collapse text-left text-xs">
-              <thead>
-                <tr className="bg-muted/30 border-border/40 border-b text-[10px] font-bold uppercase text-muted-foreground">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                <tr>
                   <th className="p-3">Referrer</th>
                   <th className="p-3">Referred User</th>
                   <th className="p-3">Reward Bounty</th>
@@ -281,7 +281,7 @@ export const AdminReferralsPage: React.FC = () => {
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-border/50 divide-y">
+              <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                 {filteredRewards.map((r: ReferralReward) => {
                   const referral = r.referral as unknown as Referral
                   const referrerEmail = referral?.referrer?.email || 'N/A'
@@ -289,7 +289,10 @@ export const AdminReferralsPage: React.FC = () => {
                   const isPending = r.status === 'pending'
 
                   return (
-                    <tr key={r.id} className="hover:bg-muted/10">
+                    <tr
+                      key={r.id}
+                      className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
                       <td className="p-3 font-semibold text-foreground">
                         {referrerEmail}
                       </td>

@@ -10,6 +10,8 @@ interface ListingGridProps {
   onToggleFavorite: (id: string) => void
   loading: boolean
   onResetFilters?: () => void
+  onTryAnotherPlatform?: () => void
+  onTryAnotherCountry?: () => void
 }
 
 export const ListingGrid: React.FC<ListingGridProps> = ({
@@ -18,6 +20,8 @@ export const ListingGrid: React.FC<ListingGridProps> = ({
   onToggleFavorite,
   loading,
   onResetFilters,
+  onTryAnotherPlatform,
+  onTryAnotherCountry,
 }) => {
   if (loading) {
     return (
@@ -30,7 +34,13 @@ export const ListingGrid: React.FC<ListingGridProps> = ({
   }
 
   if (listings.length === 0) {
-    return <EmptyState onAction={onResetFilters} />
+    return (
+      <EmptyState
+        onResetFilters={onResetFilters}
+        onTryAnotherPlatform={onTryAnotherPlatform}
+        onTryAnotherCountry={onTryAnotherCountry}
+      />
+    )
   }
 
   return (

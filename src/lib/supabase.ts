@@ -17,11 +17,15 @@ const isValidUrl = (url: string) => {
 }
 
 if (!clientUrl || !isValidUrl(clientUrl) || !clientKey) {
-  console.warn(
-    'Supabase credentials are missing or invalid. Falling back to dummy configuration.'
+  throw new Error(
+    'Supabase configuration error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be defined and valid.'
   )
-  clientUrl = 'https://placeholder-project.supabase.co'
-  clientKey = 'placeholder-key'
 }
 
-export const supabase = createClient(clientUrl, clientKey)
+export const supabase = createClient(clientUrl, clientKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+})

@@ -5,7 +5,7 @@ export const storageService = {
    * Upload user document/images to Supabase storage buckets
    */
   async uploadFile(
-    bucket: 'listings' | 'kyc-documents' | 'avatars',
+    bucket: 'listings' | 'kyc-documents' | 'avatars' | 'testimonials-videos' | 'testimonials-thumbnails',
     path: string,
     file: File
   ): Promise<string> {
@@ -35,7 +35,7 @@ export const storageService = {
    * Delete file from target bucket
    */
   async deleteFile(
-    bucket: 'listings' | 'kyc-documents' | 'avatars',
+    bucket: 'listings' | 'kyc-documents' | 'avatars' | 'testimonials-videos' | 'testimonials-thumbnails',
     path: string
   ): Promise<void> {
     try {

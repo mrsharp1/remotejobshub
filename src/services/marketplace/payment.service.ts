@@ -3,127 +3,7 @@ import { Payment } from '@/types'
 import { notificationService } from '@/services/marketplace/notification.service'
 
 export const paymentService = {
-  initializePayment(
-    email: string,
-    amount: number,
-    orderId: string,
-    onSuccess: (reference: { reference: string }) => void,
-    onClose: () => void
-  ): void {
-    const scriptId = 'paystack-inline-js'
-    let script = document.getElementById(scriptId) as HTMLScriptElement | null
-
-    const initPaystack = () => {
-      const publicKey =
-        (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string) ||
-        'pk_test_306282026paystackdummykeyrjh'
-
-      const sdk = window as unknown as {
-        PaystackPop: {
-          setup: (options: Record<string, unknown>) => {
-            openIframe: () => void
-          }
-        }
-      }
-
-      const handler = sdk.PaystackPop.setup({
-        key: publicKey,
-        email: email,
-        amount: Math.round(amount * 100), // convert to kobo/cents
-        currency: 'NGN', // Paystack default sandbox currency
-        ref: 'PAY-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
-        metadata: {
-          orderId,
-        },
-        callback: (response: unknown) => {
-          onSuccess(response as { reference: string })
-        },
-        onClose: () => {
-          onClose()
-        },
-      })
-      handler.openIframe()
-    }
-
-    if (!script) {
-      script = document.createElement('script')
-      script.id = scriptId
-      script.src = 'https://js.paystack.co/v1/inline.js'
-      script.onload = initPaystack
-      document.body.appendChild(script)
-    } else {
-      initPaystack()
-    }
-  },
-
-  async verifyPayment(reference: string, orderId: string): Promise<void> {
-    try {
-      // 1. Fetch Order details
-      const { data: order } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single()
-
-      if (!order) throw new Error('Order not found')
-
-      // 2. Insert success payment record in DB
-      const { error: payError } = await supabase.from('payments').insert([
-        {
-          order_id: orderId,
-          buyer_id: order.buyer_id,
-          seller_id: order.seller_id,
-          paystack_reference: reference,
-          payment_status: 'success',
-          amount: order.amount,
-          currency: order.currency || 'USD',
-          paid_at: new Date().toISOString(),
-        },
-      ])
-
-      if (payError) throw payError
-
-      // 3. Update order status to payment_received
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ status: 'payment_received' })
-        .eq('id', orderId)
-
-      if (orderError) throw orderError
-
-      // 4. Update order timeline
-      await supabase.from('order_timeline').insert([
-        {
-          order_id: orderId,
-          status: 'payment_received',
-          notes:
-            'Paystack checkout completed successfully. Escrow funds secured.',
-        },
-      ])
-
-      // 5. Notify both buyer and seller
-      await notificationService.createNotification({
-        user_id: order.buyer_id,
-        title: 'Escrow Payment Confirmed 💳',
-        message: `Your payment of $${order.amount} for order #${orderId.slice(0, 8)} was successfully verified and secured in escrow.`,
-        type: 'payment',
-        reference_type: 'order',
-        reference_id: orderId,
-      })
-
-      await notificationService.createNotification({
-        user_id: order.seller_id,
-        title: 'Payment Secured in Escrow 💳',
-        message: `Buyer has paid $${order.amount} for your listing. Funds are secured in escrow. Please deliver credentials.`,
-        type: 'payment',
-        reference_type: 'order',
-        reference_id: orderId,
-      })
-    } catch (err) {
-      console.error('Error in verifyPayment:', err)
-      throw err
-    }
-  },
+  // Legacy initializePayment and verifyPayment removed for wallet-only atomic checkout
 
   async getPayment(id: string): Promise<Payment | null> {
     try {
@@ -139,6 +19,24 @@ export const paymentService = {
       return data as Payment
     } catch (err) {
       console.error('Error in getPayment:', err)
+      return null
+    }
+  },
+
+  async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select(
+          '*, order:orders(*), buyer:profiles!payments_buyer_id_fkey(*), seller:profiles!payments_seller_id_fkey(*)'
+        )
+        .eq('order_id', orderId)
+        .single()
+
+      if (error) throw error
+      return data as Payment
+    } catch (err) {
+      console.error('Error in getPaymentByOrderId:', err)
       return null
     }
   },
@@ -181,28 +79,13 @@ export const paymentService = {
 
   async markReleased(id: string): Promise<void> {
     try {
-      const { data: payment, error } = await supabase
-        .from('payments')
-        .update({
-          payment_status: 'released',
-          released_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
+      const { data, error } = await supabase.rpc('rpc_release_escrow', { p_payment_id: id })
+      
       if (error) throw error
-
-      if (payment) {
-        // Notify seller
-        await notificationService.createNotification({
-          user_id: payment.seller_id,
-          title: 'Escrow Funds Released 💸',
-          message: `Escrow payment of $${payment.amount} has been released to your dashboard balance.`,
-          type: 'payment',
-          reference_type: 'order',
-          reference_id: payment.order_id,
-        })
+      
+      // Check for application-level errors returned as JSON by the RPC
+      if (data && data.success === false) {
+        throw new Error(data.message || 'Failed to release escrow')
       }
     } catch (err) {
       console.error('Error in markReleased:', err)

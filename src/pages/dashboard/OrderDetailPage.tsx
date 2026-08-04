@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Send, Loader2, AlertCircle, MessageSquare, Star } from 'lucide-react'
+import { disputeService } from '@/services/marketplace/dispute.service'
 import { orderService } from '@/services/marketplace/order.service'
+import { paymentService } from '@/services/marketplace/payment.service'
 import { reviewService } from '@/services/marketplace/review.service'
 import { useAuthStore } from '@/stores/authStore'
 import { Order, OrderMessage, OrderTimeline, Review } from '@/types'
 import { EscrowProgress } from '@/components/marketplace/EscrowProgress'
 import { supabase } from '@/lib/supabase'
+import { getOrderStatusDisplayLabel } from '@/utils/OrderStatusMapper'
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -162,14 +165,29 @@ export const OrderDetailPage: React.FC = () => {
     status: Order['status'],
     notes: string
   ) => {
-    if (!id) return
+    if (!id || !user?.id) return
     setUpdatingStatus(true)
     try {
-      await orderService.updateOrderStatus(id, status, notes)
+      if (status === 'seller_processing') {
+        await orderService.markSellerProcessing(id, user.id)
+      } else if (status === 'buyer_review') {
+        await orderService.markBuyerReview(id, user.id)
+      } else if (status === 'completed') {
+        const payment = await paymentService.getPaymentByOrderId(id)
+        if (!payment) throw new Error('Payment not found for this order')
+        await paymentService.markReleased(payment.id)
+      } else if (status === 'disputed') {
+        await disputeService.createDispute({ order_id: id, opened_by: user.id, reason: notes })
+      } else if (status === 'cancelled') {
+        await orderService.cancelOrder(id, user.id, notes)
+      } else {
+        throw new Error('Invalid state transition requested.')
+      }
       refetchOrder()
       loadOrderTimeline()
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      alert(err.message || 'Failed to update order status')
     } finally {
       setUpdatingStatus(false)
     }
@@ -237,8 +255,8 @@ export const OrderDetailPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Status Badge:</span>
-          <span className="bg-primary/10 border-primary/20 rounded border px-2.5 py-1 text-xs font-bold capitalize text-primary">
-            {order.status.replace('_', ' ')}
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-sm font-bold capitalize text-primary">
+            {getOrderStatusDisplayLabel(order.status as any)}
           </span>
         </div>
       </div>
@@ -267,9 +285,9 @@ export const OrderDetailPage: React.FC = () => {
                 >
                   <div className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-500" />
                   <div>
-                    <span className="font-bold capitalize text-foreground">
-                      {event.status.replace('_', ' ')}
-                    </span>
+                    <h4 className="font-bold capitalize text-foreground">
+                      {getOrderStatusDisplayLabel(event.status as any)}
+                    </h4>
                     <span className="block text-[10px] text-muted-foreground">
                       {new Date(event.created_at).toLocaleString()}
                     </span>
@@ -379,22 +397,6 @@ export const OrderDetailPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Step 1 & 2: Payment Pending Simulation */}
-                {(order.status === 'pending' ||
-                  order.status === 'payment_pending') && (
-                  <button
-                    onClick={() =>
-                      handleTransitionStatus(
-                        'payment_received',
-                        'Payment received successfully in escrow. Awaiting seller credential release.'
-                      )
-                    }
-                    className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow hover:opacity-90"
-                  >
-                    Simulate Payment Receipt
-                  </button>
-                )}
-
                 {/* Step 3: Payment Received -> Awaiting Seller release */}
                 {order.status === 'payment_received' && isSeller && (
                   <button
@@ -689,7 +691,7 @@ export const OrderDetailPage: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Listing price:</span>
                     <span className="font-bold text-foreground">
-                      ${Number(order.listing.price).toLocaleString()}
+                      ₦{Number(order.listing.price).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">

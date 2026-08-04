@@ -1,23 +1,30 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
-  Users,
-  UserCheck,
-  ShoppingBag,
-  ListFilter,
-  DollarSign,
-  AlertTriangle,
-  Bell,
-  Clock,
-  BarChart2,
-  Settings,
-  ShieldCheck,
   Loader2,
-  Sparkles,
+  Search,
+  Send,
+  Trash2,
+  Download,
+  CheckSquare,
+  Square,
+  Smartphone,
+  Mail,
+  ShieldCheck,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Profile, Listing, Order, Notification } from '@/types'
+import { Profile, Order, Notification } from '@/types'
+import { ExecutiveHero } from '@/components/admin/dashboard/ExecutiveHero'
+import { getOrderStatusDisplayLabel } from '@/utils/OrderStatusMapper'
+import { useEventSubscriber } from '@/hooks/useEventSubscriber'
+import { MetricsGrid } from '@/components/admin/dashboard/MetricsGrid'
+import { AnalyticsSection } from '@/components/admin/dashboard/AnalyticsSection'
+import { QuickActions } from '@/components/admin/dashboard/QuickActions'
+import { ActivityTimeline } from '@/components/admin/dashboard/ActivityTimeline'
+import { SystemHealth } from '@/components/admin/dashboard/SystemHealth'
+import { ResponsiveTableWrapper } from '@/components/ui/ResponsiveTableWrapper'
 
 export const AdminDashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -26,6 +33,14 @@ export const AdminDashboardPage: React.FC = () => {
   const [chartMetric, setChartMetric] = useState<
     'users' | 'orders' | 'revenue' | 'listings'
   >('revenue')
+
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
 
   // Notification Builder state
   const [targetUserId, setTargetUserId] = useState('')
@@ -37,6 +52,11 @@ export const AdminDashboardPage: React.FC = () => {
   // Settings mock state
   const [commissionRate, setCommissionRate] = useState(10)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+
+  // Selection states for User Console
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
+  const [userSearchQuery, setUserSearchQuery] = useState('')
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'buyer' | 'seller'>('all')
 
   // Sub-queries
   const { data: allProfiles = [], refetch: refetchProfiles } = useQuery({
@@ -57,7 +77,7 @@ export const AdminDashboardPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, buyer:profiles(*), seller:profiles(*)')
+        .select('*, buyer:profiles!orders_buyer_id_fkey(*), seller:profiles!orders_seller_id_fkey(*)')
         .order('created_at', { ascending: false })
       if (error) throw error
       return (data || []) as (Order & { buyer?: Profile; seller?: Profile })[]
@@ -80,6 +100,11 @@ export const AdminDashboardPage: React.FC = () => {
     })
 
   // Live Database Queries for Metrics
+  
+  useEventSubscriber('ORDER_CREATED', () => { refetchOrders(); refetchNotifications() })
+  useEventSubscriber('ESCROW_RELEASED', () => { refetchOrders() })
+  useEventSubscriber('DISPUTE_OPENED', () => { refetchOrders(); refetchNotifications() })
+  useEventSubscriber('DISPUTE_RESOLVED', () => { refetchOrders() })
   const {
     data: telemetry = {
       users: 0,
@@ -92,6 +117,8 @@ export const AdminDashboardPage: React.FC = () => {
       revenue: 0,
       disputes: 0,
       notifications: 0,
+      pendingKyc: 0,
+      pendingWithdrawals: 0,
     },
     isLoading,
   } = useQuery({
@@ -137,6 +164,18 @@ export const AdminDashboardPage: React.FC = () => {
         .from('notifications')
         .select('*', { count: 'exact', head: true })
 
+      // 5. Fetch Pending KYC Verifications count
+      const { count: pendingKyc } = await supabase
+        .from('seller_verifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+
+      // 6. Fetch Pending Withdrawals count
+      const { count: pendingWithdrawals } = await supabase
+        .from('withdrawal_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+
       return {
         users: totalUsers,
         buyers,
@@ -148,6 +187,8 @@ export const AdminDashboardPage: React.FC = () => {
         revenue,
         disputes,
         notifications: notifCount || 0,
+        pendingKyc: pendingKyc || 0,
+        pendingWithdrawals: pendingWithdrawals || 0,
       }
     },
   })
@@ -193,45 +234,6 @@ export const AdminDashboardPage: React.FC = () => {
     },
   })
 
-  // Analytics Chart placeholders
-  const chartDatasets = {
-    users: [
-      { label: 'Jan', value: 12 },
-      { label: 'Feb', value: 24 },
-      { label: 'Mar', value: 45 },
-      { label: 'Apr', value: 80 },
-      { label: 'May', value: 120 },
-      { label: 'Jun', value: telemetry.users || 150 },
-    ],
-    orders: [
-      { label: 'Jan', value: 5 },
-      { label: 'Feb', value: 12 },
-      { label: 'Mar', value: 18 },
-      { label: 'Apr', value: 32 },
-      { label: 'May', value: 48 },
-      { label: 'Jun', value: telemetry.orders || 55 },
-    ],
-    revenue: [
-      { label: 'Jan', value: 500 },
-      { label: 'Feb', value: 1200 },
-      { label: 'Mar', value: 1800 },
-      { label: 'Apr', value: 3400 },
-      { label: 'May', value: 5800 },
-      { label: 'Jun', value: telemetry.revenue || 7200 },
-    ],
-    listings: [
-      { label: 'Jan', value: 8 },
-      { label: 'Feb', value: 15 },
-      { label: 'Mar', value: 22 },
-      { label: 'Apr', value: 35 },
-      { label: 'May', value: 64 },
-      {
-        label: 'Jun',
-        value: telemetry.activeListings + telemetry.pendingListings || 82,
-      },
-    ],
-  }
-
   // User Actions
   const handleToggleUserRole = async (
     profileId: string,
@@ -271,6 +273,34 @@ export const AdminDashboardPage: React.FC = () => {
     } catch {
       alert('Failed to update verification status')
     }
+  }
+
+  // Bulk Actions
+  const handleBulkToggleVerification = async () => {
+    if (selectedUserIds.length === 0) return
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ seller_verified: true })
+        .in('id', selectedUserIds)
+      if (error) throw error
+      refetchProfiles()
+      setSelectedUserIds([])
+      alert('Bulk verification complete!')
+    } catch {
+      alert('Failed to complete bulk verification')
+    }
+  }
+
+  const handleBulkExportJSON = () => {
+    const selectedProfiles = allProfiles.filter((p) => selectedUserIds.includes(p.id))
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedProfiles, null, 2))
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', dataStr)
+    downloadAnchor.setAttribute('download', 'exported_users.json')
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
   }
 
   // Order Actions
@@ -332,74 +362,243 @@ export const AdminDashboardPage: React.FC = () => {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-destructive" />
+      </div>
+    )
+  }
+
+  // --- View: Platform Users Console ---
   if (view === 'users') {
+    const filteredProfiles = allProfiles.filter((p) => {
+      const matchesSearch =
+        (p.full_name || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+        (p.email || '').toLowerCase().includes(userSearchQuery.toLowerCase())
+      const matchesRole =
+        userRoleFilter === 'all' || p.role === userRoleFilter
+      return matchesSearch && matchesRole
+    })
+
+    const isAllSelected = filteredProfiles.length > 0 && filteredProfiles.every((p) => selectedUserIds.includes(p.id))
+
+    const handleSelectAll = () => {
+      if (isAllSelected) {
+        setSelectedUserIds([])
+      } else {
+        setSelectedUserIds(filteredProfiles.map((p) => p.id))
+      }
+    }
+
+    const handleToggleSelectUser = (id: string) => {
+      setSelectedUserIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      )
+    }
+
     return (
       <div className="space-y-6">
         <div className="border-border/40 border-b pb-4">
           <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
             User Management Console
           </span>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Platform Users
+          <h1 className="font-heading text-3xl font-black text-slate-900 dark:text-white">
+            Platform Users Registry
           </h1>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted text-[10px] font-bold uppercase text-muted-foreground">
+        {/* Filters and Actions Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/70 p-4 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search name, email, identifier..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-base focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+              />
+            </div>
+            {/* Role filter */}
+            <select
+              value={userRoleFilter}
+              onChange={(e) => setUserRoleFilter(e.target.value as any)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-base focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+            >
+              <option value="all">All Roles</option>
+              <option value="buyer">Buyers Only</option>
+              <option value="seller">Sellers Only</option>
+            </select>
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedUserIds.length > 0 && (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex items-center gap-2 rounded-xl bg-destructive/10 p-1.5 text-xs text-destructive border border-destructive/20"
+            >
+              <span className="px-2 font-bold">{selectedUserIds.length} Selected</span>
+              <button
+                onClick={handleBulkToggleVerification}
+                className="flex items-center gap-1 rounded-lg bg-destructive px-3 py-1 font-bold text-white hover:bg-destructive/90"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" /> Bulk Verify
+              </button>
+              <button
+                onClick={handleBulkExportJSON}
+                className="flex items-center gap-1 rounded-lg border border-destructive bg-transparent px-3 py-1 font-bold hover:bg-destructive/10"
+              >
+                <Download className="h-3.5 w-3.5" /> Export JSON
+              </button>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <ResponsiveTableWrapper className="hidden md:block border-slate-200 dark:border-slate-800">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
               <tr>
+                <th className="p-4 w-10">
+                  <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
+                    {isAllSelected ? (
+                      <CheckSquare className="h-4.5 w-4.5 text-destructive" />
+                    ) : (
+                      <Square className="h-4.5 w-4.5" />
+                    )}
+                  </button>
+                </th>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
                 <th className="p-4">Role</th>
                 <th className="p-4">Seller Verification</th>
-                <th className="p-4">Actions</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y text-foreground">
-              {allProfiles.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/30">
-                  <td className="p-4 font-bold">{p.full_name || 'N/A'}</td>
-                  <td className="p-4">{p.email || 'N/A'}</td>
-                  <td className="p-4 capitalize">
-                    <span className="bg-destructive/10 rounded px-2 py-0.5 font-semibold text-destructive">
-                      {p.role}
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-card">
+              {filteredProfiles.map((p) => {
+                const isSelected = selectedUserIds.includes(p.id)
+                return (
+                  <tr
+                    key={p.id}
+                    className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${isSelected ? 'bg-destructive/[0.02]' : ''}`}
+                  >
+                    <td className="p-4">
+                      <button onClick={() => handleToggleSelectUser(p.id)} className="text-slate-400">
+                        {isSelected ? (
+                          <CheckSquare className="h-4.5 w-4.5 text-destructive" />
+                        ) : (
+                          <Square className="h-4.5 w-4.5" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="p-4 font-bold text-slate-900 dark:text-white">{p.full_name || 'N/A'}</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">{p.email || 'N/A'}</td>
+                    <td className="p-4 capitalize">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.role === 'seller' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-blue-500/10 text-blue-600'}`}>
+                        {p.role}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      {p.seller_verified ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-500">
+                          <ShieldCheck className="h-4 w-4" /> Verified
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">Unverified</span>
+                      )}
+                    </td>
+                    <td className="p-4 flex justify-end gap-2">
+                      <button
+                        onClick={() => handleToggleUserRole(p.id, p.role)}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        Toggle Role
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleToggleUserVerification(
+                            p.id,
+                            p.seller_verified || false
+                          )
+                        }
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        Toggle Verify
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </ResponsiveTableWrapper>
+
+        {/* Mobile Stacked Card View */}
+        <div className="grid gap-4 md:hidden">
+          {filteredProfiles.map((p) => {
+            const isSelected = selectedUserIds.includes(p.id)
+            return (
+              <div
+                key={p.id}
+                className={`premium-card p-5 relative space-y-4 ${isSelected ? 'border-destructive/35 bg-destructive/[0.02]' : ''}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleToggleSelectUser(p.id)} className="text-slate-400">
+                      {isSelected ? (
+                        <CheckSquare className="h-5 w-5 text-destructive" />
+                      ) : (
+                        <Square className="h-5 w-5" />
+                      )}
+                    </button>
+                    <span className="font-bold text-slate-900 dark:text-white">{p.full_name || 'N/A'}</span>
+                  </div>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.role === 'seller' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-blue-500/10 text-blue-600'}`}>
+                    {p.role}
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  <span className="block">{p.email}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                  {p.seller_verified ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">
+                      <ShieldCheck className="h-4 w-4" /> Verified
                     </span>
-                  </td>
-                  <td className="p-4">
-                    {p.seller_verified ? (
-                      <span className="font-bold text-green-500">Verified</span>
-                    ) : (
-                      <span className="text-muted-foreground">Unverified</span>
-                    )}
-                  </td>
-                  <td className="flex gap-2 p-4">
+                  ) : (
+                    <span className="text-xs text-slate-400">Unverified</span>
+                  )}
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleToggleUserRole(p.id, p.role)}
-                      className="rounded border bg-background px-2.5 py-1 font-semibold hover:bg-muted"
+                      className="rounded-lg border bg-white px-3 py-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300 min-h-[44px]"
                     >
-                      Toggle Role
+                      Role
                     </button>
                     <button
                       onClick={() =>
-                        handleToggleUserVerification(
-                          p.id,
-                          p.seller_verified || false
-                        )
+                        handleToggleUserVerification(p.id, p.seller_verified || false)
                       }
-                      className="rounded border bg-background px-2.5 py-1 font-semibold hover:bg-muted"
+                      className="rounded-lg border bg-white px-3 py-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300 min-h-[44px]"
                     >
-                      Toggle Verify
+                      Verify
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     )
   }
 
+  // --- View: Escrow Transactions Auditor ---
   if (view === 'orders') {
     return (
       <div className="space-y-6">
@@ -407,48 +606,53 @@ export const AdminDashboardPage: React.FC = () => {
           <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
             Escrow Transactions Auditor
           </span>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Escrow Orders
+          <h1 className="font-heading text-3xl font-black text-slate-900 dark:text-white">
+            Escrow Orders Management
           </h1>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted text-[10px] font-bold uppercase text-muted-foreground">
+        <ResponsiveTableWrapper className="border-slate-200 dark:border-slate-800">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
               <tr>
                 <th className="p-4">Order ID</th>
                 <th className="p-4">Buyer</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Created At</th>
-                <th className="p-4">Actions</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y text-foreground">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-card">
               {allOrders.map((o) => (
-                <tr key={o.id} className="hover:bg-muted/30">
-                  <td className="p-4 font-mono font-bold text-muted-foreground">
+                <tr
+                  key={o.id}
+                  className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                >
+                  <td className="p-4 font-mono font-bold text-slate-400">
                     {o.id.slice(0, 8)}...
                   </td>
-                  <td className="p-4">{o.buyer?.full_name || 'buyer'}</td>
-                  <td className="p-4 font-bold">
+                  <td className="p-4 font-semibold text-slate-900 dark:text-white">
+                    {o.buyer?.full_name || 'buyer'}
+                  </td>
+                  <td className="p-4 font-bold text-slate-900 dark:text-white">
                     ₦{Number(o.amount).toLocaleString()}
                   </td>
                   <td className="p-4 capitalize">
-                    <span className="bg-primary/10 rounded px-2 py-0.5 font-semibold text-primary">
-                      {o.status}
+                    <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                      {getOrderStatusDisplayLabel(o.status as any)}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 text-slate-500">
                     {new Date(o.created_at).toLocaleDateString()}
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 text-right">
                     <select
                       value={o.status}
                       onChange={(e) =>
                         handleUpdateOrderStatus(o.id, e.target.value)
                       }
-                      className="rounded border bg-background p-1 text-xs"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-base font-medium focus:outline-none dark:border-slate-800 dark:bg-slate-900"
                     >
                       <option value="pending">Pending</option>
                       <option value="active">Active</option>
@@ -461,11 +665,12 @@ export const AdminDashboardPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </ResponsiveTableWrapper>
       </div>
     )
   }
 
+  // --- View: System Alerts & Messages Console ---
   if (view === 'notifications') {
     return (
       <div className="space-y-6">
@@ -473,23 +678,20 @@ export const AdminDashboardPage: React.FC = () => {
           <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
             System Alerts & Messages Console
           </span>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            System Notifications
+          <h1 className="font-heading text-3xl font-black text-slate-900 dark:text-white">
+            Global Push Broadcasts
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Send form */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-4">
-            <h3 className="mb-4 font-heading text-sm font-bold text-foreground">
-              Send System Notification
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Notification Send Form */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card lg:col-span-4 space-y-6">
+            <h3 className="font-heading text-base font-bold text-slate-900 dark:text-white">
+              Create Broadcast Payload
             </h3>
-            <form
-              onSubmit={handleSendNotification}
-              className="space-y-4 text-xs"
-            >
+            <form onSubmit={handleSendNotification} className="space-y-4 text-xs">
               <div>
-                <label className="mb-1 block font-bold text-muted-foreground">
+                <label className="mb-1 block font-bold text-slate-500">
                   Target User ID
                 </label>
                 <input
@@ -497,12 +699,12 @@ export const AdminDashboardPage: React.FC = () => {
                   placeholder="Enter profile user UUID"
                   value={targetUserId}
                   onChange={(e) => setTargetUserId(e.target.value)}
-                  className="w-full rounded border bg-background p-2"
+                  className="w-full rounded-xl border bg-slate-50 p-3 text-base focus:outline-none dark:bg-slate-900"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block font-bold text-muted-foreground">
+                <label className="mb-1 block font-bold text-slate-500">
                   Title
                 </label>
                 <input
@@ -510,74 +712,119 @@ export const AdminDashboardPage: React.FC = () => {
                   placeholder="Notification Title"
                   value={notifTitle}
                   onChange={(e) => setNotifTitle(e.target.value)}
-                  className="w-full rounded border bg-background p-2"
+                  className="w-full rounded-xl border bg-slate-50 p-3 text-base focus:outline-none dark:bg-slate-900"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block font-bold text-muted-foreground">
-                  Message
+                <label className="mb-1 block font-bold text-slate-500">
+                  Message Details
                 </label>
                 <textarea
-                  placeholder="Notification message body details"
+                  placeholder="Notification message body details..."
                   value={notifMessage}
                   onChange={(e) => setNotifMessage(e.target.value)}
-                  className="h-24 w-full rounded border bg-background p-2"
+                  className="h-24 w-full rounded-xl border bg-slate-50 p-3 text-base focus:outline-none dark:bg-slate-900"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block font-bold text-muted-foreground">
-                  Type
+                <label className="mb-1 block font-bold text-slate-500">
+                  Delivery Type
                 </label>
                 <select
                   value={notifType}
                   onChange={(e) => setNotifType(e.target.value)}
-                  className="w-full rounded border bg-background p-2"
+                  className="w-full rounded-xl border bg-slate-50 p-3 text-base focus:outline-none dark:bg-slate-900"
                 >
-                  <option value="system">System</option>
-                  <option value="order">Order Update</option>
-                  <option value="promotion">Promotion</option>
+                  <option value="system">System Push Alert</option>
+                  <option value="order">Order Transaction Alert</option>
+                  <option value="promotion">Marketing Broadcast</option>
                 </select>
               </div>
               <button
                 type="submit"
                 disabled={isSendingNotif}
-                className="hover:bg-primary/95 w-full rounded bg-primary py-2 font-bold text-white disabled:opacity-50"
+                className="w-full flex justify-center items-center gap-2 rounded-xl bg-destructive py-3 font-bold text-white transition hover:bg-destructive/90 disabled:opacity-50"
               >
-                {isSendingNotif ? 'Sending...' : 'Send Notification'}
+                {isSendingNotif ? 'Sending...' : (
+                  <>
+                    <Send className="h-4 w-4" /> Send Notification
+                  </>
+                )}
               </button>
             </form>
           </div>
 
-          {/* Messages list */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-8">
-            <h3 className="mb-4 font-heading text-sm font-bold text-foreground">
-              Sent Notifications History
-            </h3>
-            <div className="max-h-[500px] divide-y overflow-y-auto">
-              {allNotifications.map((n) => (
-                <div
-                  key={n.id}
-                  className="flex items-start justify-between py-3 text-xs"
-                >
-                  <div>
-                    <span className="font-bold text-foreground">{n.title}</span>
-                    <p className="mt-1 leading-snug text-muted-foreground">
-                      {n.message}
-                    </p>
-                    <span className="mt-2 block font-mono text-[9px] text-muted-foreground">
-                      Target User: {n.user_id}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteNotification(n.id)}
-                    className="text-[10px] font-bold text-destructive hover:underline"
-                  >
-                    Delete
-                  </button>
+          {/* Real-time Notification Preview & History */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Real-time Mock Previews */}
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Push Preview */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 space-y-3">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <Smartphone className="h-4 w-4 text-indigo-400" /> Push Device Mockup
+                </span>
+                <div className="relative mx-auto h-[130px] w-full max-w-[280px] rounded-3xl border-8 border-slate-800 bg-slate-900 p-2 shadow-xl">
+                  {notifTitle || notifMessage ? (
+                    <div className="rounded-xl bg-white/95 p-2 text-[10px] text-slate-900 shadow-lg dark:bg-slate-950 dark:text-white border border-slate-100 dark:border-slate-850 animate-bounce">
+                      <span className="block font-bold">{notifTitle || 'Notification Header'}</span>
+                      <p className="line-clamp-2 mt-0.5 text-slate-500">{notifMessage || 'Notification description text goes here...'}</p>
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[10px] italic text-slate-500">
+                      Input title to preview push
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Email Mock Preview */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 space-y-3">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <Mail className="h-4 w-4 text-emerald-400" /> Email Template Mockup
+                </span>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[10px] dark:border-slate-800 dark:bg-slate-900/60 max-h-[130px] overflow-y-auto">
+                  <div className="border-b border-slate-200/50 pb-2 mb-2">
+                    <span className="block font-bold text-slate-700 dark:text-slate-300">From: RJH Security System</span>
+                    <span className="block text-slate-500">Subject: {notifTitle || 'Warning Notification Alert'}</span>
+                  </div>
+                  <p className="leading-relaxed text-slate-600 dark:text-slate-400">
+                    {notifMessage || 'Hello, this is a platform security alert regarding your transaction pipeline. Action required.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Notifications List */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card">
+              <h3 className="mb-4 font-heading text-sm font-bold text-slate-900 dark:text-white">
+                Sent Alerts Registry
+              </h3>
+              <div className="max-h-[300px] divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto">
+                {allNotifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className="flex items-start justify-between py-4 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <span className="font-bold text-slate-900 dark:text-white">{n.title}</span>
+                      <p className="leading-relaxed text-slate-600 dark:text-slate-400">
+                        {n.message}
+                      </p>
+                      <span className="block font-mono text-[9px] text-slate-400">
+                        Recipient ID: {n.user_id}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteNotification(n.id)}
+                      className="flex items-center gap-1 rounded-lg bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-500/20"
+                    >
+                      <Trash2 className="h-3 w-3" /> Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -585,6 +832,7 @@ export const AdminDashboardPage: React.FC = () => {
     )
   }
 
+  // --- View: Platform Settings Config ---
   if (view === 'settings') {
     return (
       <div className="space-y-6">
@@ -592,38 +840,38 @@ export const AdminDashboardPage: React.FC = () => {
           <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
             Global Configuration Center
           </span>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Platform Settings
+          <h1 className="font-heading text-3xl font-black text-slate-900 dark:text-white">
+            System Configurations
           </h1>
         </div>
 
-        <div className="max-w-md space-y-4 rounded-xl border border-border bg-card p-6 text-xs shadow-sm">
+        <div className="max-w-md space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card text-xs">
           <div>
-            <label className="mb-1 block font-bold text-muted-foreground">
+            <label className="mb-1 block font-bold text-slate-500">
               Escrow Commission Rate (%)
             </label>
             <input
               type="number"
               value={commissionRate}
               onChange={(e) => setCommissionRate(Number(e.target.value))}
-              className="w-full rounded border bg-background p-2 font-bold"
+              className="w-full rounded-xl border bg-slate-50 p-3 text-base font-bold dark:bg-slate-900 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-between border-y py-2">
+          <div className="flex items-center justify-between border-y border-slate-100 py-4 dark:border-slate-800">
             <div>
-              <span className="block font-bold text-foreground">
+              <span className="block font-bold text-slate-900 dark:text-white">
                 Platform Maintenance Mode
               </span>
-              <span className="text-[10px] text-muted-foreground">
-                Restrict buyer/seller transactions for database sync tasks
+              <span className="text-[10px] text-slate-500">
+                Prevent listings deployment and transactions execution globally
               </span>
             </div>
             <input
               type="checkbox"
               checked={maintenanceMode}
               onChange={(e) => setMaintenanceMode(e.target.checked)}
-              className="h-4 w-4"
+              className="h-4.5 w-4.5 accent-destructive cursor-pointer"
             />
           </div>
 
@@ -631,360 +879,53 @@ export const AdminDashboardPage: React.FC = () => {
             onClick={() =>
               alert('Platform config settings saved successfully!')
             }
-            className="hover:bg-primary/95 w-full rounded bg-primary py-2 font-bold text-white"
+            className="w-full rounded-xl bg-destructive py-3 font-bold text-white transition hover:bg-destructive/90"
           >
-            Save Settings Configuration
+            Save Configuration Settings
           </button>
         </div>
       </div>
     )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-destructive" />
-      </div>
-    )
-  }
-
-  const activeDataset = chartDatasets[chartMetric]
-  const maxVal = Math.max(...activeDataset.map((d) => d.value), 10)
+  }  // --- View: Main Command Overview (Default Dashboard) ---
+  const formattedDate = currentTime.toLocaleDateString('en-NG', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const formattedTime = currentTime.toLocaleTimeString('en-NG', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 
   return (
-    <div className="space-y-8">
-      {/* Title Header */}
-      <div className="border-border/40 border-b pb-4">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
-          Security Administrator Control Console
-        </span>
-        <h1 className="font-heading text-2xl font-bold text-foreground">
-          System Overview Dashboard
-        </h1>
-      </div>
+    <div className="space-y-12 pb-14 text-slate-900 dark:text-slate-100">
+      <ExecutiveHero
+        fullName="Alex Mercer"
+        formattedDate={formattedDate}
+        formattedTime={formattedTime}
+        pendingKyc={telemetry.pendingKyc}
+        disputes={telemetry.disputes}
+        pendingListings={telemetry.pendingListings}
+        pendingWithdrawals={telemetry.pendingWithdrawals}
+      />
 
-      {/* Telemetry Grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {[
-          {
-            title: 'Total Users',
-            value: telemetry.users,
-            icon: Users,
-            color: 'text-primary',
-          },
-          {
-            title: 'Market Buyers',
-            value: telemetry.buyers,
-            icon: Users,
-            color: 'text-muted-foreground',
-          },
-          {
-            title: 'Market Sellers',
-            value: telemetry.sellers,
-            icon: UserCheck,
-            color: 'text-emerald-500',
-          },
-          {
-            title: 'Verified Sellers',
-            value: telemetry.verifiedSellers,
-            icon: ShieldCheck,
-            color: 'text-emerald-600',
-          },
-          {
-            title: 'Active Listings',
-            value: telemetry.activeListings,
-            icon: ListFilter,
-            color: 'text-blue-500',
-          },
-          {
-            title: 'Pending Listings',
-            value: telemetry.pendingListings,
-            icon: Clock,
-            color: 'text-yellow-500',
-          },
-          {
-            title: 'Escrow Orders',
-            value: telemetry.orders,
-            icon: ShoppingBag,
-            color: 'text-primary',
-          },
-          {
-            title: 'Gross Revenue',
-            value: `$${telemetry.revenue.toLocaleString()}`,
-            icon: DollarSign,
-            color: 'text-emerald-500',
-          },
-          {
-            title: 'Disputes Opened',
-            value: telemetry.disputes,
-            icon: AlertTriangle,
-            color: 'text-orange-500',
-          },
-          {
-            title: 'System Alerts',
-            value: telemetry.notifications,
-            icon: Bell,
-            color: 'text-primary',
-          },
-        ].map((card, idx) => (
-          <div
-            key={idx}
-            className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                {card.title}
-              </span>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
-            </div>
-            <div className="truncate font-heading text-lg font-bold text-foreground">
-              {card.value}
-            </div>
-          </div>
-        ))}
-      </div>
+      <MetricsGrid telemetry={telemetry} />
 
-      {/* AI Fraud & Security Predictions banner */}
-      <div className="bg-primary/5 border-primary/20 flex items-center justify-between rounded-xl border p-4 text-xs">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 animate-pulse text-primary" />
-          <div>
-            <span className="block font-bold text-foreground">
-              AI Smart Fraud Predictor active
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              2 suspicious account listings matched fraud signature logs
-              templates. Audit recommended.
-            </span>
-          </div>
-        </div>
-        <a
-          href="/admin/ai-insights"
-          className="hover:bg-primary/95 rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-white"
-        >
-          Review Predictions
-        </a>
-      </div>
+      <AnalyticsSection
+        telemetry={telemetry}
+        chartMetric={chartMetric}
+        setChartMetric={setChartMetric}
+      />
 
-      {/* Analytics Graph Row */}
-      <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div className="border-border/40 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="flex items-center gap-1.5 font-heading text-sm font-bold text-foreground">
-            <BarChart2 className="h-4 w-4 text-destructive" /> Metric Analytics
-            Telemetry
-          </h3>
-          <div className="flex rounded-lg bg-muted p-0.5 text-[10px] font-semibold">
-            {[
-              { key: 'users', label: 'User Growth' },
-              { key: 'orders', label: 'Orders' },
-              { key: 'revenue', label: 'Revenue' },
-              { key: 'listings', label: 'Listings' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() =>
-                  setChartMetric(
-                    tab.key as 'users' | 'orders' | 'revenue' | 'listings'
-                  )
-                }
-                className={`rounded-md px-3 py-1 transition-all ${
-                  chartMetric === tab.key
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex h-44 items-end gap-3 px-2 pt-6">
-          {activeDataset.map((d, idx) => {
-            const pct = (d.value / maxVal) * 100
-            return (
-              <div
-                key={idx}
-                className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-              >
-                <span className="text-[9px] font-bold text-foreground">
-                  {chartMetric === 'revenue'
-                    ? `$${d.value.toLocaleString()}`
-                    : d.value}
-                </span>
-                <div
-                  className="bg-destructive/20 w-full cursor-pointer rounded-t-sm transition-all hover:bg-destructive"
-                  style={{ height: `${Math.max(pct, 5)}%` }}
-                />
-                <span className="mt-1 text-[9px] font-medium text-muted-foreground">
-                  {d.label}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Sibling Columns: Quick Actions & Latest Activity Logs */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Column: Quick Actions */}
-        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-4">
-          <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
-            Quick Console Actions
-          </h3>
-          <div className="grid grid-cols-1 gap-2.5">
-            {[
-              {
-                label: 'Manage Users',
-                desc: 'Audit role authorizations',
-                icon: Users,
-              },
-              {
-                label: 'Manage Listings',
-                desc: 'Verify account configurations',
-                icon: ListFilter,
-              },
-              {
-                label: 'Manage Orders',
-                desc: 'Track escrow milestones',
-                icon: ShoppingBag,
-              },
-              {
-                label: 'Manage Disputes',
-                desc: 'Moderate buyer dispute tickets',
-                icon: AlertTriangle,
-              },
-              {
-                label: 'Verification Requests',
-                desc: 'Inspect seller checkmarks',
-                icon: ShieldCheck,
-              },
-              {
-                label: 'Platform Settings',
-                desc: 'Configure payment gateways',
-                icon: Settings,
-              },
-            ].map((action, idx) => (
-              <button
-                key={idx}
-                onClick={() =>
-                  alert(
-                    `${action.label} panel logic is coming soon in the moderation update!`
-                  )
-                }
-                className="hover:bg-muted/50 border-border/65 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
-              >
-                <div className="bg-destructive/10 rounded-md p-1.5 text-destructive">
-                  <action.icon className="h-4.5 w-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-foreground">
-                    {action.label}
-                  </h4>
-                  <p className="mt-0.5 text-[9px] text-muted-foreground">
-                    {action.desc}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <QuickActions />
 
-        {/* Right Column: Latest Activities Feed */}
-        <div className="space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-8">
-          <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
-            Latest System Activity Feed
-          </h3>
-
-          <div className="grid grid-cols-1 gap-6 text-[10px] md:grid-cols-2">
-            {/* Recent Signups */}
-            <div className="space-y-3">
-              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
-                Recent Signups
-              </h4>
-              <div className="space-y-2">
-                {activity.users.map((u: Profile) => (
-                  <div
-                    key={u.id}
-                    className="bg-muted/20 flex items-center justify-between rounded p-2"
-                  >
-                    <span className="max-w-[130px] truncate font-bold">
-                      {u.full_name || 'New Profile'}
-                    </span>
-                    <span className="bg-destructive/10 rounded px-1.5 py-0.5 text-[8px] font-bold capitalize text-destructive">
-                      {u.role || 'user'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Listings */}
-            <div className="space-y-3">
-              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
-                Recent Listings
-              </h4>
-              <div className="space-y-2">
-                {activity.listings.map((l: Listing) => (
-                  <div
-                    key={l.id}
-                    className="bg-muted/20 flex items-center justify-between rounded p-2"
-                  >
-                    <span className="max-w-[130px] truncate font-bold">
-                      {l.title}
-                    </span>
-                    <span className="text-muted-foreground">
-                      ${Number(l.price).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Orders */}
-            <div className="space-y-3">
-              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
-                Recent Orders
-              </h4>
-              <div className="space-y-2">
-                {activity.orders.map((o: Order) => (
-                  <div
-                    key={o.id}
-                    className="bg-muted/20 flex items-center justify-between rounded p-2"
-                  >
-                    <span className="max-w-[120px] truncate font-bold">
-                      {o.listing?.title || 'Account Order'}
-                    </span>
-                    <span className="capitalize">
-                      {o.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Notifications */}
-            <div className="space-y-3">
-              <h4 className="border-border/40 border-b pb-1.5 font-bold uppercase tracking-wider text-muted-foreground">
-                System Alerts
-              </h4>
-              <div className="space-y-2">
-                {activity.notifications.map((n: Notification) => (
-                  <div
-                    key={n.id}
-                    className="bg-muted/20 flex flex-col gap-0.5 rounded p-2"
-                  >
-                    <span className="truncate font-bold">{n.title}</span>
-                    <p className="line-clamp-1 leading-snug text-muted-foreground">
-                      {n.message}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ActivityTimeline activity={activity} />
       </div>
+
+      <SystemHealth />
     </div>
   )
 }

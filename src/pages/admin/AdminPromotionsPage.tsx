@@ -400,18 +400,21 @@ export const AdminPromotionsPage: React.FC = () => {
                   No coupons deployed.
                 </div>
               ) : (
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="bg-muted/30 border-border/40 border-b text-[10px] font-bold uppercase text-muted-foreground">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                    <tr>
                       <th className="p-3">Code</th>
                       <th className="p-3">Discount</th>
                       <th className="p-3">Usage</th>
                       <th className="p-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/50 divide-y">
+                  <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                     {coupons.map((c: Coupon) => (
-                      <tr key={c.id} className="hover:bg-muted/10">
+                      <tr
+                        key={c.id}
+                        className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      >
                         <td className="p-3 font-mono font-bold uppercase text-foreground">
                           {c.code}
                         </td>
@@ -445,18 +448,21 @@ export const AdminPromotionsPage: React.FC = () => {
                 No campaigns launched.
               </div>
             ) : (
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-muted/30 border-border/40 border-b text-[10px] font-bold uppercase text-muted-foreground">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                  <tr>
                     <th className="p-3">Title</th>
                     <th className="p-3">Type</th>
                     <th className="p-3">Discount</th>
                     <th className="p-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-border/50 divide-y">
+                <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                   {promotions.map((p: Promotion) => (
-                    <tr key={p.id} className="hover:bg-muted/10">
+                    <tr
+                      key={p.id}
+                      className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
                       <td className="p-3 font-semibold text-foreground">
                         {p.title}
                       </td>

@@ -1,6 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEventSubscriber } from '@/hooks/useEventSubscriber'
+import { formatCurrency } from '@/utils/currency'
 import {
   ShoppingBag,
   Wallet,
@@ -19,11 +21,25 @@ import { orderService } from '@/services/marketplace/order.service'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { notificationService } from '@/services/marketplace/notification.service'
 import type { Notification } from '@/types'
+import { ResponsiveTableWrapper } from '@/components/ui/ResponsiveTableWrapper'
 
 export const DashboardOverviewPage: React.FC = () => {
   const { profile, user } = useAuthStore()
   const role = profile?.role ?? 'buyer'
   const userId = user?.id ?? ''
+  const queryClient = useQueryClient()
+
+  const refreshDashboard = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-overview-orders', userId] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard-overview-wallet', userId] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard-overview-notifications', userId] })
+  }
+
+  useEventSubscriber('ORDER_CREATED', refreshDashboard)
+  useEventSubscriber('ESCROW_RELEASED', refreshDashboard)
+  useEventSubscriber('DISPUTE_OPENED', refreshDashboard)
+  useEventSubscriber('DISPUTE_RESOLVED', refreshDashboard)
+  useEventSubscriber('VAULT_OPENED', refreshDashboard)
 
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ['dashboard-overview-orders', userId],
@@ -204,7 +220,7 @@ export const DashboardOverviewPage: React.FC = () => {
               Wallet Balance
             </p>
             <p className="mt-1 font-heading text-2xl font-extrabold text-foreground">
-              ${balance.toFixed(2)}
+              {formatCurrency(balance)}
             </p>
             <Link
               to={isSeller ? '/seller/wallet' : '/dashboard/wallet'}
@@ -269,77 +285,79 @@ export const DashboardOverviewPage: React.FC = () => {
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/30 border-b text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <th className="px-4 py-3">Order ID</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Date</th>
+          <ResponsiveTableWrapper className="border-card">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/30 border-b text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3">Order ID</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(orders ?? []).slice(0, 5).map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-muted/20 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      <Link
+                        to={`/orders/${order.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      {formatCurrency(order.amount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          order.status === 'completed'
+                            ? 'bg-emerald-500/10 text-emerald-600'
+                            : order.status === 'cancelled'
+                              ? 'bg-red-500/10 text-red-600'
+                              : order.status === 'disputed'
+                                ? 'bg-amber-500/10 text-amber-600'
+                                : 'bg-blue-500/10 text-blue-600'
+                        }`}
+                      >
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(orders ?? []).slice(0, 5).map((order) => (
-                    <tr
-                      key={order.id}
-                      className="hover:bg-muted/20 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                        <Link
-                          to={`/orders/${order.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          #{order.id.slice(0, 8).toUpperCase()}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 font-semibold">
-                        ${order.amount.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            order.status === 'completed'
-                              ? 'bg-emerald-500/10 text-emerald-600'
-                              : order.status === 'cancelled'
-                                ? 'bg-red-500/10 text-red-600'
-                                : order.status === 'disputed'
-                                  ? 'bg-amber-500/10 text-amber-600'
-                                  : 'bg-blue-500/10 text-blue-600'
-                          }`}
-                        >
-                          {order.status.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))}
+              </tbody>
+            </table>
+          </ResponsiveTableWrapper>
         </div>
       )}
 
       {/* Empty state for new users */}
       {!isLoading && (orders ?? []).length === 0 && (
-        <div className="rounded-2xl border border-dashed bg-card p-10 text-center">
-          <ShoppingBag className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
-          <p className="font-semibold text-muted-foreground">No orders yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isBuyer
-              ? 'Browse the marketplace to find your first account.'
-              : 'Create your first listing to start selling.'}
-          </p>
+        <div className="flex flex-col items-center justify-center space-y-6 rounded-[24px] border border-white/5 bg-slate-900/30 px-4 py-20 text-center backdrop-blur-sm mt-8">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
+            <ShoppingBag className="h-12 w-12" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-heading text-2xl font-black text-white">No orders yet.</h2>
+            <p className="mx-auto max-w-sm text-sm text-slate-400">
+              {isBuyer
+                ? 'Browse the marketplace to find your first account.'
+                : 'Create your first listing to start selling.'}
+            </p>
+          </div>
           <Link
             to={isBuyer ? '/marketplace' : '/seller'}
-            className="hover:bg-primary/90 mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow"
+            className="group flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-indigo-400 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.5)] active:scale-95"
           >
             {isBuyer ? 'Browse Marketplace' : 'Go to Seller Studio'}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       )}

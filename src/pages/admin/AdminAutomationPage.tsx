@@ -82,9 +82,9 @@ export const AdminAutomationPage: React.FC = () => {
                 No automation jobs found on system registry.
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-muted/30 border-b text-[10px] font-bold uppercase text-muted-foreground">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
+                  <tr>
                     <th className="p-3">Task Name</th>
                     <th className="p-3">Description</th>
                     <th className="p-3">Next Schedule</th>
@@ -92,9 +92,12 @@ export const AdminAutomationPage: React.FC = () => {
                     <th className="p-3 text-right">Trigger</th>
                   </tr>
                 </thead>
-                <tbody className="divide-border/50 divide-y text-foreground">
+                <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
                   {jobs.map((job: AutomationJob) => (
-                    <tr key={job.id} className="hover:bg-muted/10">
+                    <tr
+                      key={job.id}
+                      className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
                       <td className="p-3 font-semibold text-foreground">
                         {job.name}
                       </td>

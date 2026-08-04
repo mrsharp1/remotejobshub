@@ -1,14 +1,35 @@
-import React, { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Minus, Play, ShoppingBag, Landmark, ShieldCheck } from 'lucide-react'
+import { FaqHero } from '@/components/faq/FaqHero'
+import { PopularQuestions } from '@/components/faq/PopularQuestions'
 
-interface FaqItem {
-  q: string
-  a: string
-}
+// Lazy loaded below-the-fold components
+const StepGuides = lazy(() => import('@/components/faq/StepGuides').then(m => ({ default: m.StepGuides })))
+const FaqSupportChannels = lazy(() => import('@/components/faq/FaqSupportChannels').then(m => ({ default: m.FaqSupportChannels })))
+const FaqTrust = lazy(() => import('@/components/faq/FaqTrust').then(m => ({ default: m.FaqTrust })))
+const FaqCTA = lazy(() => import('@/components/faq/FaqCTA').then(m => ({ default: m.FaqCTA })))
 
-const categories: { label: string; items: FaqItem[] }[] = [
+const ComponentSkeleton: React.FC = () => (
+  <div className="mx-auto max-w-5xl px-4 py-16 space-y-8 animate-pulse">
+    <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+    <div className="grid gap-6 md:grid-cols-3">
+      {[1, 2, 3].map((n) => (
+        <div key={n} className="h-40 rounded-3xl border border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950 p-6 space-y-4">
+          <div className="h-6 w-12 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-6 w-2/3 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+const categories = [
   {
     label: 'Getting Started',
+    icon: Play,
+    desc: 'New user tutorials, account setups, and profile registrations.',
     items: [
       {
         q: 'What is Remote Jobs Hub?',
@@ -26,6 +47,8 @@ const categories: { label: string; items: FaqItem[] }[] = [
   },
   {
     label: 'Buying',
+    icon: ShoppingBag,
+    desc: 'Escrow procedures, disputes, and account handover rules.',
     items: [
       {
         q: 'How does the escrow system work?',
@@ -43,6 +66,8 @@ const categories: { label: string; items: FaqItem[] }[] = [
   },
   {
     label: 'Selling',
+    icon: Landmark,
+    desc: 'Seller Studio creation, verification requirements, and commission scales.',
     items: [
       {
         q: 'How do I list my account for sale?',
@@ -64,6 +89,8 @@ const categories: { label: string; items: FaqItem[] }[] = [
   },
   {
     label: 'Payments & Security',
+    icon: ShieldCheck,
+    desc: 'Gateway integrations, seller wallets, and bank withdrawals.',
     items: [
       {
         q: 'What payment methods are accepted?',
@@ -81,81 +108,172 @@ const categories: { label: string; items: FaqItem[] }[] = [
   },
 ]
 
-const FaqAccordion: React.FC<{ item: FaqItem }> = ({ item }) => {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm transition-all">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left"
-      >
-        <span className="text-sm font-semibold leading-snug">{item.q}</span>
-        {open ? (
-          <ChevronUp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        )}
-      </button>
-      {open && (
-        <div className="bg-muted/20 border-t px-5 py-4">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {item.a}
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export const FaqPage: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null)
+
+  const handlePopularQuestionClick = useCallback((qText: string) => {
+    setSearchQuery(qText)
+    setExpandedQuestion(qText)
+    const element = document.getElementById('faq-accordion-anchor')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [])
+
+  const highlightText = useCallback((text: string, search: string) => {
+    if (!search) return text
+    const parts = text.split(new RegExp(`(${search})`, 'gi'))
+    return (
+      <>
+        {parts.map((part, i) =>
+          part.toLowerCase() === search.toLowerCase() ? (
+            <mark key={i} className="bg-yellow-100 text-slate-900 rounded px-0.5 font-bold dark:bg-yellow-500/30 dark:text-slate-100">
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </>
+    )
+  }, [])
+
+  // Filter categories based on selection and search
+  const filteredCategories = useMemo(() => {
+    return categories
+      .map((cat) => {
+        const matchedItems = cat.items.filter(
+          (item) =>
+            item.q.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.a.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        return { ...cat, items: matchedItems }
+      })
+      .filter((cat) => {
+        if (activeCategory && cat.label !== activeCategory) return false
+        return cat.items.length > 0
+      })
+  }, [searchQuery, activeCategory])
+
   return (
-    <div className="flex flex-col">
-      {/* Hero */}
-      <section className="from-primary/5 to-secondary/10 bg-gradient-to-br via-background px-4 py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="font-heading text-4xl font-extrabold tracking-tight md:text-5xl">
-            Frequently Asked Questions
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Everything you need to know about buying and selling on Remote Jobs
-            Hub.
-          </p>
+    <div className="flex flex-col bg-background">
+      <FaqHero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      
+      {/* Popular questions */}
+      {searchQuery === '' && (
+        <PopularQuestions onQuestionClick={handlePopularQuestionClick} />
+      )}
+
+      {/* Category Quick Filter */}
+      <section className="bg-white py-12 dark:bg-slate-950">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+                activeCategory === null
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              All Categories
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.label}
+                onClick={() => setActiveCategory(cat.label)}
+                className={`rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+                  activeCategory === cat.label
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* FAQ Sections */}
-      <section className="px-4 py-16">
-        <div className="mx-auto max-w-3xl space-y-12">
-          {categories.map((cat) => (
-            <div key={cat.label}>
-              <h2 className="mb-4 font-heading text-xl font-bold text-foreground">
+      {/* Accordions */}
+      <section id="faq-accordion-anchor" className="bg-slate-50 py-20 dark:bg-slate-900">
+        <div className="mx-auto max-w-3xl px-4">
+          {filteredCategories.map((cat) => (
+            <div key={cat.label} className="mb-12 last:mb-0">
+              <h3 className="mb-6 font-heading text-xl font-bold text-foreground">
                 {cat.label}
-              </h2>
-              <div className="space-y-3">
-                {cat.items.map((item) => (
-                  <FaqAccordion key={item.q} item={item} />
-                ))}
+              </h3>
+              <div className="space-y-4">
+                {cat.items.map((item) => {
+                  const isOpen = expandedQuestion === item.q
+                  return (
+                    <div
+                      key={item.q}
+                      className={`premium-card overflow-hidden transition-colors ${
+                        isOpen ? 'border-indigo-500/50 dark:border-indigo-500/30' : ''
+                      }`}
+                    >
+                      <button
+                        onClick={() => setExpandedQuestion(isOpen ? null : item.q)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-start justify-between gap-4 p-6 text-left"
+                      >
+                        <span className="font-heading text-base font-bold text-slate-900 dark:text-white">
+                          {highlightText(item.q, searchQuery)}
+                        </span>
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${isOpen ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
+                          {isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 pb-6 text-base leading-relaxed text-slate-600 dark:text-slate-400">
+                              {highlightText(item.a, searchQuery)}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ))}
+
+          {filteredCategories.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-lg font-medium text-slate-500">
+                No matching questions found for "{searchQuery}".
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setActiveCategory(null)
+                }}
+                className="mt-4 text-sm font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+              >
+                Clear search query
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Still have questions */}
-      <section className="border-t px-4 py-12">
-        <div className="mx-auto max-w-xl text-center">
-          <p className="font-semibold">Still have questions?</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Our support team is available 7 days a week.
-          </p>
-          <a
-            href="/contact"
-            className="hover:bg-primary/90 mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow"
-          >
-            Contact Support
-          </a>
-        </div>
-      </section>
+      <Suspense fallback={<ComponentSkeleton />}>
+        <StepGuides />
+        <FaqTrust />
+        <FaqSupportChannels />
+        <FaqCTA />
+      </Suspense>
     </div>
   )
 }

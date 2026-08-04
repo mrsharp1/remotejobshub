@@ -236,30 +236,42 @@ export const recommendationService = {
   },
 
   async getAdminAIInsights(): Promise<AIInsight[]> {
-    return [
-      {
-        id: '1',
-        title: 'Predicted Scam Listings',
-        description: 'Listing accounts matching high risk flags templates.',
-        metric_value: '2 Listings',
-        metric_change: 'Flagged under manual audit review',
-      },
-      {
-        id: '2',
-        title: 'Marketplace Growth forecast',
-        description: 'Predicted revenue increases over the next quarter.',
-        metric_value: '+22.4%',
-        metric_change:
-          'Based on last 3 months completed escrow transaction logs',
-      },
-      {
-        id: '3',
-        title: 'Top Performing Platform target',
-        description:
-          'Target platform with the fastest conversion clearance rate.',
-        metric_value: 'Upwork Accounts',
-        metric_change: 'Average order completed in 3.2 days',
-      },
-    ]
+    try {
+      const [
+        { count: listingsCount },
+        { count: ordersCount }
+      ] = await Promise.all([
+        supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'completed')
+      ])
+
+      return [
+        {
+          id: '1',
+          title: 'Active Listed Accounts',
+          description: 'Verified accounts listed and ready for transaction.',
+          metric_value: `${listingsCount || 0} Accounts`,
+          metric_change: 'Query calculated in real-time',
+        },
+        {
+          id: '2',
+          title: 'Total Escrow Orders',
+          description: 'Completed safe-escrow transactions on the platform.',
+          metric_value: `${ordersCount || 0} Deliveries`,
+          metric_change: 'Query calculated in real-time',
+        }
+      ]
+    } catch (e) {
+      console.error('Error fetching dynamic insights:', e)
+      return [
+        {
+          id: '1',
+          title: 'Active Listed Accounts',
+          description: 'Verified accounts listed and ready for transaction.',
+          metric_value: '0 Accounts',
+          metric_change: 'N/A',
+        }
+      ]
+    }
   },
 }
