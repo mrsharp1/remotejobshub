@@ -40,7 +40,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ order }) => {
           className="inline-flex items-center gap-2 text-xs font-bold text-blue-400 hover:underline"
         >
           <LifeBuoy className="h-4 w-4" />
-          24/7 Telegram Support <ExternalLink className="h-3 w-3" />
+          Telegram Community <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>

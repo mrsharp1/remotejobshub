@@ -4,6 +4,7 @@ import { Check, AlertCircle, Camera, Loader2 } from 'lucide-react'
 import { Profile } from '@/types'
 import { authService } from '@/services/auth/auth.service'
 import { useAuthStore } from '@/stores/authStore'
+import { useWithdrawals } from '@/features/withdrawals/hooks/useWithdrawals'
 
 interface ProfileCompletionCardProps {
   profile: Profile | null
@@ -20,6 +21,9 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
   )
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const { user } = useAuthStore()
+  const { data: withdrawals = [] } = useWithdrawals(profile?.id)
+
+  const hasPayoutDetails = withdrawals.length > 0
 
   const checklistItems = [
     { label: 'Full Name', completed: !!profile?.full_name },
@@ -31,8 +35,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
     { label: 'Government ID', completed: profile?.seller_verified || false },
     {
       label: 'Payment Method',
-      completed:
-        !!profile?.company_name && !!profile?.company_website && !!profile?.bio,
+      completed: hasPayoutDetails,
     },
   ]
 

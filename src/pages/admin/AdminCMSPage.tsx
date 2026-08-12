@@ -14,7 +14,8 @@ import {
   Users,
   Star,
   Calendar,
-  HelpCircle
+  HelpCircle,
+  Video
 } from 'lucide-react'
 
 import { PolicyManager } from '@/components/admin/cms/PolicyManager'
@@ -52,7 +53,7 @@ type CMSSection =
   | 'seo'
   | 'policies'
   | 'reviews'
-  | 'video_guides'
+  | 'video_guide'
 
 export const AdminCMSPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<CMSSection>('publish_center')
@@ -110,7 +111,6 @@ export const AdminCMSPage: React.FC = () => {
         { id: 'timeline', label: 'Company Timeline', icon: Clock, tags: 'history milestones timeline year' },
         { id: 'core_values', label: 'Core Values', icon: Star, tags: 'values principles icons' },
         { id: 'community_events', label: 'Community Events', icon: Calendar, tags: 'events meetups webinars dates' },
-        { id: 'video_guides', label: 'Video Guides', icon: HelpCircle, tags: 'video guides tutorials help' },
       ]
     },
     {
@@ -122,6 +122,7 @@ export const AdminCMSPage: React.FC = () => {
         { id: 'seo', label: 'SEO Manager', icon: Globe, tags: 'google search meta tags' },
         { id: 'policies', label: 'Policy Manager', icon: FileText, tags: 'terms privacy legal' },
         { id: 'reviews', label: 'Review Center', icon: Star, tags: 'reviews testimonials feedback' },
+        { id: 'video_guide', label: 'Video Guide', icon: Video, tags: 'video guide instructions help tutorial' },
       ]
     }
   ]
@@ -154,7 +155,7 @@ export const AdminCMSPage: React.FC = () => {
       case 'seo': return <div className="p-6 text-slate-500">SEO Manager Placeholder</div>
       case 'policies': return <PolicyManager />
       case 'reviews': return <ReviewManager />
-      case 'video_guides': return <VideoGuideManager />
+      case 'video_guide': return <VideoGuideManager />
       default: return <PublishCenter />
     }
   }

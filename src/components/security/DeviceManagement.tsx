@@ -49,13 +49,19 @@ export const DeviceManagement: React.FC = () => {
 
       <ActiveSessions 
         sessions={mockSessions} 
-        onRevoke={(id) => console.log('Revoke', id)} 
-        onRevokeAll={() => console.log('Revoke All')} 
+        onRevoke={(id) => {
+          if (import.meta.env.DEV) console.log('Revoke', id)
+        }} 
+        onRevokeAll={() => {
+          if (import.meta.env.DEV) console.log('Revoke All')
+        }} 
       />
       
       <TrustedDevices 
         devices={mockTrusted} 
-        onRemove={(id) => console.log('Remove', id)} 
+        onRemove={(id) => {
+          if (import.meta.env.DEV) console.log('Remove', id)
+        }} 
       />
     </div>
   )

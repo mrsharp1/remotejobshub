@@ -34,7 +34,7 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({ order }) => {
         >
           <div className="flex items-center gap-3">
             <LifeBuoy className="h-4 w-4" />
-            24/7 Telegram Support
+            Telegram Community
           </div>
           <ExternalLink className="h-3 w-3 opacity-50" />
         </a>

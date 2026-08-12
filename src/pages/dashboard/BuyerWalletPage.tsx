@@ -12,15 +12,18 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  ArrowDownLeft,
 } from 'lucide-react'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { useAuthStore } from '@/stores/authStore'
 import { WalletTransaction } from '@/types'
 import { DepositModal } from '@/components/wallet/DepositModal'
+import { WithdrawalModal, WithdrawalHistory } from '@/features/withdrawals'
 
 export const BuyerWalletPage: React.FC = () => {
   const { user } = useAuthStore()
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false)
 
   // Fetch Wallet details
   const {
@@ -109,13 +112,20 @@ export const BuyerWalletPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <div>
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setIsDepositModalOpen(true)}
               className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-[15px] font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] min-h-[44px]"
             >
               <PlusCircle className="h-5 w-5 transition-transform group-hover:rotate-90" />
               Deposit Funds
+            </button>
+            <button
+              onClick={() => setIsWithdrawalModalOpen(true)}
+              className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 py-3.5 text-[15px] font-bold text-foreground shadow-sm transition-all hover:bg-muted hover:shadow-md active:scale-[0.98] min-h-[44px]"
+            >
+              <ArrowDownLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
+              Withdraw Funds
             </button>
           </div>
         </div>
@@ -161,6 +171,8 @@ export const BuyerWalletPage: React.FC = () => {
               </div>
             ))}
           </div>
+
+          <WithdrawalHistory userId={user?.id || ''} />
 
           <div className="grid grid-cols-1 items-start gap-6">
             {/* Transactions Ledger - Full Width */}
@@ -277,6 +289,13 @@ export const BuyerWalletPage: React.FC = () => {
           refetchWallet()
           refetchTx()
         }}
+      />
+
+      <WithdrawalModal
+        isOpen={isWithdrawalModalOpen}
+        onClose={() => setIsWithdrawalModalOpen(false)}
+        userId={user?.id || ''}
+        availableBalance={Number(wallet?.available_balance || 0)}
       />
     </div>
   )

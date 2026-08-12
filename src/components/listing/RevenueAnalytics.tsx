@@ -34,38 +34,38 @@ export const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ listing }) =
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Metric 1 */}
-        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Monthly Avg</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-white">₦{monthlyRevenue.toLocaleString()}</p>
+        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900 min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Monthly Avg</p>
+          <p className="mt-2 font-mono text-xl sm:text-2xl font-bold text-white truncate" title={`₦${monthlyRevenue.toLocaleString()}`}>₦{monthlyRevenue.toLocaleString()}</p>
           <div className="mt-4 h-8 w-full opacity-50 transition-opacity group-hover:opacity-100">
-            <svg viewBox="0 0 90 30" className="h-full w-full overflow-visible fill-none stroke-emerald-500 stroke-2">
+            <svg viewBox="0 0 90 30" className="h-full w-full overflow-visible fill-none stroke-emerald-500 stroke-2" preserveAspectRatio="none">
               <polyline points={sparklinePoints} />
             </svg>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Weekly Run Rate</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-white">₦{weeklyRevenue.toLocaleString()}</p>
-          <div className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-400">
-            <TrendingUp className="h-4 w-4" /> +{growthRate}% Month over Month
+        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900 min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Weekly Run Rate</p>
+          <p className="mt-2 font-mono text-xl sm:text-2xl font-bold text-white truncate" title={`₦${weeklyRevenue.toLocaleString()}`}>₦{weeklyRevenue.toLocaleString()}</p>
+          <div className="mt-4 flex items-center gap-2 text-[10px] sm:text-xs font-bold text-emerald-400">
+            <TrendingUp className="h-4 w-4 shrink-0" /> <span className="truncate">+{growthRate}% MoM</span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Est. Break-even</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-white">{roiDays} Days</p>
-          <div className="mt-4 flex items-center gap-2 text-xs font-bold text-indigo-400">
+        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900 min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Est. Break-even</p>
+          <p className="mt-2 font-mono text-xl sm:text-2xl font-bold text-white truncate">{roiDays} Days</p>
+          <div className="mt-4 flex items-center gap-2 text-[10px] sm:text-xs font-bold text-indigo-400 truncate">
             Based on current velocity
           </div>
         </div>
 
         {/* Metric 4 */}
-        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Customer Demand</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-white">Very High</p>
+        <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-5 transition-colors hover:border-white/10 hover:bg-slate-900 min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Customer Demand</p>
+          <p className="mt-2 font-mono text-xl sm:text-2xl font-bold text-white truncate">Very High</p>
           <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-slate-800">
             <motion.div 
               initial={{ width: 0 }}

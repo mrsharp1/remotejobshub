@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
@@ -8,6 +8,7 @@ import { LoadingScreen } from '@/components/shared/LoadingScreen'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { DeveloperConsole } from '@/components/shared/DeveloperConsole'
 import { DebugPanel } from '@/components/shared/DebugPanel'
+import { FloatingSupportChat } from '@/components/support/FloatingSupportChat'
 
 const HomePage = lazy(() =>
   import('@/pages/public/HomePage').then((m) => ({ default: m.HomePage }))
@@ -30,6 +31,9 @@ const CheckoutPage = lazy(() =>
 const AboutPage = lazy(() =>
   import('@/pages/public/AboutPage').then((m) => ({ default: m.AboutPage }))
 )
+const VideoGuidePage = lazy(() =>
+  import('@/pages/public/VideoGuidePage').then((m) => ({ default: m.VideoGuidePage }))
+)
 const ContactPage = lazy(() =>
   import('@/pages/public/ContactPage').then((m) => ({ default: m.ContactPage }))
 )
@@ -49,14 +53,9 @@ const NotFoundPage = lazy(() =>
     default: m.NotFoundPage,
   }))
 )
-
-// --- Added Missing Pages ---
-const CookiesPage = lazy(() => import('@/pages/public/CookiesPage').then(m => ({ default: m.CookiesPage })))
-const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then(m => ({ default: m.PrivacyPage })))
-const TermsPage = lazy(() => import('@/pages/public/TermsPage').then(m => ({ default: m.TermsPage })))
-const HowItWorksPage = lazy(() => import('@/pages/public/HowItWorksPage').then(m => ({ default: m.HowItWorksPage })))
-const VideoGuidePage = lazy(() => import('@/pages/public/VideoGuidePage').then(m => ({ default: m.VideoGuidePage })))
-
+const HowItWorksPage = lazy(() =>
+  import('@/pages/public/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage }))
+)
 
 // --- Trust & Knowledge Center ---
 const TrustCenterPage = lazy(() => import('@/pages/public/TrustCenterPage').then(m => ({ default: m.TrustCenterPage })))
@@ -84,6 +83,9 @@ const PublicMediaLibraryPage = lazy(() => import('@/pages/public/PublicMediaLibr
 const CompanyTimelinePage = lazy(() => import('@/pages/public/CompanyTimelinePage').then(m => ({ default: m.CompanyTimelinePage })))
 const EventsPage = lazy(() => import('@/pages/public/EventsPage').then(m => ({ default: m.EventsPage })))
 const AwardsPage = lazy(() => import('@/pages/public/AwardsPage').then(m => ({ default: m.AwardsPage })))
+const TermsPage = lazy(() => import('@/pages/public/TermsPage').then((m) => ({ default: m.TermsPage })))
+const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
+const CookiesPage = lazy(() => import('@/pages/public/CookiesPage').then((m) => ({ default: m.CookiesPage })))
 const LoginPage = lazy(() =>
   import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
 )
@@ -195,11 +197,6 @@ const AdminMessagesPage = lazy(() =>
     default: m.AdminMessagesPage,
   }))
 )
-const SellerSettingsPage = lazy(() =>
-  import('@/pages/seller/SellerSettingsPage').then((m) => ({
-    default: m.SellerSettingsPage,
-  }))
-)
 const BuyerWalletPage = lazy(() =>
   import('@/pages/dashboard/BuyerWalletPage').then((m) => ({
     default: m.BuyerWalletPage,
@@ -300,6 +297,11 @@ const SellerSecurityPage = lazy(() =>
     default: m.SellerSecurityPage,
   }))
 )
+const SellerSettingsPage = lazy(() =>
+  import('@/pages/seller/SellerSettingsPage').then((m) => ({
+    default: m.SellerSettingsPage,
+  }))
+)
 const AdminRiskPage = lazy(() =>
   import('@/pages/admin/AdminRiskPage').then((m) => ({
     default: m.AdminRiskPage,
@@ -322,11 +324,21 @@ const AdminAutomationPage = lazy(() =>
 )
 
 const RootLayout: React.FC = () => {
+  const location = useLocation()
+  
+  // Safe exclusion mechanism for admin and auth paths
+  const isExcluded = location.pathname.startsWith('/admin') ||
+                     location.pathname.startsWith('/login') ||
+                     location.pathname.startsWith('/register') ||
+                     location.pathname.startsWith('/forgot-password') ||
+                     location.pathname.startsWith('/reset-password')
+
   return (
     <>
       <Outlet />
-      <DeveloperConsole />
+      {import.meta.env.DEV && <DeveloperConsole />}
       {import.meta.env.DEV && <DebugPanel />}
+      {!isExcluded && <FloatingSupportChat />}
     </>
   )
 }
@@ -372,11 +384,27 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+        {
+          path: 'about',
+          element: (
+            <Suspense fallback={<LoadingScreen />}>
+              <AboutPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'how-it-works',
+          element: (
+            <Suspense fallback={<LoadingScreen />}>
+              <HowItWorksPage />
+            </Suspense>
+          ),
+        },
       {
-        path: 'about',
+        path: 'video-guide',
         element: (
           <Suspense fallback={<LoadingScreen />}>
-            <AboutPage />
+            <VideoGuidePage />
           </Suspense>
         ),
       },
@@ -597,10 +625,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'cookies',
+        path: 'terms',
         element: (
           <Suspense fallback={<LoadingScreen />}>
-            <CookiesPage />
+            <TermsPage />
           </Suspense>
         ),
       },
@@ -613,26 +641,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'terms',
+        path: 'cookies',
         element: (
           <Suspense fallback={<LoadingScreen />}>
-            <TermsPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'how-it-works',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <HowItWorksPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'guides',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <VideoGuidePage />
+            <CookiesPage />
           </Suspense>
         ),
       },
@@ -689,6 +701,14 @@ const router = createBrowserRouter([
     errorElement: <ErrorBoundary />,
     children: [
       {
+        path: 'become-seller',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerVerificationPage />
+          </Suspense>
+        ),
+      },
+      {
         path: 'dashboard',
         element: (
           <Suspense fallback={<LoadingScreen />}>
@@ -717,14 +737,6 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <SellerDashboardPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'seller/settings',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <SellerSettingsPage />
           </Suspense>
         ),
       },
@@ -901,6 +913,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <SellerSecurityPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/settings',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerSettingsPage />
           </Suspense>
         ),
       },

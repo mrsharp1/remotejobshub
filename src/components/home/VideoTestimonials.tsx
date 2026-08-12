@@ -1,12 +1,34 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Star, X } from 'lucide-react'
-import { useReviewsContent } from '@/services/cms/cms.store'
+import { cmsReviewsService, CMSVideoTestimonial } from '@/services/cms/cms-reviews.service'
 import { springs } from '@/lib/framer-physics'
 
 export const VideoTestimonials: React.FC<{ location?: 'homepage' | 'marketplace' | 'community' | 'about' | 'sellerProfile' }> = ({ location = 'homepage' }) => {
-  const { videoTestimonials } = useReviewsContent()
-  console.log("RAW VIDEOS", videoTestimonials)
+  const [videoTestimonials, setVideoTestimonials] = useState<CMSVideoTestimonial[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchVideos = async () => {
+      try {
+        const data = await cmsReviewsService.getVideoTestimonials()
+        if (isMounted) {
+          setVideoTestimonials(data)
+          setIsLoading(false)
+        }
+      } catch (err: any) {
+        console.error('Failed to load video testimonials:', err)
+        if (isMounted) {
+          setError(err.message || 'Failed to load videos')
+          setIsLoading(false)
+        }
+      }
+    }
+    fetchVideos()
+    return () => { isMounted = false }
+  }, [])
 
   const filteredVideos = videoTestimonials.filter(v => {
     if (location === 'homepage') return v.showOnHomepage !== false
@@ -16,33 +38,28 @@ export const VideoTestimonials: React.FC<{ location?: 'homepage' | 'marketplace'
     if (location === 'sellerProfile') return v.showOnSellerProfile !== false
     return true
   })
-  console.log("FILTERED", filteredVideos)
 
   const [activeVideo, setActiveVideo] = useState<string | null>(null)
 
-  // SPRINT 11.3E FORENSIC DUMP
-  if (import.meta.env.DEV) {
-    console.log('--- SPRINT 11.3E RUNTIME EVIDENCE ---')
-    console.log('1. localStorage cms-storage:', JSON.parse(localStorage.getItem('cms-storage') || '{}'))
-    console.log('2. useReviewsContent() output:', { videoTestimonials })
-    console.log('3. VideoTestimonials props:', { location })
-    console.log('4. Filtered Array output:', filteredVideos)
-    console.log('---------------------------------------')
+  if (isLoading) {
+    return (
+      <section className="bg-slate-950 px-4 py-32 flex justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="bg-slate-950 px-4 py-32 flex justify-center">
+        <div className="p-4 rounded-xl border border-red-900 bg-red-950/20 text-red-500 text-sm">
+          Failed to load videos. Please try again later.
+        </div>
+      </section>
+    )
   }
 
   if (filteredVideos.length === 0) {
-    if (import.meta.env.DEV) {
-      return (
-        <div className="p-8 m-8 border-4 border-red-500 bg-black text-white font-mono text-xs rounded">
-          <h2 className="text-red-500 text-lg font-bold mb-4">SPRINT 11.3E FORENSIC DUMP - VideoTestimonials.tsx</h2>
-          <pre>1. localStorage size: {localStorage.getItem('cms-storage')?.length || 0} bytes</pre>
-          <pre>2. useReviewsContent() hook result length: {videoTestimonials.length}</pre>
-          <pre>3. Component props: location={location}</pre>
-          <pre>4. Filtered array length: {filteredVideos.length}</pre>
-          <div className="mt-4 text-gray-400">Please check DevTools Console for the full JSON objects.</div>
-        </div>
-      )
-    }
     return null
   }
 

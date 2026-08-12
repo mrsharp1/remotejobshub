@@ -12,6 +12,7 @@ export const reviewService = {
     title: string
     review: string
     would_recommend: boolean
+    reviewer_type: 'buyer' | 'seller'
   }): Promise<Review> {
     try {
       const { data, error } = await supabase
@@ -22,25 +23,42 @@ export const reviewService = {
 
       if (error) throw error
 
-      // Notify Seller
-      await notificationService.createNotification({
-        user_id: reviewData.seller_id,
-        title: 'New Review Received ⭐',
-        message: `A buyer left a ${reviewData.rating}-star review on your listing.`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: reviewData.order_id,
-      })
+      try {
+        // Notify Target User based on reviewer_type
+        if (reviewData.reviewer_type === 'buyer') {
+          await notificationService.createNotification({
+            user_id: reviewData.seller_id,
+            title: 'New Review Received ⭐',
+            message: `A buyer left a ${reviewData.rating}-star review on your listing. It is currently pending admin approval.`,
+            type: 'system',
+            reference_type: 'order',
+            reference_id: reviewData.order_id,
+          })
+        } else {
+          await notificationService.createNotification({
+            user_id: reviewData.buyer_id,
+            title: 'New Review Received ⭐',
+            message: `A seller left a ${reviewData.rating}-star review on your profile. It is currently pending admin approval.`,
+            type: 'system',
+            reference_type: 'order',
+            reference_id: reviewData.order_id,
+          })
+        }
 
-      // Notify Buyer
-      await notificationService.createNotification({
-        user_id: reviewData.buyer_id,
-        title: 'Review Published 🎉',
-        message: `Your review has been successfully posted. Thank you for your feedback!`,
-        type: 'system',
-        reference_type: 'order',
-        reference_id: reviewData.order_id,
-      })
+        // Notify Reviewer
+        const authorId = reviewData.reviewer_type === 'buyer' ? reviewData.buyer_id : reviewData.seller_id;
+        await notificationService.createNotification({
+          user_id: authorId,
+          title: 'Review Submitted',
+          message: `Your review has been successfully submitted and is awaiting admin approval.`,
+          type: 'system',
+          reference_type: 'order',
+          reference_id: reviewData.order_id,
+        })
+      } catch (notifErr) {
+        console.error('REVIEW INSERT: SUCCESS')
+        console.error('NOTIFICATION: FAILED', notifErr)
+      }
 
       return data as Review
     } catch (err) {
@@ -91,17 +109,47 @@ export const reviewService = {
     }
   },
 
-  async hideReview(id: string, adminHidden: boolean): Promise<void> {
+  async approveReview(id: string): Promise<void> {
     try {
       const { error } = await supabase
         .from('reviews')
-        .update({ admin_hidden: adminHidden })
+        .update({ moderation_status: 'approved' })
         .eq('id', id)
 
       if (error) throw error
     } catch (err) {
-      console.error('Error in hideReview:', err)
+      console.error('Error in approveReview:', err)
       throw err
+    }
+  },
+
+  async rejectReview(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .update({ moderation_status: 'rejected' })
+        .eq('id', id)
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Error in rejectReview:', err)
+      throw err
+    }
+  },
+
+  async getPendingReviews(): Promise<Review[]> {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, buyer_profile:profiles!reviews_buyer_id_fkey(*), seller_profile:profiles!reviews_seller_id_fkey(*), listing:listings(*)')
+        .eq('moderation_status', 'pending')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return (data || []) as Review[]
+    } catch (err) {
+      console.error('Error in getPendingReviews:', err)
+      return []
     }
   },
 
@@ -121,7 +169,8 @@ export const reviewService = {
         .from('reviews')
         .select('*, buyer_profile:profiles!reviews_buyer_id_fkey(*)')
         .eq('listing_id', listingId)
-        .eq('admin_hidden', false)
+        .eq('reviewer_type', 'buyer')
+        .eq('moderation_status', 'approved')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -140,7 +189,8 @@ export const reviewService = {
           '*, buyer_profile:profiles!reviews_buyer_id_fkey(*), listing:listings(*)'
         )
         .eq('seller_id', sellerId)
-        .eq('admin_hidden', false)
+        .eq('reviewer_type', 'buyer')
+        .eq('moderation_status', 'approved')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -158,7 +208,8 @@ export const reviewService = {
         .from('reviews')
         .select('rating, buyer_id')
         .eq('seller_id', sellerId)
-        .eq('admin_hidden', false)
+        .eq('reviewer_type', 'buyer')
+        .eq('moderation_status', 'approved')
 
       const reviewList = reviews || []
       const totalReviews = reviewList.length

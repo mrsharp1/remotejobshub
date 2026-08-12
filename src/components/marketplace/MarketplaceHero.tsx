@@ -89,7 +89,7 @@ export const MarketplaceHero: React.FC<MarketplaceHeroProps> = ({
             </span>
           </button>
           <Link
-            to="/register"
+            to="/become-seller"
             className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-slate-900/60 px-8 py-4 text-base font-bold text-slate-300 backdrop-blur-md transition-all hover:border-white/20 hover:bg-slate-800 hover:text-white sm:w-auto"
           >
             Become a Seller

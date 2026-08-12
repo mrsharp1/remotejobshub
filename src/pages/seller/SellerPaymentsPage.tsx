@@ -48,7 +48,7 @@ export const SellerPaymentsPage: React.FC = () => {
             <Clock className="h-4.5 w-4.5 text-blue-500" />
           </div>
           <div className="font-heading text-xl font-bold text-foreground">
-            ${pendingEscrow.toLocaleString()}
+            ₦{pendingEscrow.toLocaleString()}
           </div>
         </div>
 
@@ -60,7 +60,7 @@ export const SellerPaymentsPage: React.FC = () => {
             <CheckCircle className="h-4.5 w-4.5 text-emerald-500" />
           </div>
           <div className="font-heading text-xl font-bold text-foreground">
-            ${releasedPayments.toLocaleString()}
+            ₦{releasedPayments.toLocaleString()}
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export const SellerPaymentsPage: React.FC = () => {
             <AlertTriangle className="h-4.5 w-4.5 text-orange-500" />
           </div>
           <div className="font-heading text-xl font-bold text-foreground">
-            ${refundedPayments.toLocaleString()}
+            ₦{refundedPayments.toLocaleString()}
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@ export const SellerPaymentsPage: React.FC = () => {
                       {pay.order?.listing?.title || 'Account Asset'}
                     </td>
                     <td className="p-4 font-bold text-foreground">
-                      ₦{Number(pay.amount).toLocaleString()} {pay.currency || 'NGN'}
+                      ₦{Number(pay.amount).toLocaleString()} NGN
                     </td>
                     <td className="p-4">
                       <span

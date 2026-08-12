@@ -4,7 +4,7 @@ import { Briefcase, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
 export const AuthLayout: React.FC = () => {
-  const { user, loading } = useAuthStore()
+  const { user, loading, profile } = useAuthStore()
 
   // While auth is resolving, show spinner
   if (loading) {
@@ -17,6 +17,12 @@ export const AuthLayout: React.FC = () => {
 
   // Already logged in — send back to dashboard
   if (user) {
+    const role = profile?.role ?? 'buyer'
+    if (role === 'admin') {
+      return <Navigate to="/admin" replace />
+    } else if (role === 'seller') {
+      return <Navigate to="/seller" replace />
+    }
     return <Navigate to="/dashboard" replace />
   }
 

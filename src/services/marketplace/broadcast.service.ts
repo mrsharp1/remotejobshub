@@ -8,18 +8,8 @@ import { notificationService } from '@/services/marketplace/notification.service
 
 export const broadcastService = {
   async getBroadcasts(): Promise<Broadcast[]> {
-    try {
-      const { data, error } = await supabase
-        .from('broadcasts')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      return (data || []) as Broadcast[]
-    } catch (err) {
-      console.error('Error in getBroadcasts:', err)
-      return []
-    }
+    // The broadcasts table is obsolete in Phase 4W canonical notification architecture.
+    return []
   },
 
   async createBroadcast(
@@ -35,28 +25,15 @@ export const broadcastService = {
       | 'completed_orders',
     imageUrl?: string | null,
     linkUrl?: string | null,
-    scheduledAt?: string | null
+    scheduledAt?: string | null,
+    category?: string | null,
+    priority?: 'critical' | 'important' | 'informational' | 'promotional' | null
   ): Promise<Broadcast> {
     try {
-      // 1. Insert broadcast logs
-      const { data: b, error } = await supabase
-        .from('broadcasts')
-        .insert([
-          {
-            title,
-            message,
-            audience_filter: audienceFilter,
-            image_url: imageUrl,
-            link_url: linkUrl,
-            scheduled_at: scheduledAt,
-          },
-        ])
-        .select()
-        .single()
+      console.log('ADMIN BROADCAST STARTED')
+      console.log(`Audience: ${audienceFilter}`)
 
-      if (error) throw error
-
-      // 2. Resolve audience profiles
+      // 1. Resolve audience profiles
       let query = supabase.from('profiles').select('id')
 
       if (audienceFilter === 'sellers') {
@@ -67,37 +44,71 @@ export const broadcastService = {
         query = query.eq('role', 'buyer')
       }
 
-      const { data: profiles } = await query
+      const { data: profiles, error: profileError } = await query
+      if (profileError) {
+        console.error('Supabase profile query error:', profileError)
+        throw profileError
+      }
 
-      // 3. Dispatch targeted in-app notifications
+      console.log(`Resolved seller count: ${profiles?.length || 0}`)
+      console.log(`Resolved seller IDs:`, profiles?.map(p => p.id))
+
+      // 2. Dispatch targeted in-app notifications
       if (profiles && profiles.length > 0) {
-        let sent = 0
         for (const p of profiles) {
           // Check user notification preferences first
           const prefs = await this.getNotificationPreferences(p.id)
-          if (prefs && !prefs.announcements_enabled) continue
+          if (prefs && !prefs.announcements_enabled) {
+            console.log(`Skipping notification for seller: ${p.id} (announcements disabled)`)
+            continue
+          }
 
-          await notificationService.createNotification({
+          const notificationPayload = {
             user_id: p.id,
-            title: `📣 Announcement: ${title}`,
-            message:
-              message.slice(0, 100) + (message.length > 100 ? '...' : ''),
+            title: title,
+            message: message.slice(0, 150) + (message.length > 150 ? '...' : ''),
             type: 'system',
-            reference_type: 'order', // placeholder
-            reference_id: b.id,
-          })
-          sent++
-        }
+            category: category || 'announcements',
+            priority: priority || 'informational',
+            target_url: linkUrl,
+            reference_type: 'broadcast',
+            reference_id: null,
+          }
 
-        // Update send statistics count
-        await supabase
-          .from('broadcasts')
-          .update({ sent_count: sent, delivered_count: sent })
-          .eq('id', b.id)
+          console.log(`Notification payload:`, notificationPayload)
+          console.log(`Attempting notification insert for seller: ${p.id}`)
+
+          try {
+            await notificationService.createNotification(notificationPayload)
+            console.log(`Supabase insert result: SUCCESS for seller: ${p.id}`)
+          } catch (insertError: any) {
+            console.log(`Supabase insert result: ERROR for seller: ${p.id}`)
+            console.error('EXACT Supabase error:', {
+              message: insertError?.message,
+              code: insertError?.code,
+              details: insertError?.details,
+              hint: insertError?.hint
+            })
+            throw insertError
+          }
+        }
       }
 
-      return b as Broadcast
-    } catch (err) {
+      // 3. Return dummy broadcast log to satisfy frontend state (since broadcasts table is obsolete)
+      return {
+        id: 'legacy-broadcast',
+        title,
+        message,
+        audience_filter: audienceFilter,
+        image_url: imageUrl,
+        link_url: linkUrl,
+        scheduled_at: scheduledAt || null,
+        sent_count: profiles?.length || 0,
+        delivered_count: profiles?.length || 0,
+        read_count: 0,
+        created_at: new Date().toISOString()
+      } as Broadcast
+    } catch (err: any) {
       console.error('Error in createBroadcast:', err)
       throw err
     }

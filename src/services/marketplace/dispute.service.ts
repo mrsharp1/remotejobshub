@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { Dispute, DisputeMessage, DisputeEvidence } from '@/types'
+import { paymentService } from './payment.service'
 
 export const disputeService = {
   async createDispute(disputeData: {
@@ -213,6 +214,21 @@ export const disputeService = {
 
       if (!dispute) throw new Error('Dispute not found')
 
+      // Fetch payment record
+      const { data: payment, error: payError } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('order_id', dispute.order_id)
+        .single()
+
+      if (payError || !payment) throw new Error('Payment record not found')
+
+      // Execute secure database RPC refund settlement
+      const { error: rpcError } = await supabase.rpc('rpc_mark_payment_refunded', {
+        p_payment_id: payment.id,
+      })
+      if (rpcError) throw rpcError
+
       // 2. Set dispute status to resolved_buyer and resolution notes
       const { error: disputeError } = await supabase
         .from('disputes')
@@ -257,6 +273,18 @@ export const disputeService = {
         .single()
 
       if (!dispute) throw new Error('Dispute not found')
+
+      // Fetch payment record
+      const { data: payment, error: payError } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('order_id', dispute.order_id)
+        .single()
+
+      if (payError || !payment) throw new Error('Payment record not found')
+
+      // Call the existing payment service wrapper that executes rpc_release_escrow()
+      await paymentService.markReleased(payment.id)
 
       // 2. Set dispute status to resolved_seller and resolution notes
       const { error: disputeError } = await supabase

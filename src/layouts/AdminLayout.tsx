@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 
 export const AdminLayout: React.FC = () => {
   const { user, profile, loading, sandboxSession } = useAuthStore()
@@ -213,7 +213,7 @@ export const AdminLayout: React.FC = () => {
             <Lock className="h-3 w-3" /> SECURE CONSOLE
           </div>
           <div className="flex items-center gap-4">
-            <NotificationBell />
+            <NotificationBell userId={user?.id} />
             <div className="text-xs font-bold capitalize text-muted-foreground hidden sm:block">
               {profile?.full_name || 'Administrator'}
             </div>

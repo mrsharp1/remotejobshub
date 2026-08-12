@@ -32,47 +32,47 @@ export const ListingHero: React.FC<ListingHeroProps> = ({ listing, sellerRating 
         )}
       </div>
 
-      <div className="space-y-2">
-        <h1 className="font-heading text-4xl font-black leading-tight text-white md:text-5xl lg:text-6xl">
+      <div className="space-y-2 min-w-0">
+        <h1 className="font-heading text-3xl font-black leading-tight text-white md:text-5xl lg:text-6xl break-words" style={{ overflowWrap: 'anywhere' }}>
           {listing.title}
         </h1>
         <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <Globe className="h-4 w-4 text-indigo-400" />
-            {listing.country}
+          <span className="flex items-center gap-1.5 break-words min-w-0">
+            <Globe className="h-4 w-4 shrink-0 text-indigo-400" />
+            <span className="truncate">{listing.country}</span>
           </span>
-          <span>•</span>
-          <span className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-300">{listing.platform}</span> Asset
+          <span className="hidden sm:inline">•</span>
+          <span className="flex items-center gap-1.5 break-words min-w-0">
+            <span className="font-bold text-slate-300 truncate">{listing.platform}</span> <span className="shrink-0">Asset</span>
           </span>
-          <span>•</span>
-          <span className="flex items-center gap-1.5">
+          <span className="hidden sm:inline">•</span>
+          <span className="flex items-center gap-1.5 shrink-0">
             <Clock className="h-4 w-4 text-emerald-400" />
             Listed {new Date(listing.created_at).toLocaleDateString()}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-4 sm:grid-cols-4">
-        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Asking Price</p>
-          <p className="font-mono text-2xl font-bold text-white">₦{price}</p>
+      <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Asking Price</p>
+          <p className="font-mono text-xl sm:text-2xl font-bold text-white truncate" title={`₦${price}`}>₦{price}</p>
         </div>
-        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Monthly Revenue</p>
-          <p className="font-mono text-2xl font-bold text-emerald-400">₦{monthlyRevenue}</p>
+        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Monthly Rev</p>
+          <p className="font-mono text-xl sm:text-2xl font-bold text-emerald-400 truncate" title={`₦${monthlyRevenue}`}>₦{monthlyRevenue}</p>
         </div>
-        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Weekly Run Rate</p>
-          <p className="font-mono text-2xl font-bold text-indigo-400">₦{weeklyRevenue}</p>
+        <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Wk Run Rate</p>
+          <p className="font-mono text-xl sm:text-2xl font-bold text-indigo-400 truncate" title={`₦${weeklyRevenue}`}>₦{weeklyRevenue}</p>
         </div>
-        <div className="space-y-1 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-300">Trust Score</p>
+        <div className="space-y-1 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 backdrop-blur-sm min-w-0 flex flex-col justify-center">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-indigo-300 truncate">Trust Score</p>
           <div className="flex items-center gap-2">
-            <p className="font-mono text-2xl font-bold text-indigo-400">
+            <p className="font-mono text-xl sm:text-2xl font-bold text-indigo-400">
               {sellerRating ? ((sellerRating.average_rating / 5) * 100).toFixed(0) : 98}%
             </p>
-            <Zap className="h-5 w-5 fill-indigo-400 text-indigo-400" />
+            <Zap className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 fill-indigo-400 text-indigo-400" />
           </div>
         </div>
       </div>

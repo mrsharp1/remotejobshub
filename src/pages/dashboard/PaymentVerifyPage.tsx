@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { paystackService } from '@/services/marketplace/paystack.service'
+import { supabase } from '@/lib/supabase'
+import { notificationService } from '@/features/notifications/services'
 
 export const PaymentVerifyPage: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -28,6 +30,30 @@ export const PaymentVerifyPage: React.FC = () => {
         const response = await paystackService.verifyDeposit(ref)
         if (response.success) {
           setStatus('success')
+
+          try {
+            const { data: tx } = await supabase
+              .from('wallet_transactions')
+              .select('amount, user_id')
+              .eq('payment_reference', ref)
+              .maybeSingle()
+
+            if (tx) {
+              await notificationService.createNotification({
+                user_id: tx.user_id,
+                title: 'Wallet Funded',
+                message: `₦${tx.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} has been successfully added to your wallet.`,
+                type: 'wallet_deposit',
+                link: '/dashboard/wallet',
+                metadata: {
+                  reference_type: 'deposit',
+                  reference_id: ref,
+                }
+              })
+            }
+          } catch (notifErr) {
+            console.error('Failed to create wallet funding notification:', notifErr)
+          }
           
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['buyer-wallet'] }),

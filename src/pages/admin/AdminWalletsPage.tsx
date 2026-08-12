@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Search,
   Loader2,
-  CheckCircle,
-  XCircle,
   ShieldAlert,
   ArrowUpRight,
 } from 'lucide-react'
@@ -12,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { Wallet, WithdrawalRequest } from '@/types'
 import { formatCurrency } from '@/utils/currency'
+import { AdminWithdrawalTable } from '@/features/withdrawals'
 
 export const AdminWalletsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'wallets' | 'withdrawals'>(
@@ -59,7 +58,6 @@ export const AdminWalletsPage: React.FC = () => {
   const {
     data: withdrawals = [],
     isLoading: isWithdrawalsLoading,
-    refetch: refetchWithdrawals,
   } = useQuery({
     queryKey: ['admin-withdrawals'],
     queryFn: async () => {
@@ -115,33 +113,7 @@ export const AdminWalletsPage: React.FC = () => {
     }
   }
 
-  // Approval
-  const handleApprove = async (id: string) => {
-    if (!confirm('Are you sure you want to approve this withdrawal payout?'))
-      return
-    try {
-      await walletService.approveWithdrawal(id)
-      await refetchWithdrawals()
-      await refetchWallets()
-      alert('Withdrawal approved and paid!')
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to approve withdrawal')
-    }
-  }
 
-  // Rejection
-  const handleReject = async (id: string) => {
-    const reason = prompt('Enter reason for rejecting this withdrawal:')
-    if (!reason) return
-    try {
-      await walletService.rejectWithdrawal(id, reason)
-      await refetchWithdrawals()
-      await refetchWallets()
-      alert('Withdrawal request rejected.')
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to reject withdrawal')
-    }
-  }
 
   // Filters
   const filteredWallets = wallets.filter((w) => {
@@ -364,81 +336,11 @@ export const AdminWalletsPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto overflow-hidden rounded-2xl border border-border bg-white shadow-sm dark:bg-card">
-          {isWithdrawalsLoading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : filteredWithdrawals.length === 0 ? (
-            <div className="py-12 text-center text-xs italic text-muted-foreground">
-              No withdrawal requests pending approval.
-            </div>
-          ) : (
-            <table className="w-full border-collapse text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/50">
-                <tr>
-                  <th className="p-3">User</th>
-                  <th className="p-3">Bank Details</th>
-                  <th className="p-3">Amount</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-border/50 divide-y bg-white dark:bg-card">
-                {filteredWithdrawals.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  >
-                    <td className="p-3">
-                      <div className="font-bold text-foreground">
-                        {req.profile?.full_name || 'Anonymous User'}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {req.profile?.email || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="font-bold text-foreground">
-                        {req.bank_name || 'N/A'}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {req.account_number || 'N/A'} ({req.account_name || 'N/A'})
-                      </div>
-                    </td>
-                    <td className="p-3 font-mono font-bold">
-                      {formatCurrency(Number(req.amount || 0))}
-                    </td>
-                    <td className="p-3 font-bold capitalize text-muted-foreground">
-                      {req.status}
-                    </td>
-                    <td className="space-x-2 p-3 text-right">
-                      {req.status === 'pending' ? (
-                        <>
-                          <button
-                            onClick={() => handleApprove(req.id)}
-                            className="inline-flex min-h-[44px] items-center gap-1 rounded border border-green-500/25 bg-green-500/10 px-3 py-2 text-xs font-bold text-green-600 hover:bg-green-500/20"
-                          >
-                            <CheckCircle className="h-3 w-3" /> Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(req.id)}
-                            className="border-destructive/25 bg-destructive/10 hover:bg-destructive/20 inline-flex min-h-[44px] items-center gap-1 rounded border px-3 py-2 text-xs font-bold text-destructive"
-                          >
-                            <XCircle className="h-3 w-3" /> Reject
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-[10px] italic text-muted-foreground">
-                          Processed
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm dark:bg-card">
+          <AdminWithdrawalTable
+            withdrawals={filteredWithdrawals}
+            isLoading={isWithdrawalsLoading}
+          />
         </div>
       )}
     </div>

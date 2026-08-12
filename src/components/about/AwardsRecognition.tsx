@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ShieldCheck, Award, FileCode2 } from 'lucide-react'
+
 
 export const AwardsRecognition: React.FC = () => {
   return (
@@ -17,9 +17,9 @@ export const AwardsRecognition: React.FC = () => {
 
         <div className="grid gap-6 md:grid-cols-3">
           {[
-            { icon: ShieldCheck, title: 'SOC 2 Type II Compliant', desc: 'Independently audited for security, availability, processing integrity, confidentiality, and privacy.' },
-            { icon: Award, title: 'ISO 27001 Certified', desc: 'Internationally recognized standard for information security management systems.' },
-            { icon: FileCode2, title: 'PCI-DSS Level 1', desc: 'The highest level of payment data security standards, ensuring your financial information is never at risk.' },
+            { image: '/images/compliance/soc2.png', title: 'SOC 2 Type II Compliant', desc: 'Independently audited for security, availability, processing integrity, confidentiality, and privacy.' },
+            { image: '/images/compliance/iso27001.jpg', title: 'ISO 27001 Certified', desc: 'Internationally recognized standard for information security management systems.' },
+            { image: '/images/compliance/pci-dss.jpg', title: 'PCI-DSS Level 1', desc: 'The highest level of payment data security standards, ensuring your financial information is never at risk.' },
           ].map((award, idx) => (
             <motion.div
               key={idx}
@@ -30,8 +30,8 @@ export const AwardsRecognition: React.FC = () => {
               className="premium-card relative flex flex-col items-center overflow-hidden p-10 text-center"
             >
               <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-500/10 blur-[40px]" />
-              <div className="relative z-10 mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10">
-                <award.icon className="h-10 w-10" />
+              <div className="relative z-10 mb-6 flex h-24 sm:h-28 items-center justify-center">
+                <img src={award.image} alt={award.title} className="h-full w-auto object-contain rounded-xl shadow-sm border border-slate-200/20" />
               </div>
               <h3 className="mb-3 font-heading text-xl font-bold text-foreground">{award.title}</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{award.desc}</p>

@@ -92,7 +92,8 @@ export const SellerVerificationPage: React.FC = () => {
           full_name: data.fullName,
           phone: data.phoneNumber,
           country: data.nationality,
-          address: data.residentialAddress,
+          residential_address: data.residentialAddress,
+          date_of_birth: data.dateOfBirth,
         }
       )
       await refetch()
@@ -105,16 +106,16 @@ export const SellerVerificationPage: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 pb-12">
+    <div className="mx-auto max-w-3xl space-y-6 pb-12 px-4 sm:px-6">
       {/* Title Header */}
-      <div className="border-b border-white/5 pb-4">
+      <div className="border-b border-border pb-4">
         <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
           Security & Identity Trust Registry
         </span>
-        <h1 className="font-heading text-2xl font-bold text-white mt-1">
+        <h1 className="font-heading text-2xl font-bold text-foreground mt-1">
           KYC & Seller Verification
         </h1>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Verify your identity to unlock Listing Studio, Wallet, and Withdrawals.
         </p>
       </div>
@@ -133,22 +134,22 @@ export const SellerVerificationPage: React.FC = () => {
           />
 
           {/* Progress Card */}
-          <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl space-y-4">
+          <div className="premium-card space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Fingerprint className="h-4.5 w-4.5 text-indigo-400" />
-                <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white">
+                <Fingerprint className="h-4.5 w-4.5 text-indigo-500 dark:text-indigo-400" />
+                <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
                   Verification Progress
                 </h3>
               </div>
-              <span className="text-xs font-mono font-bold text-indigo-400">
+              <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
                 {percent}% Complete
               </span>
             </div>
 
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-950">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-gradient-to-r from-indigo-550 to-indigo-650 transition-all duration-500"
+                className="h-full bg-indigo-650 transition-all duration-500"
                 style={{ width: `${percent}%` }}
               />
             </div>

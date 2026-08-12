@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { SellerVerification } from '@/types'
+import { notificationService } from '@/features/notifications/services'
 
 export const kycService = {
   async getVerification(userId: string): Promise<SellerVerification | null> {
@@ -45,7 +46,8 @@ export const kycService = {
       full_name: string
       phone: string
       country: string
-      address: string
+      residential_address?: string
+      date_of_birth?: string
     }
   ): Promise<SellerVerification> {
     try {
@@ -58,6 +60,8 @@ export const kycService = {
               user_id: userId,
               document_type: docType,
               status: 'pending',
+              residential_address: profileData?.residential_address,
+              date_of_birth: profileData?.date_of_birth,
               updated_at: new Date().toISOString(),
             },
           ],
@@ -119,13 +123,14 @@ export const kycService = {
           full_name: profileData.full_name,
           phone: profileData.phone,
           country: profileData.country,
-          address: profileData.address,
         }).eq('id', userId)
         
         if (profileErr) {
           console.error("FULL KYC ERROR", profileErr)
           alert(JSON.stringify(profileErr, null, 2))
-          console.warn('Failed to update seller profile during KYC submission:', profileErr)
+          if (import.meta.env.DEV) {
+            console.warn('Failed to update seller profile during KYC submission:', profileErr)
+          }
           throw profileErr
         }
       }
@@ -144,6 +149,28 @@ export const kycService = {
     adminId: string
   ): Promise<void> {
     try {
+      if (status === 'approved') {
+        const { data: vRecord } = await supabase
+          .from('seller_verifications')
+          .select('*, profile:user_id(*), documents:verification_documents(*)')
+          .eq('id', verificationId)
+          .single()
+        
+        if (!vRecord) throw new Error('Verification not found')
+        
+        const hasDoc = vRecord.documents && vRecord.documents.length > 0
+        const hasName = !!vRecord.profile?.full_name
+        const hasPhone = !!vRecord.profile?.phone
+        const hasCountry = !!vRecord.profile?.country
+        const hasDob = !!vRecord.date_of_birth
+        const hasAddress = !!vRecord.residential_address
+        const hasDocType = !!vRecord.document_type
+        
+        if (!hasDoc || !hasName || !hasPhone || !hasCountry || !hasDob || !hasAddress || !hasDocType) {
+          throw new Error('Cannot approve: Missing required KYC evidence.')
+        }
+      }
+
       // Update verification status
       const { error } = await supabase
         .from('seller_verifications')
@@ -173,6 +200,16 @@ export const kycService = {
               status: status === 'approved' ? 'active' : 'pending',
             })
             .eq('id', vRecord.user_id)
+            
+          if (status === 'approved') {
+            await notificationService.createNotification({
+              user_id: vRecord.user_id,
+              type: 'verification',
+              title: 'Verification Approved',
+              message: 'Your seller account has been approved!',
+              link: '/seller'
+            })
+          }
         }
       }
 

@@ -91,6 +91,15 @@ export const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({ order, i
             </button>
           )}
 
+          {order.status === 'disputed' && (
+            <button
+              onClick={() => navigate(`/orders/${order.id}`)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-4 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-orange-500 active:scale-95"
+            >
+              View Dispute
+            </button>
+          )}
+
           <VerificationCountdown order={order} />
 
           <EscrowStatus order={order} />

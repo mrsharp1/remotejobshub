@@ -7,11 +7,10 @@ import { TrustMetrics } from '@/components/about/TrustMetrics'
 import { WhyTrustUs } from '@/components/about/WhyTrustUs'
 import { InteractiveTimeline } from '@/components/about/InteractiveTimeline'
 import { GlobalPresence } from '@/components/about/GlobalPresence'
-import { LeadershipTeam } from '@/components/about/LeadershipTeam'
-import { AwardsRecognition } from '@/components/about/AwardsRecognition'
-import { CommunityTelegram } from '@/components/about/CommunityTelegram'
 import { OfficialPartnership } from '@/components/about/OfficialPartnership'
 import { TrustedPartners } from '@/components/about/TrustedPartners'
+import { AwardsRecognition } from '@/components/about/AwardsRecognition'
+import { CommunityTelegram } from '@/components/about/CommunityTelegram'
 import { WrittenReviews } from '@/components/home/WrittenReviews'
 import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 import { FinalCallToAction } from '@/components/about/FinalCallToAction'
@@ -24,14 +23,13 @@ export const AboutPage: React.FC = () => {
       <MissionVision />
       <CoreValues />
       <TrustMetrics />
-      <OfficialPartnership />
-      <TrustedPartners />
       <WhyTrustUs />
       <InteractiveTimeline />
       
       {/* Retained components woven elegantly into the narrative */}
       <GlobalPresence />
-      <LeadershipTeam />
+      <OfficialPartnership />
+      <TrustedPartners />
       <AwardsRecognition />
       <CommunityTelegram />
       

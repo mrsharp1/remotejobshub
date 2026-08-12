@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {
   User,
   FileText,
-  Landmark,
   ShieldCheck,
   CheckCircle,
   Loader2,
@@ -44,8 +43,6 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
   const [nationalitySearch, setNationalitySearch] = useState('')
   const [residentialAddress, setResidentialAddress] = useState('')
   const [docType, setDocType] = useState<'government_id' | 'passport' | 'drivers_license' | 'national_id'>('government_id')
-  const [bankName, setBankName] = useState('Access Bank Nigeria')
-  const [accountNumber, setAccountNumber] = useState('')
 
   // Gov ID Upload States
   const [govIdUrl, setGovIdUrl] = useState('')
@@ -69,7 +66,6 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
   const steps = [
     { num: 1, label: 'Identity', icon: User },
     { num: 2, label: 'Gov ID', icon: FileText },
-    { num: 3, label: 'Payout', icon: Landmark },
   ]
 
   const handleNext = () => {
@@ -133,12 +129,12 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
 
   if (success) {
     return (
-      <div className="rounded-3xl border border-white/5 bg-slate-900/60 p-8 text-center shadow-2xl backdrop-blur-xl animate-in fade-in duration-300">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 shadow-lg shadow-emerald-950/20">
+      <div className="premium-card text-center animate-in fade-in duration-300">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-lg">
           <CheckCircle className="h-8 w-8" />
         </div>
-        <h3 className="mt-6 font-heading text-xl font-bold text-white">KYC Documents Submitted</h3>
-        <p className="mx-auto mt-2 max-w-md text-xs text-slate-400 leading-relaxed">
+        <h3 className="mt-6 font-heading text-xl font-bold text-foreground">KYC Documents Submitted</h3>
+        <p className="mx-auto mt-2 max-w-md text-xs text-muted-foreground leading-relaxed">
           Your credentials have been securely stored in our trust registry. Compliance officers will review your submission shortly.
         </p>
       </div>
@@ -146,9 +142,9 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
   }
 
   return (
-    <div className="rounded-3xl border border-white/5 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl space-y-6">
+    <div className="premium-card space-y-6">
       {/* Mobile-First Stepper Progress */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-4 overflow-x-auto gap-3 scrolling-touch select-none">
+      <div className="flex items-center justify-between border-b border-border pb-4 overflow-x-auto gap-3 scrolling-touch select-none scrollbar-none">
         {steps.map((s) => {
           const StepIcon = s.icon
           const isActive = step === s.num
@@ -160,13 +156,13 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   isActive
                     ? 'bg-indigo-650 text-white shadow-lg'
                     : isCompleted
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-slate-950 border border-white/5 text-slate-500'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : 'bg-muted border border-border text-muted-foreground'
                 }`}
               >
                 {isCompleted ? <CheckCircle className="h-4 w-4" /> : <StepIcon className="h-3.5 w-3.5" />}
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-white font-black' : 'text-slate-500'}`}>
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-foreground font-black' : 'text-muted-foreground'}`}>
                 {s.label}
               </span>
             </div>
@@ -180,9 +176,9 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex items-center justify-between">
-              <h4 className="font-heading text-lg font-bold text-white">Identity Information</h4>
+              <h4 className="font-heading text-lg font-bold text-foreground">Identity Information</h4>
               {fullName && dateOfBirth && nationality && residentialAddress && profile?.email && phoneNumber && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/20">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   <CheckCircle className="h-3 w-3" /> Complete
                 </span>
               )}
@@ -190,7 +186,7 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Full Legal Name
                   {fullName && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
@@ -199,12 +195,12 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   placeholder="e.g. John Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3.5 text-xs text-white placeholder-slate-650 focus:border-indigo-500/50 focus:outline-none transition-colors"
+                  className="w-full rounded-xl border border-border bg-white dark:bg-slate-950 p-3.5 text-xs text-foreground placeholder-muted-foreground/60 focus:border-indigo-500/50 focus:outline-none transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Email Address
                   {profile?.email && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
@@ -212,12 +208,12 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   type="email"
                   value={profile?.email || ''}
                   readOnly
-                  className="w-full rounded-xl border border-white/5 bg-slate-900 p-3.5 text-xs text-slate-500 focus:outline-none cursor-not-allowed"
+                  className="w-full rounded-xl border border-border bg-slate-100 dark:bg-slate-900 p-3.5 text-xs text-muted-foreground focus:outline-none cursor-not-allowed"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Phone Number
                   {phoneNumber && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
@@ -227,16 +223,16 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   readOnly={!!profile?.phone}
-                  className={`w-full rounded-xl border border-white/5 p-3.5 text-xs focus:outline-none transition-colors ${
+                  className={`w-full rounded-xl border border-border p-3.5 text-xs focus:outline-none transition-colors ${
                     profile?.phone
-                      ? 'bg-slate-900 text-slate-500 cursor-not-allowed'
-                      : 'bg-slate-950 text-white placeholder-slate-650 focus:border-indigo-500/50'
+                      ? 'bg-slate-100 dark:bg-slate-900 text-muted-foreground cursor-not-allowed'
+                      : 'bg-white dark:bg-slate-950 text-foreground placeholder-muted-foreground/60 focus:border-indigo-500/50'
                   }`}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Date of Birth
                   {dateOfBirth && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
@@ -244,39 +240,39 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   type="date"
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3.5 text-xs text-white placeholder-slate-650 focus:border-indigo-500/50 focus:outline-none transition-colors"
-                  style={{ colorScheme: 'dark' }}
+                  className="w-full rounded-xl border border-border bg-white dark:bg-slate-950 p-3.5 text-xs text-foreground placeholder-muted-foreground/60 focus:border-indigo-500/50 focus:outline-none transition-colors"
+                  style={{ colorScheme: 'light dark' }}
                 />
               </div>
 
               <div className="space-y-1.5 relative">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Nationality
                   {nationality && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
                 <div 
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3.5 text-xs text-white focus-within:border-indigo-500/50 transition-colors flex items-center justify-between cursor-pointer"
+                  className="w-full rounded-xl border border-border bg-white dark:bg-slate-950 p-3.5 text-xs text-foreground focus-within:border-indigo-500/50 transition-colors flex items-center justify-between cursor-pointer"
                   onClick={() => setIsNationalityOpen(!isNationalityOpen)}
                 >
-                  <span className={nationality ? "text-white" : "text-slate-650"}>
+                  <span className={nationality ? "text-foreground" : "text-muted-foreground/60"}>
                     {countries.find(c => c.label === nationality) ? `${countries.find(c => c.label === nationality)?.flag} ${nationality}` : nationality || "Select Nationality"}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${isNationalityOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
                 </div>
                 {isNationalityOpen && (
-                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-white/10 bg-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                    <div className="p-2 border-b border-white/5 relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-2 border-b border-border relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <input
                         type="text"
                         placeholder="Search country..."
                         value={nationalitySearch}
                         onChange={(e) => setNationalitySearch(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full rounded-lg bg-slate-950 pl-8 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                        className="w-full rounded-lg bg-white dark:bg-slate-950 pl-8 pr-3 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 border border-border"
                       />
                     </div>
-                    <ul className="max-h-48 overflow-y-auto p-1 py-1 scrollbar-thin scrollbar-thumb-slate-800">
+                    <ul className="max-h-48 overflow-y-auto p-1 py-1 scrollbar-thin">
                       {filteredCountries.map((country) => (
                         <li
                           key={country.label}
@@ -285,17 +281,17 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                             setIsNationalityOpen(false)
                             setNationalitySearch('')
                           }}
-                          className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-slate-800 ${
-                            nationality === country.label ? 'bg-indigo-500/10 text-indigo-300' : 'text-slate-300'
+                          className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-muted ${
+                            nationality === country.label ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold' : 'text-foreground'
                           }`}
                         >
                           <span className="text-base">{country.flag}</span>
                           {country.label}
-                          {nationality === country.label && <CheckCircle className="h-3.5 w-3.5 ml-auto text-indigo-400" />}
+                          {nationality === country.label && <CheckCircle className="h-3.5 w-3.5 ml-auto text-indigo-550" />}
                         </li>
                       ))}
                       {filteredCountries.length === 0 && (
-                        <li className="px-3 py-4 text-center text-xs text-slate-500">No countries found</li>
+                        <li className="px-3 py-4 text-center text-xs text-muted-foreground">No countries found</li>
                       )}
                     </ul>
                   </div>
@@ -303,7 +299,7 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
               </div>
 
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Residential Address
                   {residentialAddress && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                 </label>
@@ -312,7 +308,7 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
                   value={residentialAddress}
                   onChange={(e) => setResidentialAddress(e.target.value)}
                   rows={3}
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3.5 text-xs text-white placeholder-slate-650 focus:border-indigo-500/50 focus:outline-none transition-colors resize-none"
+                  className="w-full rounded-xl border border-border bg-white dark:bg-slate-950 p-3.5 text-xs text-foreground placeholder-muted-foreground/60 focus:border-indigo-500/50 focus:outline-none transition-colors resize-none"
                 />
               </div>
             </div>
@@ -322,13 +318,13 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
         {/* Step 2: Government ID */}
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <h4 className="font-heading text-sm font-bold text-white">Government ID Upload</h4>
+            <h4 className="font-heading text-sm font-bold text-foreground">Government ID Upload</h4>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">Select Document Type</label>
+              <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">Select Document Type</label>
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value as any)}
-                className="w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white dark:bg-slate-950 p-3 text-xs text-foreground focus:outline-none"
               >
                 <option value="government_id">National ID Card</option>
                 <option value="passport">International Passport</option>
@@ -347,64 +343,33 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
             />
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className={`rounded-2xl border border-dashed border-white/10 p-6 text-center transition-colors ${
-                isUploadingGovId ? 'bg-slate-950/40 cursor-wait' : 'bg-slate-950/40 cursor-pointer hover:bg-slate-950'
+              className={`rounded-2xl border border-dashed border-border p-6 text-center transition-colors ${
+                isUploadingGovId ? 'bg-muted/40 cursor-wait' : 'bg-muted/40 cursor-pointer hover:bg-muted'
               }`}
             >
               {isUploadingGovId ? (
-                <Loader2 className="mx-auto h-8 w-8 text-indigo-400 animate-spin" />
+                <Loader2 className="mx-auto h-8 w-8 text-indigo-500 dark:text-indigo-400 animate-spin" />
               ) : govIdUrl ? (
-                <CheckCircle className="mx-auto h-8 w-8 text-emerald-400" />
+                <CheckCircle className="mx-auto h-8 w-8 text-emerald-500 dark:text-emerald-400" />
               ) : (
-                <Upload className="mx-auto h-8 w-8 text-indigo-400" />
+                <Upload className="mx-auto h-8 w-8 text-indigo-500 dark:text-indigo-400" />
               )}
-              <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-300">
+              <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-foreground">
                 {govIdFileName ? govIdFileName : 'Drag & Drop Document Image'}
               </span>
-              <p className="mt-0.5 text-[9px] text-slate-500">Supports PNG, JPG, PDF up to 10MB</p>
+              <p className="mt-0.5 text-[9px] text-muted-foreground">Supports PNG, JPG, PDF up to 10MB</p>
             </div>
           </div>
         )}
 
-        {/* Step 3: Bank Account */}
-        {step === 3 && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <h4 className="font-heading text-sm font-bold text-white">Bank Payout Verification</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">Select Bank</label>
-                <select
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
-                >
-                  <option value="Access Bank Nigeria">Access Bank Nigeria</option>
-                  <option value="Guaranty Trust Bank">Guaranty Trust Bank (GTB)</option>
-                  <option value="Zenith Bank">Zenith Bank PLC</option>
-                  <option value="United Bank for Africa">United Bank for Africa (UBA)</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">Account Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 0123456789"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  className="w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Navigation workspace buttons */}
-      <div className="flex items-center justify-between border-t border-white/5 pt-4">
+      <div className="flex items-center justify-between border-t border-border pt-4 gap-4 flex-wrap">
         <button
           onClick={handleBack}
           disabled={step === 1}
-          className="inline-flex items-center gap-1 rounded-xl border border-white/5 bg-slate-900/60 px-4 py-2.5 text-xs font-bold text-slate-300 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
@@ -412,16 +377,15 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
         {step < steps.length ? (
           <button
             onClick={handleNext}
-            disabled={step === 2 && !govIdUrl}
-            className="inline-flex items-center gap-1 rounded-xl bg-indigo-650 px-5 py-2.5 text-xs font-bold text-white transition-all shadow-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white transition-all shadow-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue <ChevronRight className="h-4 w-4" />
           </button>
         ) : (
           <button
             onClick={handleFinalSubmit}
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition-all shadow-lg hover:bg-emerald-700 disabled:opacity-50"
+            disabled={isSubmitting || !govIdUrl}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white transition-all shadow-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

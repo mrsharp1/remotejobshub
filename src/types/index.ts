@@ -13,7 +13,6 @@ export interface Profile {
   email: string
   phone: string | null
   country: string | null
-  address?: string | null
   avatar_url: string | null
   role: 'buyer' | 'seller' | 'admin'
   status: 'active' | 'suspended' | 'pending' | 'deleted'
@@ -48,6 +47,7 @@ export interface Listing {
   price: number
   description?: string | null
   reason_for_sale?: string | null
+  vault_data?: any | null
   status: 'draft' | 'submitted' | 'published' | 'sold' | 'archived'
   approval_status: 'pending' | 'approved' | 'rejected'
   views: number
@@ -133,36 +133,12 @@ export interface Notification {
   user_id: string
   title: string
   message: string
-  type:
-    | 'order'
-    | 'payment'
-    | 'listing'
-    | 'system'
-    | 'escrow'
-    | 'marketplace'
-    | 'verification'
-    | 'wallet'
-    | 'security'
-    | 'disputes'
-    | 'reviews'
-    | 'announcements'
-    | 'message'
-    | 'withdrawal_requested'
-    | 'withdrawal_cancelled'
-    | 'withdrawal_approved'
-    | 'withdrawal_rejected'
+  type: string
   category?: string | null
+  priority?: 'critical' | 'important' | 'informational' | 'promotional' | null
   target_url?: string | null
   link?: string | null
-  metadata?: {
-    avatar_url?: string;
-    reference_type?: string;
-    reference_id?: string;
-    conversationId?: string;
-    reason?: string;
-    [key: string]: unknown;
-  } | null;
-  priority?: 'critical' | 'high' | 'normal' | 'low' | string | null
+  metadata?: Record<string, any> | null
   reference_type?: string | null
   reference_id?: string | null
   is_read: boolean
@@ -242,6 +218,8 @@ export interface Review {
   listing_id: string
   seller_id: string
   buyer_id: string
+  reviewer_type: 'buyer' | 'seller'
+  moderation_status: 'pending' | 'approved' | 'rejected'
   rating: number
   title: string
   review: string
@@ -472,6 +450,8 @@ export interface SellerVerification {
     'government_id' | 'passport' | 'drivers_license' | 'national_id'
   selfie_url?: string | null
   proof_of_address_url?: string | null
+  residential_address?: string | null
+  date_of_birth?: string | null
   notes?: string | null
   created_at: string
   updated_at: string

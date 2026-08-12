@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
@@ -20,9 +20,6 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const navigate = useNavigate()
-  const location = useLocation()
-  const from =
-    (location.state as { from?: string } | null)?.from ?? '/dashboard'
 
   const {
     register,
@@ -41,8 +38,22 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true)
     setErrorMsg(null)
     try {
-      await authService.signIn(data.email, data.password)
-      navigate(from, { replace: true })
+      const signInResult = await authService.signIn(data.email, data.password)
+      if (signInResult?.user) {
+        const fetchedProfile = await authService.getProfile(signInResult.user.id)
+        const role = fetchedProfile?.role ?? 'buyer'
+        
+        let destination = '/dashboard'
+        if (role === 'admin') {
+          destination = '/admin'
+        } else if (role === 'seller') {
+          destination = '/seller'
+        }
+        
+        navigate(destination, { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err: unknown) {
       const error = err as Error
       setErrorMsg(error.message || 'Invalid email or password.')

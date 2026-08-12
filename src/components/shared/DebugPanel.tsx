@@ -2,6 +2,7 @@ import React from 'react'
 import { useCMSStore } from '@/services/cms/cms.store'
 
 export const DebugPanel: React.FC = () => {
+  if (import.meta.env.VITE_SHOW_CMS_DEBUG !== 'true') return null
   const { reviewsContent: storeContent, reviewsDraft: storeDraft, storeId } = useCMSStore()
   
   return (

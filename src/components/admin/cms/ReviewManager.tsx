@@ -1,21 +1,64 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, CheckCircle, Search, Star, Video, MessageSquare, Eye, EyeOff, UploadCloud, Image as ImageIcon } from 'lucide-react'
-import { useReviewsContent, useCMSStore, WrittenReview, VideoTestimonial } from '@/services/cms/cms.store'
+import { useCMSStore } from '@/services/cms/cms.store'
 import { storageService } from '@/services/marketplace/storage.service'
+import { cmsReviewsService, CMSWrittenReview, CMSVideoTestimonial } from '@/services/cms/cms-reviews.service'
+import { useAuth } from '@/providers/AuthProvider'
+import { supabase } from '@/lib/supabase'
 
 export const ReviewManager: React.FC = () => {
-  const content = useReviewsContent()
-  const { updateReviewsDraft, publishReviews, hasUnpublishedChanges, addMedia } = useCMSStore()
+  const { addMedia } = useCMSStore()
+  const { profile, isAuthenticated } = useAuth()
   
   const [activeTab, setActiveTab] = useState<'written' | 'video'>('written')
   const [searchTerm, setSearchTerm] = useState('')
   
-  const [editingWritten, setEditingWritten] = useState<Partial<WrittenReview> | null>(null)
-  const [editingVideo, setEditingVideo] = useState<Partial<VideoTestimonial> | null>(null)
+  // Data state from Supabase
+  const [writtenReviews, setWrittenReviews] = useState<CMSWrittenReview[]>([])
+  const [videoTestimonials, setVideoTestimonials] = useState<CMSVideoTestimonial[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [editingWritten, setEditingWritten] = useState<Partial<CMSWrittenReview> | null>(null)
+  const [editingVideo, setEditingVideo] = useState<Partial<CMSVideoTestimonial> | null>(null)
 
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadFilename, setUploadFilename] = useState('')
+
+  // Diagnostic logging
+  useEffect(() => {
+    const runDiagnostic = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('CMS REVIEW AUTH CHECK')
+      console.log(`authenticated: ${session ? 'YES' : 'NO'}`)
+      console.log(`user id: ${session?.user?.id || 'NONE'}`)
+      console.log(`profile_role: ${profile?.role || 'NONE'}`)
+    }
+    runDiagnostic()
+  }, [profile])
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const [written, videos] = await Promise.all([
+        cmsReviewsService.getWrittenReviews(),
+        cmsReviewsService.getVideoTestimonials()
+      ])
+      setWrittenReviews(written)
+      setVideoTestimonials(videos)
+    } catch (err: any) {
+      console.error('Failed to fetch reviews:', err)
+      setError(err.message || 'Failed to fetch reviews')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const finishVideoUpload = async (file: File) => {
     try {
@@ -143,114 +186,138 @@ export const ReviewManager: React.FC = () => {
     }
   }
 
-  const saveWritten = () => {
+  const saveWritten = async () => {
     if (!editingWritten?.customerName || !editingWritten?.body) return
-    const review: WrittenReview = {
-      id: editingWritten.id || crypto.randomUUID(),
-      customerName: editingWritten.customerName || '',
-      country: editingWritten.country || '',
-      platformPurchased: editingWritten.platformPurchased || 'Upwork',
-      rating: editingWritten.rating || 5,
-      title: editingWritten.title || '',
-      body: editingWritten.body || '',
-      avatar: editingWritten.avatar || '',
-      verified: editingWritten.verified ?? true,
-      isFeatured: editingWritten.isFeatured ?? false,
-      showOnHomepage: editingWritten.showOnHomepage ?? true,
-      showOnMarketplace: editingWritten.showOnMarketplace ?? true,
-      showOnCommunity: editingWritten.showOnCommunity ?? true,
-      showOnAbout: editingWritten.showOnAbout ?? true,
-      showOnSellerProfile: editingWritten.showOnSellerProfile ?? true
+    
+    setError(null)
+    try {
+      const reviewPayload = {
+        customerName: editingWritten.customerName || '',
+        country: editingWritten.country || '',
+        platformPurchased: editingWritten.platformPurchased || 'Upwork',
+        rating: editingWritten.rating || 5,
+        title: editingWritten.title || '',
+        body: editingWritten.body || '',
+        avatar: editingWritten.avatar || '',
+        verified: editingWritten.verified ?? true,
+        isFeatured: editingWritten.isFeatured ?? false,
+        showOnHomepage: editingWritten.showOnHomepage ?? true,
+        showOnMarketplace: editingWritten.showOnMarketplace ?? true,
+        showOnCommunity: editingWritten.showOnCommunity ?? true,
+        showOnAbout: editingWritten.showOnAbout ?? true,
+        showOnSellerProfile: editingWritten.showOnSellerProfile ?? true
+      }
+
+      if (editingWritten.id) {
+        await cmsReviewsService.updateWrittenReview(editingWritten.id, reviewPayload)
+      } else {
+        await cmsReviewsService.createWrittenReview(reviewPayload)
+      }
+      
+      await fetchData()
+      setEditingWritten(null)
+    } catch (err: any) {
+      console.error('Save written review failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
     }
+  }
 
-    let newReviews = [...content.writtenReviews]
-    if (editingWritten.id) {
-      newReviews = newReviews.map(r => r.id === review.id ? review : r)
-    } else {
-      newReviews.unshift(review)
+  const deleteWritten = async (id: string) => {
+    setError(null)
+    try {
+      await cmsReviewsService.deleteWrittenReview(id)
+      await fetchData()
+    } catch (err: any) {
+      console.error('Delete written review failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
     }
-
-    console.log("SAVE REVIEW", { ...content, writtenReviews: newReviews })
-    updateReviewsDraft({ ...content, writtenReviews: newReviews })
-    setEditingWritten(null)
   }
 
-  const deleteWritten = (id: string) => {
-    updateReviewsDraft({
-      ...content,
-      writtenReviews: content.writtenReviews.filter(r => r.id !== id)
-    })
+  const toggleWrittenProp = async (id: string, prop: keyof CMSWrittenReview) => {
+    const review = writtenReviews.find(r => r.id === id)
+    if (!review) return
+    setError(null)
+    try {
+      await cmsReviewsService.updateWrittenReview(id, { [prop]: !review[prop] })
+      await fetchData()
+    } catch (err: any) {
+      console.error('Toggle property failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
+    }
   }
 
-  const toggleWrittenProp = (id: string, prop: keyof WrittenReview) => {
-    updateReviewsDraft({
-      ...content,
-      writtenReviews: content.writtenReviews.map(r => 
-        r.id === id ? { ...r, [prop]: !r[prop as keyof WrittenReview] } : r
-      )
-    })
-  }
-
-  const saveVideo = () => {
+  const saveVideo = async () => {
     if (!editingVideo?.customerName || !editingVideo?.videoUrl) return
-    const video: VideoTestimonial = {
-      id: editingVideo.id || crypto.randomUUID(),
-      videoUrl: editingVideo.videoUrl || '',
-      thumbnail: editingVideo.thumbnail || '',
-      customerName: editingVideo.customerName || '',
-      country: editingVideo.country || '',
-      rating: editingVideo.rating || 5,
-      summary: editingVideo.summary || '',
-      duration: editingVideo.duration || '1m',
-      order: editingVideo.order || 0,
-      isFeatured: editingVideo.isFeatured ?? false,
-      showOnHomepage: editingVideo.showOnHomepage ?? true,
-      showOnMarketplace: editingVideo.showOnMarketplace ?? true,
-      showOnCommunity: editingVideo.showOnCommunity ?? true,
-      showOnAbout: editingVideo.showOnAbout ?? true,
-      showOnSellerProfile: editingVideo.showOnSellerProfile ?? true,
+    setError(null)
+    
+    try {
+      const videoPayload = {
+        videoUrl: editingVideo.videoUrl || '',
+        thumbnail: editingVideo.thumbnail || '',
+        customerName: editingVideo.customerName || '',
+        country: editingVideo.country || '',
+        rating: editingVideo.rating || 5,
+        summary: editingVideo.summary || '',
+        duration: editingVideo.duration || '1m',
+        displayOrder: editingVideo.displayOrder || 0,
+        isFeatured: editingVideo.isFeatured ?? false,
+        showOnHomepage: editingVideo.showOnHomepage ?? true,
+        showOnMarketplace: editingVideo.showOnMarketplace ?? true,
+        showOnCommunity: editingVideo.showOnCommunity ?? true,
+        showOnAbout: editingVideo.showOnAbout ?? true,
+        showOnSellerProfile: editingVideo.showOnSellerProfile ?? true,
+      }
+
+      if (editingVideo.id) {
+        await cmsReviewsService.updateVideoTestimonial(editingVideo.id, videoPayload)
+      } else {
+        await cmsReviewsService.createVideoTestimonial(videoPayload)
+      }
+
+      await fetchData()
+      setEditingVideo(null)
+    } catch (err: any) {
+      console.error('Save video testimonial failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
     }
+  }
 
-    let newVideos = [...content.videoTestimonials]
-    if (editingVideo.id) {
-      newVideos = newVideos.map(v => v.id === video.id ? video : v)
-    } else {
-      newVideos.push(video)
+  const deleteVideo = async (id: string) => {
+    setError(null)
+    try {
+      await cmsReviewsService.deleteVideoTestimonial(id)
+      await fetchData()
+    } catch (err: any) {
+      console.error('Delete video testimonial failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
     }
-
-    console.log("SAVE REVIEW", { ...content, videoTestimonials: newVideos })
-    updateReviewsDraft({ ...content, videoTestimonials: newVideos })
-    setEditingVideo(null)
   }
 
-  const deleteVideo = (id: string) => {
-    updateReviewsDraft({
-      ...content,
-      videoTestimonials: content.videoTestimonials.filter(v => v.id !== id)
-    })
+  const toggleVideoProp = async (id: string, prop: keyof CMSVideoTestimonial) => {
+    const video = videoTestimonials.find(v => v.id === id)
+    if (!video) return
+    setError(null)
+    try {
+      await cmsReviewsService.updateVideoTestimonial(id, { [prop]: !video[prop] })
+      await fetchData()
+    } catch (err: any) {
+      console.error('Toggle video property failed:', err)
+      setError(`code: ${err?.code}\nmessage: ${err?.message}\ndetails: ${err?.details}\nhint: ${err?.hint}`)
+    }
   }
 
-  const toggleVideoProp = (id: string, prop: keyof VideoTestimonial) => {
-    updateReviewsDraft({
-      ...content,
-      videoTestimonials: content.videoTestimonials.map(v => 
-        v.id === id ? { ...v, [prop]: !v[prop as keyof VideoTestimonial] } : v
-      )
-    })
-  }
-
-  const filteredWritten = content.writtenReviews.filter(r => 
+  const filteredWritten = writtenReviews.filter(r => 
     r.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     r.body.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredVideos = content.videoTestimonials.filter(v => 
+  const filteredVideos = videoTestimonials.filter(v => 
     v.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     v.summary.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col relative">
       {/* Header Tabs */}
       <div className="flex border-b border-border bg-card">
         <button
@@ -274,6 +341,14 @@ export const ReviewManager: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-background">
+        
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:border-red-900">
+            <h4 className="font-bold mb-1">Operation Failed</h4>
+            <pre className="text-xs whitespace-pre-wrap font-mono">{error}</pre>
+          </div>
+        )}
+
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -296,135 +371,145 @@ export const ReviewManager: React.FC = () => {
           </div>
         </div>
 
-        {/* WRITTEN REVIEWS */}
-        {activeTab === 'written' && (
-          <div className="space-y-4">
-            {filteredWritten.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-                No written reviews found. Click 'Add Review' to get started.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredWritten.map(review => (
-                  <div key={review.id} className="rounded-xl border border-border bg-card p-5 space-y-3 shadow-sm">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 overflow-hidden rounded-full bg-slate-200">
-                          {review.avatar ? <img src={review.avatar} alt={review.customerName} className="h-full w-full object-cover" /> : <div className="h-full w-full bg-primary/10 text-primary flex items-center justify-center font-bold">{review.customerName.charAt(0)}</div>}
-                        </div>
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <>
+            {/* WRITTEN REVIEWS */}
+            {activeTab === 'written' && (
+              <div className="space-y-4">
+                {filteredWritten.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+                    No written reviews found. Click 'Add Review' to get started.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredWritten.map(review => (
+                      <div key={review.id} className="rounded-xl border border-border bg-card p-5 space-y-3 shadow-sm flex flex-col justify-between">
                         <div>
-                          <h4 className="font-bold text-sm flex items-center gap-1">
-                            {review.customerName} {review.verified && <CheckCircle className="h-3 w-3 text-emerald-500" />}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">{review.country} • {review.platformPurchased}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-1 text-yellow-500">
-                        {Array.from({ length: review.rating }).map((_, i) => (
-                          <Star key={i} className="h-3 w-3 fill-current" />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-bold text-sm">{review.title}</h5>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{review.body}</p>
-                    </div>
-                    
-                    <div className="pt-2 flex items-center justify-between border-t border-border mt-3">
-                      <div className="flex gap-2">
-                        <button onClick={() => toggleWrittenProp(review.id, 'isFeatured')} className={`p-1.5 rounded-md ${review.isFeatured ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Toggle Featured">
-                          <Star className={`h-4 w-4 ${review.isFeatured ? 'fill-current' : ''}`} />
-                        </button>
-                        <button onClick={() => toggleWrittenProp(review.id, 'showOnHomepage')} className={`p-1.5 rounded-md ${review.showOnHomepage ? 'text-primary' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Show on Homepage">
-                          {review.showOnHomepage ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                        </button>
-                        <button onClick={() => toggleWrittenProp(review.id, 'showOnMarketplace')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnMarketplace ? 'text-indigo-500' : 'text-slate-400'}`} title="Show on Marketplace">MP</button>
-                        <button onClick={() => toggleWrittenProp(review.id, 'showOnCommunity')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnCommunity ? 'text-violet-500' : 'text-slate-400'}`} title="Show on Community">CO</button>
-                        <button onClick={() => toggleWrittenProp(review.id, 'showOnAbout')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnAbout ? 'text-emerald-500' : 'text-slate-400'}`} title="Show on About">AB</button>
-                        <button onClick={() => toggleWrittenProp(review.id, 'showOnSellerProfile')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnSellerProfile ? 'text-pink-500' : 'text-slate-400'}`} title="Show on Seller Profile">SP</button>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setEditingWritten(review)} className="p-1.5 text-slate-400 hover:text-primary">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => deleteWritten(review.id)} className="p-1.5 text-slate-400 hover:text-red-500">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* VIDEO TESTIMONIALS */}
-        {activeTab === 'video' && (
-          <div className="space-y-4">
-            {filteredVideos.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-                No video testimonials found. Click 'Add Video' to get started.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredVideos.map(video => (
-                  <div key={video.id} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex flex-col">
-                    <div className="relative h-48 bg-slate-200">
-                      {video.thumbnail ? (
-                        <img src={video.thumbnail} alt={video.customerName} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-slate-400"><Video className="h-10 w-10" /></div>
-                      )}
-                      <div className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1 text-xs font-bold text-white">
-                        {video.duration}
-                      </div>
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                      <div>
-                        <div className="flex justify-between items-start">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 overflow-hidden rounded-full bg-slate-200">
+                                {review.avatar ? <img src={review.avatar} alt={review.customerName} className="h-full w-full object-cover" /> : <div className="h-full w-full bg-primary/10 text-primary flex items-center justify-center font-bold">{review.customerName.charAt(0)}</div>}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm flex items-center gap-1">
+                                  {review.customerName} {review.verified && <CheckCircle className="h-3 w-3 text-emerald-500" />}
+                                </h4>
+                                <p className="text-xs text-muted-foreground">{review.country} • {review.platformPurchased}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1 text-yellow-500">
+                              {Array.from({ length: review.rating }).map((_, i) => (
+                                <Star key={i} className="h-3 w-3 fill-current" />
+                              ))}
+                            </div>
+                          </div>
+                          
                           <div>
-                            <h4 className="font-bold text-sm">{video.customerName}</h4>
-                            <p className="text-xs text-muted-foreground">{video.country}</p>
-                          </div>
-                          <div className="flex gap-1 text-yellow-500">
-                            {Array.from({ length: video.rating }).map((_, i) => (
-                              <Star key={i} className="h-3 w-3 fill-current" />
-                            ))}
+                            <h5 className="font-bold text-sm">{review.title}</h5>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{review.body}</p>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{video.summary}</p>
-                      </div>
-                      
-                      <div className="pt-3 border-t border-border flex items-center justify-between">
-                        <div className="flex gap-2">
-                          <button onClick={() => toggleVideoProp(video.id, 'isFeatured')} className={`p-1.5 rounded-md ${video.isFeatured ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' : 'text-slate-400 hover:bg-slate-100'}`} title="Toggle Featured">
-                            <Star className={`h-4 w-4 ${video.isFeatured ? 'fill-current' : ''}`} />
-                          </button>
-                          <button onClick={() => toggleVideoProp(video.id, 'showOnHomepage')} className={`p-1.5 rounded-md ${video.showOnHomepage ? 'text-primary' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Show on Homepage">
-                            {video.showOnHomepage ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </button>
-                          <button onClick={() => toggleVideoProp(video.id, 'showOnMarketplace')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnMarketplace ? 'text-indigo-500' : 'text-slate-400'}`} title="Show on Marketplace">MP</button>
-                          <button onClick={() => toggleVideoProp(video.id, 'showOnCommunity')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnCommunity ? 'text-violet-500' : 'text-slate-400'}`} title="Show on Community">CO</button>
-                          <button onClick={() => toggleVideoProp(video.id, 'showOnAbout')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnAbout ? 'text-emerald-500' : 'text-slate-400'}`} title="Show on About">AB</button>
-                          <button onClick={() => toggleVideoProp(video.id, 'showOnSellerProfile')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnSellerProfile ? 'text-pink-500' : 'text-slate-400'}`} title="Show on Seller Profile">SP</button>
+                        
+                        <div className="pt-2 flex items-center justify-between border-t border-border mt-3">
+                          <div className="flex gap-2">
+                            <button onClick={() => toggleWrittenProp(review.id, 'isFeatured')} className={`p-1.5 rounded-md ${review.isFeatured ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Toggle Featured">
+                              <Star className={`h-4 w-4 ${review.isFeatured ? 'fill-current' : ''}`} />
+                            </button>
+                            <button onClick={() => toggleWrittenProp(review.id, 'showOnHomepage')} className={`p-1.5 rounded-md ${review.showOnHomepage ? 'text-primary' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Show on Homepage">
+                              {review.showOnHomepage ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                            </button>
+                            <button onClick={() => toggleWrittenProp(review.id, 'showOnMarketplace')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnMarketplace ? 'text-indigo-500' : 'text-slate-400'}`} title="Show on Marketplace">MP</button>
+                            <button onClick={() => toggleWrittenProp(review.id, 'showOnCommunity')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnCommunity ? 'text-violet-500' : 'text-slate-400'}`} title="Show on Community">CO</button>
+                            <button onClick={() => toggleWrittenProp(review.id, 'showOnAbout')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnAbout ? 'text-emerald-500' : 'text-slate-400'}`} title="Show on About">AB</button>
+                            <button onClick={() => toggleWrittenProp(review.id, 'showOnSellerProfile')} className={`p-1.5 rounded-md text-xs font-bold ${review.showOnSellerProfile ? 'text-pink-500' : 'text-slate-400'}`} title="Show on Seller Profile">SP</button>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setEditingWritten(review)} className="p-1.5 text-slate-400 hover:text-primary">
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => deleteWritten(review.id)} className="p-1.5 text-slate-400 hover:text-red-500">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setEditingVideo(video)} className="p-1.5 text-slate-400 hover:text-primary">
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => deleteVideo(video.id)} className="p-1.5 text-slate-400 hover:text-red-500">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
-          </div>
+
+            {/* VIDEO TESTIMONIALS */}
+            {activeTab === 'video' && (
+              <div className="space-y-4">
+                {filteredVideos.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+                    No video testimonials found. Click 'Add Video' to get started.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredVideos.map(video => (
+                      <div key={video.id} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex flex-col">
+                        <div className="relative h-48 bg-slate-200">
+                          {video.thumbnail ? (
+                            <img src={video.thumbnail} alt={video.customerName} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-slate-400"><Video className="h-10 w-10" /></div>
+                          )}
+                          <div className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1 text-xs font-bold text-white">
+                            {video.duration}
+                          </div>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-bold text-sm">{video.customerName}</h4>
+                                <p className="text-xs text-muted-foreground">{video.country}</p>
+                              </div>
+                              <div className="flex gap-1 text-yellow-500">
+                                {Array.from({ length: video.rating }).map((_, i) => (
+                                  <Star key={i} className="h-3 w-3 fill-current" />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{video.summary}</p>
+                          </div>
+                          
+                          <div className="pt-3 border-t border-border flex items-center justify-between">
+                            <div className="flex gap-2">
+                              <button onClick={() => toggleVideoProp(video.id, 'isFeatured')} className={`p-1.5 rounded-md ${video.isFeatured ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' : 'text-slate-400 hover:bg-slate-100'}`} title="Toggle Featured">
+                                <Star className={`h-4 w-4 ${video.isFeatured ? 'fill-current' : ''}`} />
+                              </button>
+                              <button onClick={() => toggleVideoProp(video.id, 'showOnHomepage')} className={`p-1.5 rounded-md ${video.showOnHomepage ? 'text-primary' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title="Show on Homepage">
+                                {video.showOnHomepage ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                              </button>
+                              <button onClick={() => toggleVideoProp(video.id, 'showOnMarketplace')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnMarketplace ? 'text-indigo-500' : 'text-slate-400'}`} title="Show on Marketplace">MP</button>
+                              <button onClick={() => toggleVideoProp(video.id, 'showOnCommunity')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnCommunity ? 'text-violet-500' : 'text-slate-400'}`} title="Show on Community">CO</button>
+                              <button onClick={() => toggleVideoProp(video.id, 'showOnAbout')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnAbout ? 'text-emerald-500' : 'text-slate-400'}`} title="Show on About">AB</button>
+                              <button onClick={() => toggleVideoProp(video.id, 'showOnSellerProfile')} className={`p-1.5 rounded-md text-xs font-bold ${video.showOnSellerProfile ? 'text-pink-500' : 'text-slate-400'}`} title="Show on Seller Profile">SP</button>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setEditingVideo(video)} className="p-1.5 text-slate-400 hover:text-primary">
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                              <button onClick={() => deleteVideo(video.id)} className="p-1.5 text-slate-400 hover:text-red-500">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -591,17 +676,18 @@ export const ReviewManager: React.FC = () => {
         </div>
       )}
 
-      {/* Footer Publish Bar */}
-      <div className="border-t border-border bg-card p-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
-        <p className="text-sm text-muted-foreground">
-          {hasUnpublishedChanges ? 'You have unsaved review changes.' : 'Reviews are synced.'}
-        </p>
-        <button 
-          onClick={() => publishReviews()}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Synchronize Reviews System
-        </button>
+      {/* Footer Status Bar (Replaces Publish Bar) */}
+      <div className="border-t border-border bg-card p-4 flex justify-between items-center text-sm text-muted-foreground">
+        <p>Reviews are now saved instantly to the database.</p>
+        <div className="flex gap-4">
+          <span className="flex items-center gap-1">
+            <span className={`h-2 w-2 rounded-full ${isAuthenticated ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+            {isAuthenticated ? 'Connected' : 'Disconnected'}
+          </span>
+          <button onClick={fetchData} className="text-primary hover:underline">
+            Refresh Data
+          </button>
+        </div>
       </div>
     </div>
   )

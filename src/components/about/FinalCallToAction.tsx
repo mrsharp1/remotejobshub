@@ -56,7 +56,7 @@ export const FinalCallToAction: React.FC = () => {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
         >
           <Link
-            to="/register"
+            to="/become-seller"
             className="group relative flex w-full sm:w-auto items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-8 py-4 text-base sm:text-lg font-bold text-slate-900 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)]"
           >
             <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">

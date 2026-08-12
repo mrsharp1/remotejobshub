@@ -19,6 +19,9 @@ export const orderService = {
         throw new Error(data.message || 'Failed to complete checkout')
       }
 
+      // Notifications are now handled purely by the rpc_checkout_with_wallet trigger/rpc natively
+      // to guarantee atomicity and prevent duplicate notifications.
+
       return data
     } catch (err: any) {
       console.error('Error in checkoutWithWallet:', err)

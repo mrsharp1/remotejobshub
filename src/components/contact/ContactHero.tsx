@@ -38,7 +38,7 @@ export const ContactHero: React.FC = () => {
           transition={{ ...springs.gentle, delay: 0.2 }}
           className="max-w-4xl font-heading text-5xl font-black tracking-tighter md:text-7xl lg:text-8xl"
         >
-          We are here to <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">protect your trades.</span>
+          Contact <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Remote Jobs Hub</span>
         </motion.h1>
 
         <motion.p
@@ -47,7 +47,7 @@ export const ContactHero: React.FC = () => {
           transition={{ ...springs.gentle, delay: 0.3 }}
           className="mt-8 max-w-2xl text-lg leading-relaxed text-slate-400 md:text-xl"
         >
-          Have questions about account transfers, escrow verification, or custom partnerships? Contact our risk operations team today.
+          We're here to help. Whether you have questions about listings, sellers, accounts, payments, or technical issues, our support team is available through multiple channels.
         </motion.p>
 
         {/* Glass Trust Badges */}

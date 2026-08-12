@@ -14,7 +14,9 @@ export const BuyerNotification: React.FC<BuyerNotificationProps> = ({ order }) =
         description: `Your order ORD-${order.id.slice(0, 6).toUpperCase()} has been successfully settled.`,
         action: {
           label: 'View Receipt',
-          onClick: () => console.log('View receipt')
+          onClick: () => {
+            if (import.meta.env.DEV) console.log('View receipt')
+          }
         }
       })
     }, 1500)

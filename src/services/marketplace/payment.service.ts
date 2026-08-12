@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { Payment } from '@/types'
 import { notificationService } from '@/services/marketplace/notification.service'
+import { notificationService as featureNotificationService } from '@/features/notifications/services'
 
 export const paymentService = {
   // Legacy initializePayment and verifyPayment removed for wallet-only atomic checkout
@@ -79,6 +80,12 @@ export const paymentService = {
 
   async markReleased(id: string): Promise<void> {
     try {
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', id)
+        .single()
+
       const { data, error } = await supabase.rpc('rpc_release_escrow', { p_payment_id: id })
       
       if (error) throw error
@@ -86,6 +93,40 @@ export const paymentService = {
       // Check for application-level errors returned as JSON by the RPC
       if (data && data.success === false) {
         throw new Error(data.message || 'Failed to release escrow')
+      }
+
+      if (payment) {
+        // Buyer Notification: payment_completed
+        await featureNotificationService.createNotification({
+          user_id: payment.buyer_id,
+          title: 'Order Completed',
+          message: 'Your order has been completed successfully.',
+          type: 'payment_completed',
+          category: 'order',
+          priority: 'important',
+          target_url: `/dashboard/orders/${payment.order_id}`,
+          link: `/dashboard/orders/${payment.order_id}`,
+          metadata: {
+            reference_type: 'order',
+            reference_id: payment.order_id,
+          }
+        })
+
+        // Seller Notification: escrow_released
+        await featureNotificationService.createNotification({
+          user_id: payment.seller_id,
+          title: 'Payment Released',
+          message: 'Funds from your completed order have been released to your wallet.',
+          type: 'escrow_released',
+          category: 'wallet',
+          priority: 'important',
+          target_url: `/seller/orders/${payment.order_id}`,
+          link: `/seller/orders/${payment.order_id}`,
+          metadata: {
+            reference_type: 'order',
+            reference_id: payment.order_id,
+          }
+        })
       }
     } catch (err) {
       console.error('Error in markReleased:', err)
@@ -114,6 +155,9 @@ export const paymentService = {
           title: 'Escrow Funds Refunded 💸',
           message: `Escrow payment of $${payment.amount} has been refunded back to your account.`,
           type: 'payment',
+          category: 'wallet',
+          priority: 'important',
+          target_url: `/dashboard/orders/${payment.order_id}`,
           reference_type: 'order',
           reference_id: payment.order_id,
         })

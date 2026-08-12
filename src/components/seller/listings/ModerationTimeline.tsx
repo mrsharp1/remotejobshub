@@ -21,16 +21,16 @@ export const ModerationTimeline: React.FC<ModerationTimelineProps> = ({
   const isRejected = status === 'rejected'
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5 space-y-4 shadow-xl">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xl text-foreground">
       <div>
-        <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-white">Moderation Timeline</h4>
-        <p className="text-[10px] text-slate-450 mt-0.5">Track compliance audit milestones</p>
+        <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">Moderation Timeline</h4>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Track compliance audit milestones</p>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {steps.map((s, idx) => (
           <div key={idx} className="flex items-center gap-3 flex-1">
-            <div className={`rounded-xl p-2 shrink-0 ${s.ok ? 'bg-purple-500/10 text-purple-400' : 'bg-slate-950 text-slate-650'}`}>
+            <div className={`rounded-xl p-2 shrink-0 ${s.ok ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-muted text-muted-foreground'}`}>
               {s.key === 'approved' && status === 'approved' ? (
                 <ShieldCheck className="h-4.5 w-4.5" />
               ) : s.ok ? (
@@ -40,34 +40,34 @@ export const ModerationTimeline: React.FC<ModerationTimelineProps> = ({
               )}
             </div>
             <div>
-              <span className={`block text-xs font-bold leading-tight ${s.ok ? 'text-white' : 'text-slate-500'}`}>
+              <span className={`block text-xs font-bold leading-tight ${s.ok ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {s.label}
               </span>
-              <span className="block text-[9.5px] text-slate-400 mt-0.5 leading-relaxed">{s.desc}</span>
+              <span className="block text-[9.5px] text-muted-foreground mt-0.5 leading-relaxed">{s.desc}</span>
             </div>
             {idx < steps.length - 1 && (
-              <ArrowRight className="hidden sm:block h-4 w-4 text-slate-650 shrink-0 ml-auto" />
+              <ArrowRight className="hidden sm:block h-4 w-4 text-muted-foreground/60 shrink-0 ml-auto" />
             )}
           </div>
         ))}
       </div>
 
       {isRejected && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-550/5 p-4 space-y-3 animate-in fade-in duration-300">
-          <div className="flex items-start gap-2.5 text-rose-450">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-3 animate-in fade-in duration-300">
+          <div className="flex items-start gap-2.5 text-rose-600 dark:text-rose-400">
             <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
             <div>
               <h5 className="font-heading text-xs font-bold">Audit Action Required</h5>
-              <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
                 Moderator has flagged details. Correct them to enable publishing.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-950/60 rounded-lg p-3 flex items-start gap-2.5 text-[10px] text-slate-300 border border-white/5 leading-relaxed">
-            <MessageSquare className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+          <div className="bg-muted/60 rounded-lg p-3 flex items-start gap-2.5 text-[10px] text-foreground border border-border leading-relaxed">
+            <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <p>
-              <strong className="text-white">Admin Comments:</strong> "{adminComment || 'Credentials verification failed. Please check recovery details and backup codes.'}"
+              <strong className="text-foreground">Admin Comments:</strong> "{adminComment || 'Credentials verification failed. Please check recovery details and backup codes.'}"
             </p>
           </div>
 

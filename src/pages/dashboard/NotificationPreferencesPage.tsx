@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2, Save, BellRing } from 'lucide-react'
 import { broadcastService } from '@/services/marketplace/broadcast.service'
 import { useAuthStore } from '@/stores/authStore'
+import { DeviceNotificationControl } from '@/features/notifications/components/DeviceNotificationControl'
 
 export const NotificationPreferencesPage: React.FC = () => {
   const { user } = useAuthStore()
@@ -13,7 +14,7 @@ export const NotificationPreferencesPage: React.FC = () => {
   const [updates, setUpdates] = useState(true)
   const [announcements, setAnnouncements] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-
+  
   // Fetch initial preferences
   const {
     data: prefs,
@@ -100,67 +101,78 @@ export const NotificationPreferencesPage: React.FC = () => {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-8">
       {/* Title */}
-      <div className="border-border/40 border-b pb-4">
-        <h1 className="flex items-center gap-2 font-heading text-2xl font-bold text-foreground">
-          <BellRing className="h-6 w-6 text-primary" /> Notification Settings
+      <div className="border-border/40 border-b pb-5">
+        <h1 className="flex items-center gap-2 font-heading text-3xl font-bold text-foreground">
+          <BellRing className="h-7 w-7 text-primary" /> Notification Settings
         </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Choose which channels and categories you want to opt-in or opt-out
-          from.
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Choose which channels and categories you want to opt-in or opt-out from across your account.
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <form
-          onSubmit={handleSavePreferences}
-          className="space-y-6 rounded-xl border bg-card p-5 shadow-sm"
-        >
-          <div className="space-y-5">
-            {switchesList.map((item, idx) => (
-              <div
-                key={idx}
-                className="border-border/30 flex items-start justify-between gap-4 border-b pb-4 last:border-b-0"
-              >
-                <div className="text-xs">
-                  <h4 className="font-bold text-foreground">{item.label}</h4>
-                  <p className="mt-0.5 leading-relaxed text-muted-foreground">
-                    {item.desc}
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={item.value}
-                    onChange={(e) => item.setter(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-5 w-9 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none"></div>
-                </label>
-              </div>
-            ))}
-          </div>
+      {/* Device Notifications Section */}
+      <section className="space-y-4">
+        <h2 className="font-heading text-lg font-bold text-foreground">Push Notifications</h2>
+        <DeviceNotificationControl userId={user?.id} />
+      </section>
 
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="hover:bg-primary/95 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-xs font-bold text-white transition-colors disabled:opacity-60"
+      {/* Email / In-App Preferences */}
+      <section className="space-y-4">
+        <h2 className="font-heading text-lg font-bold text-foreground">Notification Channels</h2>
+        {isLoading ? (
+          <div className="flex justify-center py-20 rounded-xl border bg-card">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSavePreferences}
+            className="space-y-2 rounded-xl border bg-card shadow-sm overflow-hidden"
           >
-            {isSaving ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <>
-                <Save className="h-3.5 w-3.5" /> Save Preferences Configuration
-              </>
-            )}
-          </button>
-        </form>
-      )}
+            <div className="divide-y divide-border/50">
+              {switchesList.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start justify-between gap-4 p-5 hover:bg-muted/10 transition-colors"
+                >
+                  <div className="text-sm">
+                    <h4 className="font-bold text-foreground">{item.label}</h4>
+                    <p className="mt-1 leading-relaxed text-muted-foreground max-w-[85%]">
+                      {item.desc}
+                    </p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center mt-1 shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={item.value}
+                      onChange={(e) => item.setter(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-border after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-5 border-t border-border bg-muted/20">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="hover:bg-primary/90 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-all disabled:opacity-60 ml-auto shadow-sm"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save Channel Preferences
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
     </div>
   )
 }

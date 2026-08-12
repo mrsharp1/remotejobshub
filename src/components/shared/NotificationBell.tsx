@@ -25,7 +25,6 @@ export const NotificationBell: React.FC = () => {
       return notificationService.getNotifications(user.id)
     },
     enabled: !!user?.id,
-    refetchInterval: 8000, // Auto refresh mock polling
   })
 
   const unreadCount = useMemoUnreadCount(notifications)
@@ -57,11 +56,17 @@ export const NotificationBell: React.FC = () => {
   const handleNotificationClick = async (notif: Notification) => {
     setIsOpen(false)
     try {
-      await notificationService.markAsRead(notif.id)
-      refetch()
+      if (!notif.is_read) {
+        await notificationService.markAsRead(notif.id)
+        refetch()
+      }
 
-      // Redirect depending on reference parameter type
-      if (notif.reference_type === 'order' && notif.reference_id) {
+      // Route to deep link using target_url with fallback to legacy logic
+      if (notif.target_url) {
+        navigate(notif.target_url)
+      } else if (notif.link) {
+        navigate(notif.link)
+      } else if (notif.reference_type === 'order' && notif.reference_id) {
         navigate(`/orders/${notif.reference_id}`)
       } else if (notif.reference_type === 'listing') {
         navigate('/seller') // Redirect listing studio checks

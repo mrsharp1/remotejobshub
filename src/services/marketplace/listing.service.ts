@@ -35,9 +35,9 @@ export const listingService = {
         .single()
 
       if (error) {
-        console.error("LISTING INSERT ERROR:", error);
-        alert(JSON.stringify(error, null, 2));
-        throw error;
+        console.error('LISTING INSERT ERROR:', error)
+        alert(JSON.stringify(error, null, 2))
+        throw error
       }
 
       if (images && images.length > 0) {
@@ -164,7 +164,7 @@ export const listingService = {
       const { data, error } = await supabase
         .from('listings')
         .select(
-          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
+          'id, seller_id, title, platform, country, account_age, monthly_income, price, description, reason_for_sale, status, approval_status, views, favorites_count, is_featured, created_at, updated_at, original_email_included, recovery_email_included, phone_included, identity_verified, approved_at, approved_by, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
         )
         .eq('id', id)
         .single()
@@ -173,7 +173,7 @@ export const listingService = {
         console.error('Error in getListing:', error.message)
         return null
       }
-      return data as Listing
+      return data as unknown as Listing
     } catch (err) {
       console.error('Error in getListing:', err)
       return null
@@ -190,7 +190,7 @@ export const listingService = {
       let query = supabase
         .from('listings')
         .select(
-          '*, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
+          'id, seller_id, title, platform, country, account_age, monthly_income, price, description, reason_for_sale, status, approval_status, views, favorites_count, is_featured, created_at, updated_at, original_email_included, recovery_email_included, phone_included, identity_verified, approved_at, approved_by, images:listing_images(*), tags:listing_tags(*), seller:profiles!listings_seller_id_fkey(*)'
         )
         .eq('approval_status', 'approved')
         .eq('status', 'published')
@@ -212,7 +212,7 @@ export const listingService = {
         ascending: false,
       })
       if (error) throw error
-      return (data || []) as Listing[]
+      return (data || []) as unknown as Listing[]
     } catch (err) {
       console.error('Error in getListings:', err)
       return []
@@ -331,30 +331,34 @@ export const listingService = {
       })
       .eq('id', id)
       .select()
-      .single();
+      .single()
 
     if (error) {
-      console.error("APPROVE LISTING ERROR:", error);
-      alert(JSON.stringify(error, null, 2));
-      throw error;
+      console.error('APPROVE LISTING ERROR:', error)
+      alert(JSON.stringify(error, null, 2))
+      throw error
     }
 
-    console.log("Listing approved successfully:", listing);
+    if (import.meta.env.DEV) {
+      console.log('Listing approved successfully:', listing)
+    }
 
     try {
       await notificationService.createNotification({
         user_id: listing.seller_id,
-        title: "Listing Approved 🎉",
+        title: 'Listing Approved 🎉',
         message: `Your listing "${listing.title}" has been approved and is now live on the marketplace.`,
-        type: "listing",
-        reference_type: "listing",
+        type: 'listing',
+        reference_type: 'listing',
         reference_id: id,
-      });
+      })
     } catch (notificationError) {
-      console.warn("Notification failed:", notificationError);
+      if (import.meta.env.DEV) {
+        console.warn('Notification failed:', notificationError)
+      }
     }
 
-    return;
+    return
   },
 
   async rejectListing(
@@ -368,7 +372,6 @@ export const listingService = {
         .update({
           approval_status: 'rejected',
           status: 'draft',
-          review_notes: notes,
           approved_by: adminId,
           approved_at: new Date().toISOString(),
         })
@@ -404,7 +407,6 @@ export const listingService = {
         .update({
           approval_status: 'pending',
           status: 'draft',
-          review_notes: notes,
           approved_by: adminId,
         })
         .eq('id', id)

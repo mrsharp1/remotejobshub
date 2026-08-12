@@ -2,23 +2,21 @@ import React from 'react'
 import { PricingHero } from '@/components/pricing/PricingHero'
 import { PricingCards } from '@/components/pricing/PricingCards'
 import { PricingTrust } from '@/components/pricing/PricingTrust'
-import { FeatureComparison } from '@/components/pricing/FeatureComparison'
+import { BuyerTrustSection } from '@/components/pricing/BuyerTrustSection'
 import { SavingsCalculator } from '@/components/pricing/SavingsCalculator'
 import { CustomerTestimonials } from '@/components/pricing/CustomerTestimonials'
 import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 import { PricingFAQ } from '@/components/pricing/PricingFAQ'
 import { PricingCommunity } from '@/components/pricing/PricingCommunity'
 import { PricingCTA } from '@/components/pricing/PricingCTA'
-import { BuyerTrustSection } from '@/components/pricing/BuyerTrustSection'
 
 export const PricingPage: React.FC = () => {
   return (
     <div className="flex flex-col bg-background">
       <PricingHero />
       <PricingCards />
-      <BuyerTrustSection />
       <PricingTrust />
-      <FeatureComparison />
+      <BuyerTrustSection />
       <SavingsCalculator />
       <CustomerTestimonials />
       <div className="bg-slate-50 dark:bg-slate-900 pb-16">

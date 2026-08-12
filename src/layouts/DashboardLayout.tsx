@@ -158,7 +158,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Seller Settings',
-    to: '/seller',
+    to: '/seller/settings',
     icon: Settings,
     roles: ['seller', 'admin'],
   },

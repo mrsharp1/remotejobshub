@@ -16,6 +16,13 @@ import { PaymentCard } from '@/components/seller/PaymentCard'
 import { SellerAgreementModal } from '@/components/seller/SellerAgreementModal'
 import { useEventSubscriber } from '@/hooks/useEventSubscriber'
 
+// Live data queries
+import { useQuery } from '@tanstack/react-query'
+import { walletService } from '@/services/marketplace/wallet.service'
+import { orderService } from '@/services/marketplace/order.service'
+import { useConversations } from '@/features/messaging/hooks/useConversations'
+import { useWithdrawals } from '@/features/withdrawals/hooks/useWithdrawals'
+
 // Studio Imports
 import { ListingForm } from '@/components/seller/studio/ListingForm'
 import { ListingPreview } from '@/components/seller/studio/ListingPreview'
@@ -48,6 +55,24 @@ export const SellerDashboardPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
+  // Live queries
+  const { data: wallet, refetch: refetchWallet } = useQuery({
+    queryKey: ['seller-wallet', profile?.id],
+    queryFn: () => (profile?.id ? walletService.getWallet(profile.id) : null),
+    enabled: !!profile?.id,
+  })
+
+  const { data: withdrawals = [] } = useWithdrawals(profile?.id)
+  const hasPayoutDetails = withdrawals.length > 0
+
+  const { data: sellerOrders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ['seller-orders', profile?.id],
+    queryFn: () => (profile?.id ? orderService.getSellerOrders(profile.id) : []),
+    enabled: !!profile?.id,
+  })
+
+  const { data: conversations = [], refetch: refetchConversations } = useConversations(profile?.id)
+
   const getTabCounts = () => {
     const counts: Record<string, number> = {
       all: sellerListings.length,
@@ -69,14 +94,18 @@ export const SellerDashboardPage: React.FC = () => {
     const paused = sellerListings.filter((l) => l.status === 'archived').length
     const drafts = sellerListings.filter((l) => l.status === 'draft').length
     
-    const revenue = sellerListings
-      .filter((l) => l.status === 'sold')
-      .reduce((sum, l) => sum + l.price, 0)
+    // Live Revenue calculation (completed sales sum)
+    const revenue = sellerOrders
+      .filter((o) => o.status === 'completed')
+      .reduce((sum, o) => sum + Number(o.amount), 0)
 
-    // Views: view_count is not currently tracked per listing, defaults to 0
-    const views = 0
+    // Dynamic views tally from listings
+    const views = sellerListings.reduce((sum, l) => sum + (l.views || 0), 0)
 
-    const conversion = sellerListings.length > 0 ? Math.round((sold / sellerListings.length) * 100 * 10) / 10 : 0
+    // Dynamic conversion rate calculation
+    const conversion = views > 0 
+      ? Math.round((sellerOrders.filter(o => o.status === 'completed').length / views) * 100 * 10) / 10
+      : (sellerListings.length > 0 ? Math.round((sold / sellerListings.length) * 100 * 10) / 10 : 0)
 
     return { active, pending, sold, paused, drafts, revenue, views, conversion }
   }
@@ -105,14 +134,21 @@ export const SellerDashboardPage: React.FC = () => {
     warnings: string[]
   } | null>(null)
 
-  useEffect(() => {
+  const handleWorkspaceUpdate = useCallback(() => {
     fetchListings()
-  }, [fetchListings])
+    refetchWallet()
+    refetchOrders()
+    refetchConversations()
+  }, [fetchListings, refetchWallet, refetchOrders, refetchConversations])
 
-  useEventSubscriber('ORDER_CREATED', fetchListings)
-  useEventSubscriber('ESCROW_RELEASED', fetchListings)
-  useEventSubscriber('DISPUTE_OPENED', fetchListings)
-  useEventSubscriber('DISPUTE_RESOLVED', fetchListings)
+  useEffect(() => {
+    handleWorkspaceUpdate()
+  }, [handleWorkspaceUpdate])
+
+  useEventSubscriber('ORDER_CREATED', handleWorkspaceUpdate)
+  useEventSubscriber('ESCROW_RELEASED', handleWorkspaceUpdate)
+  useEventSubscriber('DISPUTE_OPENED', handleWorkspaceUpdate)
+  useEventSubscriber('DISPUTE_RESOLVED', handleWorkspaceUpdate)
 
   useEffect(() => {
     if (sellerListings.length > 0) {
@@ -133,10 +169,7 @@ export const SellerDashboardPage: React.FC = () => {
     { completed: !!profile?.avatar_url },
     { completed: !!profile?.bio },
     { completed: profile?.seller_verified || false },
-    {
-      completed:
-        !!profile?.company_name && !!profile?.company_website && !!profile?.bio,
-    },
+    { completed: hasPayoutDetails },
   ]
   const completedCount = checklistItems.filter((i) => i.completed).length
   const completionPercentage = Math.round(
@@ -275,7 +308,9 @@ export const SellerDashboardPage: React.FC = () => {
           formImages,
           formTags
         )
-        console.log("Listing successfully inserted.");
+        if (import.meta.env.DEV) {
+          console.log("Listing successfully inserted.");
+        }
       }
       setStudioView('list')
     } catch (err) {
@@ -347,8 +382,8 @@ export const SellerDashboardPage: React.FC = () => {
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
               Pending Payouts
             </p>
-            <p className="mt-1 font-heading text-3xl font-black text-white">
-              ₦12,450.00
+            <p className="mt-1 font-heading text-3xl font-black text-white font-mono">
+              ₦{(wallet?.pending_balance || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -394,26 +429,34 @@ export const SellerDashboardPage: React.FC = () => {
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Revenue</p>
-                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">₦12,450.00</p>
-                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">+₦2,400 this week</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  ₦{getStats().revenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Completed sales</p>
               </div>
 
               <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Views</p>
-                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">1,420</p>
-                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">+18% exposure rate</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  {getStats().views.toLocaleString()}
+                </p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Listing pageviews</p>
               </div>
 
               <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Favorites</p>
-                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">182</p>
-                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">12.8% conversion rate</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  {sellerListings.reduce((sum, l) => sum + (l.favorites_count || 0), 0).toLocaleString()}
+                </p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Listing bookmarks</p>
               </div>
 
               <div className="premium-card p-5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Average Conversion</p>
-                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white">2.4%</p>
-                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Top 5% of marketplace</p>
+                <p className="mt-2 font-heading text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  {getStats().conversion}%
+                </p>
+                <p className="mt-1 text-[10px] text-emerald-500 font-semibold">Orders ÷ Views</p>
               </div>
             </div>
 
@@ -441,15 +484,7 @@ export const SellerDashboardPage: React.FC = () => {
                   <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Revenue Performance</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">Vetted monthly transaction milestones</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        Weekly
-                      </span>
-                      <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        Monthly
-                      </span>
+                      <p className="text-xs text-slate-400 mt-0.5">Live completed escrow transactions trend (last 7 days)</p>
                     </div>
                   </div>
 
@@ -463,11 +498,53 @@ export const SellerDashboardPage: React.FC = () => {
                         </linearGradient>
                       </defs>
                       <path
-                        d="M0,150 Q100,80 200,120 T400,60 T600,30 L600,200 L0,200 Z"
+                        d={(() => {
+                          const days = Array.from({ length: 7 }, (_, i) => {
+                            const d = new Date()
+                            d.setDate(d.getDate() - i)
+                            return d.toDateString()
+                          }).reverse()
+
+                          const dailyRevenue = days.map((day) => {
+                            return sellerOrders
+                              .filter((o) => o.status === 'completed' && new Date(o.created_at).toDateString() === day)
+                              .reduce((sum, o) => sum + Number(o.amount), 0)
+                          })
+
+                          const maxRev = Math.max(...dailyRevenue, 1000)
+                          const pts = dailyRevenue.map((rev, idx) => {
+                            const x = (idx / 6) * 600
+                            const y = 180 - (rev / maxRev) * 140
+                            return `${x},${y}`
+                          })
+
+                          return `M0,200 L${pts.join(' L')} L600,200 Z`
+                        })()}
                         fill="url(#chartGrad)"
                       />
                       <path
-                        d="M0,150 Q100,80 200,120 T400,60 T600,30"
+                        d={(() => {
+                          const days = Array.from({ length: 7 }, (_, i) => {
+                            const d = new Date()
+                            d.setDate(d.getDate() - i)
+                            return d.toDateString()
+                          }).reverse()
+
+                          const dailyRevenue = days.map((day) => {
+                            return sellerOrders
+                              .filter((o) => o.status === 'completed' && new Date(o.created_at).toDateString() === day)
+                              .reduce((sum, o) => sum + Number(o.amount), 0)
+                          })
+
+                          const maxRev = Math.max(...dailyRevenue, 1000)
+                          const pts = dailyRevenue.map((rev, idx) => {
+                            const x = (idx / 6) * 600
+                            const y = 180 - (rev / maxRev) * 140
+                            return `${x},${y}`
+                          })
+
+                          return `M${pts.join(' L')}`
+                        })()}
                         fill="none"
                         stroke="#10b981"
                         strokeWidth="3"
@@ -479,96 +556,102 @@ export const SellerDashboardPage: React.FC = () => {
                 {/* Seller Orders / Escrow Stage */}
                 <div className="space-y-4">
                   <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Active Escrow Contracts</h3>
-                  <div className="premium-card p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-slate-400">#FIV-8902</span>
-                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-500">
-                            Escrow Active
-                          </span>
+                  {(() => {
+                    const activeEscrowOrders = sellerOrders.filter((o) => 
+                      ['payment_received', 'seller_processing', 'buyer_review', 'disputed'].includes(o.status)
+                    )
+
+                    if (activeEscrowOrders.length === 0) {
+                      return (
+                        <div className="premium-card p-6 text-center text-xs text-muted-foreground bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                          No active escrow agreements currently in mediation.
                         </div>
-                        <h4 className="mt-2 font-heading text-lg font-bold text-slate-900 dark:text-white">Fiverr Level 2 Account</h4>
-                        <p className="text-xs text-slate-400">Buyer: @chimobi_ops | Release window: 18 hrs left</p>
-                      </div>
-                      <div className="font-heading text-2xl font-black text-slate-900 dark:text-white">₦4,200.00</div>
-                    </div>
+                      )
+                    }
 
-                    <div className="mt-6">
-                      <div className="relative flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <span className="text-emerald-500">Vault Funded</span>
-                        <span className="text-emerald-500">Credentials Handed</span>
-                        <span className="text-emerald-500">Buyer Inspecting</span>
-                        <span>Payout Release</span>
-                      </div>
-                      <div className="relative mt-2 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="absolute left-0 top-0 h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: '75%' }} />
-                      </div>
-                    </div>
-                  </div>
+                    return activeEscrowOrders.map((order) => {
+                      let progressWidth = '25%'
+                      if (order.status === 'seller_processing') progressWidth = '50%'
+                      if (order.status === 'buyer_review') progressWidth = '75%'
+                      if (order.status === 'disputed') progressWidth = '90%'
+
+                      return (
+                        <div key={order.id} className="premium-card p-6 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-2xl">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-bold text-slate-400">#{order.id.slice(0, 8).toUpperCase()}</span>
+                                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                  order.status === 'disputed' 
+                                    ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500' 
+                                    : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500'
+                                }`}>
+                                  {order.status === 'disputed' ? 'Disputed' : 'Escrow Active'}
+                                </span>
+                              </div>
+                              <h4 className="mt-2 font-heading text-base font-bold text-slate-900 dark:text-white">{order.listing?.title || 'System listing'}</h4>
+                              <p className="text-xs text-slate-400">Buyer: @{order.buyer?.full_name?.split(' ')[0] || 'buyer'} | Status: {order.status.replace('_', ' ')}</p>
+                            </div>
+                            <div className="font-heading text-2xl font-black text-slate-900 dark:text-white font-mono">
+                              ₦{Number(order.amount).toLocaleString('en-NG')}
+                            </div>
+                          </div>
+
+                          <div className="mt-6">
+                            <div className="relative flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              <span className="text-emerald-500">Vault Funded</span>
+                              <span className={['seller_processing', 'buyer_review', 'disputed'].includes(order.status) ? 'text-emerald-500' : ''}>Processing</span>
+                              <span className={['buyer_review', 'disputed'].includes(order.status) ? 'text-emerald-500' : ''}>Inspecting</span>
+                              <span>Payout</span>
+                            </div>
+                            <div className="relative mt-2 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                              <div className="absolute left-0 top-0 h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: progressWidth }} />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
                 </div>
 
-                {/* Promotions boost */}
-                <div className="premium-card p-8">
-                  <div className="mb-6">
-                    <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Marketing & Exposure Boosts</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Activate premium placement algorithms for listings</p>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
-                      <h4 className="font-bold text-slate-900 dark:text-white">Featured Listing Tag</h4>
-                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">Pins listings to the top of category feeds for 7 days.</p>
-                      <button className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
-                        Activate featured tag
-                      </button>
-                    </div>
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
-                      <h4 className="font-bold text-slate-900 dark:text-white">Instant AI Optimization</h4>
-                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">Let AI suggestions optimize description tag structures.</p>
-                      <button className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700">
-                        Apply AI rewrite
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Right Column: AI Coach warning checklist, Profile completion, bio cards */}
               <div className="space-y-8">
                 {coachFeedback && (
-                  <div className="space-y-4 rounded-[32px] border bg-slate-900 p-8 shadow-xl text-white">
-                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-slate-400">
-                      <Sparkles className="h-4.5 w-4.5 animate-pulse text-emerald-400" />
+                  <div className="premium-card space-y-4 shadow-xl">
+                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <Sparkles className="h-4.5 w-4.5 animate-pulse text-emerald-500 dark:text-emerald-400" />
                       AI Seller Coach
                     </h3>
-                    <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                    <div className="flex items-center gap-4 border-b border-border pb-4">
                       <div className="flex flex-col items-center">
-                        <span className="text-4xl font-black text-emerald-400">
+                        <span className="text-4xl font-black text-emerald-600 dark:text-emerald-400">
                           {coachFeedback.score}%
                         </span>
-                        <span className="text-[9px] font-bold uppercase text-slate-400">
+                        <span className="text-[9px] font-bold uppercase text-muted-foreground">
                           Score
                         </span>
                       </div>
-                      <div className="space-y-0.5 text-xs text-slate-300">
+                      <div className="space-y-0.5 text-xs text-foreground">
                         <p className="font-semibold">{coachFeedback.saleProbability} Sale Probability</p>
-                        <p className="text-[11px] leading-tight text-slate-400 mt-1">
+                        <p className="text-[11px] leading-tight text-muted-foreground mt-1">
                           {coachFeedback.pricingSuggestions}
                         </p>
                       </div>
                     </div>
 
                     {coachFeedback.warnings.length > 0 ? (
-                      <div className="space-y-2 text-xs text-slate-300">
+                      <div className="space-y-2 text-xs text-foreground">
                         <span className="block font-bold">Optimization Checklist:</span>
-                        <ul className="list-disc space-y-1.5 pl-4 text-slate-400">
+                        <ul className="list-disc space-y-1.5 pl-4 text-muted-foreground">
                           {coachFeedback.warnings.map((w: string, i: number) => (
                             <li key={i}>{w}</li>
                           ))}
                         </ul>
                       </div>
                     ) : (
-                      <p className="text-xs font-semibold text-emerald-400">
+                      <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                         ✓ All active listings fully optimized for conversion!
                       </p>
                     )}
@@ -578,18 +661,32 @@ export const SellerDashboardPage: React.FC = () => {
                 {/* Messages preview */}
                 <div className="premium-card p-6">
                   <h3 className="mb-4 font-heading text-lg font-bold text-slate-900 dark:text-white">Recent Messages</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                        <div>
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">@alphacoder</h4>
-                          <p className="text-[10px] text-slate-400">"Is recovery mail included?"</p>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-bold text-emerald-500">10m ago</span>
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground">
+                      No recent messages.
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {conversations.slice(0, 3).map((conv) => (
+                        <div key={conv.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4">
+                          <div className="flex items-center gap-3">
+                            {conv.unreadCount > 0 && (
+                              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            )}
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white">@{conv.otherUser?.full_name || 'User'}</h4>
+                              <p className="text-[10px] text-slate-400 truncate max-w-[180px]">
+                                "{conv.lastMessage?.message_text || 'No message yet'}"
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-bold text-emerald-500">
+                            {conv.lastMessage ? new Date(conv.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <ProfileCompletionCard
@@ -605,13 +702,17 @@ export const SellerDashboardPage: React.FC = () => {
                 />
                 <PaymentCard
                   profile={profile}
-                  onPaymentUpdated={handleProfileUpdated}
                 />
                 <VerificationCard
                   profile={profile}
                   onStatusUpdated={handleProfileUpdated}
                 />
-                <SubscriptionCard profile={profile} />
+                <SubscriptionCard
+                  profile={profile}
+                  wallet={wallet}
+                  completedCount={sellerOrders.filter((o) => o.status === 'completed').length}
+                  totalRevenue={getStats().revenue}
+                />
               </div>
             </div>
           </motion.div>

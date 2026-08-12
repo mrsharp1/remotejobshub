@@ -14,16 +14,16 @@ export const EscrowStatusPanel: React.FC<EscrowStatusPanelProps> = ({ escrowStat
   ]
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5 space-y-4 shadow-xl">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xl text-foreground">
       <div>
-        <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-white">Escrow Progression Dashboard</h4>
-        <p className="text-[10px] text-slate-450 mt-0.5">Real-time smart contract state tracker</p>
+        <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">Escrow Progression Dashboard</h4>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Real-time smart contract state tracker</p>
       </div>
 
-      <div className="space-y-4 relative before:absolute before:left-3.5 before:top-2.5 before:bottom-2.5 before:w-0.5 before:bg-slate-950">
+      <div className="space-y-4 relative before:absolute before:left-3.5 before:top-2.5 before:bottom-2.5 before:w-0.5 before:bg-muted">
         {checkpoints.map((c, idx) => (
           <div key={idx} className="flex gap-4 items-start relative z-10">
-            <div className={`rounded-full p-1.5 shrink-0 ${c.ok ? 'bg-purple-500/10 text-purple-400' : 'bg-slate-950 text-slate-700'}`}>
+            <div className={`rounded-full p-1.5 shrink-0 ${c.ok ? 'bg-purple-500/10 text-purple-650 dark:text-purple-400' : 'bg-muted text-muted-foreground'}`}>
               {c.key === 'released' && escrowStatus === 'released' ? (
                 <ShieldCheck className="h-4.5 w-4.5" />
               ) : c.ok ? (
@@ -33,21 +33,21 @@ export const EscrowStatusPanel: React.FC<EscrowStatusPanelProps> = ({ escrowStat
               )}
             </div>
             <div>
-              <span className={`block text-xs font-bold leading-tight ${c.ok ? 'text-white' : 'text-slate-500'}`}>
+              <span className={`block text-xs font-bold leading-tight ${c.ok ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {c.label}
               </span>
-              <span className="block text-[9.5px] text-slate-400 mt-0.5 leading-relaxed">{c.desc}</span>
+              <span className="block text-[9.5px] text-muted-foreground mt-0.5 leading-relaxed">{c.desc}</span>
             </div>
           </div>
         ))}
       </div>
 
       {escrowStatus === 'disputed' && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-550/5 p-4 flex gap-3 animate-in fade-in">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 flex gap-3 animate-in fade-in">
           <AlertOctagon className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="text-xs">
-            <h5 className="font-bold text-white leading-none">Order Disputed</h5>
-            <p className="text-[9.5px] text-slate-450 mt-1.5 leading-relaxed">
+            <h5 className="font-bold text-foreground leading-none">Order Disputed</h5>
+            <p className="text-[9.5px] text-muted-foreground mt-1.5 leading-relaxed">
               Buyer flagged credential matching mismatches. Mediation officers will inspect vault details in 24 hours.
             </p>
           </div>
@@ -55,11 +55,11 @@ export const EscrowStatusPanel: React.FC<EscrowStatusPanelProps> = ({ escrowStat
       )}
 
       {escrowStatus === 'cancelled' && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-550/5 p-4 flex gap-3 animate-in fade-in">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 flex gap-3 animate-in fade-in">
           <XCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="text-xs">
-            <h5 className="font-bold text-white leading-none">Order Cancelled</h5>
-            <p className="text-[9.5px] text-slate-455 mt-1.5 leading-relaxed">
+            <h5 className="font-bold text-foreground leading-none">Order Cancelled</h5>
+            <p className="text-[9.5px] text-muted-foreground mt-1.5 leading-relaxed">
               Escrow funds have been refunded to the buyer and the listing has been reactivated.
             </p>
           </div>

@@ -5,7 +5,12 @@ export const storageService = {
    * Upload user document/images to Supabase storage buckets
    */
   async uploadFile(
-    bucket: 'listings' | 'kyc-documents' | 'avatars' | 'testimonials-videos' | 'testimonials-thumbnails',
+    bucket:
+      | 'listings'
+      | 'kyc-documents'
+      | 'avatars'
+      | 'testimonials-videos'
+      | 'testimonials-thumbnails',
     path: string,
     file: File
   ): Promise<string> {
@@ -18,15 +23,24 @@ export const storageService = {
           upsert: true,
         })
 
-      if (error) throw error
+      if (error) {
+        console.error(
+          `[StorageService] Upload failed. Bucket: "${bucket}", Path: "${path}"\nError:`,
+          error
+        )
+        throw new Error(error.message || 'Unknown storage error')
+      }
 
       // 2. Fetch and return public access URL
       const { data: publicUrlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path)
       return publicUrlData.publicUrl
-    } catch (err) {
-      console.error(`Storage upload failed for bucket "${bucket}":`, err)
+    } catch (err: any) {
+      console.error(
+        `[StorageService] Exception during upload for bucket "${bucket}", path "${path}":`,
+        err
+      )
       throw err
     }
   },
@@ -35,7 +49,12 @@ export const storageService = {
    * Delete file from target bucket
    */
   async deleteFile(
-    bucket: 'listings' | 'kyc-documents' | 'avatars' | 'testimonials-videos' | 'testimonials-thumbnails',
+    bucket:
+      | 'listings'
+      | 'kyc-documents'
+      | 'avatars'
+      | 'testimonials-videos'
+      | 'testimonials-thumbnails',
     path: string
   ): Promise<void> {
     try {

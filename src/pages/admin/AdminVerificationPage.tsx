@@ -66,10 +66,29 @@ export const AdminVerificationPage: React.FC = () => {
   const handleUpdateStatus = async (status: SellerVerification['status']) => {
     if (!selectedKyc) return
     setIsUpdating(true)
+
+    if (status === 'approved') {
+      const hasDoc = selectedKyc.documents && selectedKyc.documents.length > 0
+      const hasName = !!selectedKyc.profile?.full_name
+      const hasPhone = !!selectedKyc.profile?.phone
+      const hasCountry = !!selectedKyc.profile?.country
+      const hasDob = !!selectedKyc.date_of_birth
+      const hasAddress = !!selectedKyc.residential_address
+      const hasDocType = !!selectedKyc.document_type
+      
+      if (!hasDoc || !hasName || !hasPhone || !hasCountry || !hasDob || !hasAddress || !hasDocType) {
+        toast.error('Cannot approve: Missing required KYC evidence.')
+        setIsUpdating(false)
+        return
+      }
+    }
+
     try {
-      console.log("DEV =", import.meta.env.DEV);
-      console.log("SANDBOX =", sandboxSession.enabled);
-      console.log("ROLE =", sandboxSession.role);
+      if (import.meta.env.DEV) {
+        console.log("DEV =", import.meta.env.DEV);
+        console.log("SANDBOX =", sandboxSession.enabled);
+        console.log("ROLE =", sandboxSession.role);
+      }
 
       if (false && import.meta.env.DEV && sandboxSession.enabled) {
         setSandboxSession({
@@ -557,28 +576,41 @@ export const AdminVerificationPage: React.FC = () => {
                 </p>
               </div>
 
-              {/* Document Previews */}
+              {/* Identity & Address Previews */}
               <div className="space-y-4">
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Selfie Photo</span>
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                    <img
-                      src={selectedKyc.selfie_url || undefined}
-                      alt="Selfie"
-                      className="max-h-40 w-full cursor-zoom-in object-cover hover:scale-[1.02] transition"
-                      onClick={() => selectedKyc.selfie_url && window.open(selectedKyc.selfie_url, '_blank')}
-                    />
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Identity Information</span>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="text-slate-500">Phone:</div>
+                      <div className="font-medium text-slate-900">{selectedKyc.profile?.phone || 'N/A'}</div>
+                      <div className="text-slate-500">Country:</div>
+                      <div className="font-medium text-slate-900">{selectedKyc.profile?.country || 'N/A'}</div>
+                      <div className="text-slate-500">Date of Birth:</div>
+                      <div className="font-medium text-slate-900">{selectedKyc.date_of_birth || 'N/A'}</div>
+                      <div className="text-slate-500">Address:</div>
+                      <div className="font-medium text-slate-900">{selectedKyc.residential_address || 'N/A'}</div>
+                    </div>
                   </div>
                 </div>
+
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Proof of Address</span>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Government ID ({selectedKyc.document_type || 'Unknown'})
+                  </span>
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                    <img
-                      src={selectedKyc.proof_of_address_url || undefined}
-                      alt="Address Proof"
-                      className="max-h-40 w-full cursor-zoom-in object-cover hover:scale-[1.02] transition"
-                      onClick={() => selectedKyc.proof_of_address_url && window.open(selectedKyc.proof_of_address_url, '_blank')}
-                    />
+                    {selectedKyc.documents && selectedKyc.documents.length > 0 ? (
+                      <img
+                        src={selectedKyc.documents[0].file_url}
+                        alt="Government ID"
+                        className="max-h-40 w-full cursor-zoom-in object-cover hover:scale-[1.02] transition"
+                        onClick={() => window.open(selectedKyc.documents![0].file_url, '_blank')}
+                      />
+                    ) : (
+                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">
+                        No document uploaded
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

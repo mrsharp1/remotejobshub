@@ -11,6 +11,7 @@ import { Order, OrderMessage, OrderTimeline, Review } from '@/types'
 import { EscrowProgress } from '@/components/marketplace/EscrowProgress'
 import { supabase } from '@/lib/supabase'
 import { getOrderStatusDisplayLabel } from '@/utils/OrderStatusMapper'
+import { DisputeRoom } from '@/features/disputes/components/DisputeRoom'
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -47,24 +48,62 @@ export const OrderDetailPage: React.FC = () => {
 
   // Query review details
   const { data: reviewData, refetch: refetchReview } = useQuery({
-    queryKey: ['order-review', order?.id],
+    queryKey: ['order-review', order?.id, user?.id],
     queryFn: async () => {
-      if (!order?.id) return null
+      if (!order?.id || !user?.id) return null
+      const reviewerType = order.buyer_id === user.id ? 'buyer' : 'seller'
       const { data } = await supabase
         .from('reviews')
         .select('*')
         .eq('order_id', order.id)
+        .eq('reviewer_type', reviewerType)
         .maybeSingle()
       return data as Review | null
     },
-    enabled: !!order?.id && order.status === 'completed',
+    enabled: !!order?.id && !!user?.id && order.status === 'completed',
+  })
+
+  // Query dispute associated with this order
+  const { data: dispute } = useQuery({
+    queryKey: ['order-dispute', order?.id],
+    queryFn: async () => {
+      if (!order?.id) return null
+      const { data, error } = await supabase
+        .from('disputes')
+        .select('id')
+        .eq('order_id', order.id)
+        .maybeSingle()
+      if (error) throw error
+      return data
+    },
+    enabled: !!order?.id && order.status === 'disputed',
   })
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!order || !user) return
+
+    let actualReviewerType: 'buyer' | 'seller'
+    if (user.id === order.buyer_id) {
+      actualReviewerType = 'buyer'
+    } else if (user.id === order.seller_id) {
+      actualReviewerType = 'seller'
+    } else {
+      alert('You are not authorized to submit a review for this order.')
+      return
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('CMS TRANSACTIONAL REVIEW SUBMISSION')
+      console.log(`user_id: ${user.id}`)
+      console.log(`buyer_id: ${order.buyer_id}`)
+      console.log(`seller_id: ${order.seller_id}`)
+      console.log(`reviewer_type: ${actualReviewerType}`)
+      console.log(`order_status: ${order.status}`)
+    }
+
     try {
-      if (reviewData) {
+      if (isEditingReview && reviewData?.id) {
         await reviewService.updateReview(reviewData.id, {
           rating,
           title: reviewTitle,
@@ -72,22 +111,48 @@ export const OrderDetailPage: React.FC = () => {
           would_recommend: wouldRecommend,
         })
         setIsEditingReview(false)
+        alert('Review updated successfully.')
       } else {
         await reviewService.createReview({
           order_id: order.id,
           listing_id: order.listing_id,
           seller_id: order.seller_id,
-          buyer_id: user.id,
+          buyer_id: order.buyer_id,
+          reviewer_type: actualReviewerType,
           rating,
           title: reviewTitle,
           review: reviewText,
           would_recommend: wouldRecommend,
         })
+        alert('Review submitted successfully. It is pending admin approval and will appear publicly once approved.')
       }
       refetchReview()
-    } catch (err: unknown) {
-      const errMsg =
-        err instanceof Error ? err.message : 'Failed to submit review'
+    } catch (err: any) {
+      console.log('=== TRANSACTIONAL REVIEW FORENSIC ===');
+      console.log('order_id:', order.id);
+      console.log('current_user_id:', user?.id);
+      console.log('buyer_id:', order.buyer_id);
+      console.log('seller_id:', order.seller_id);
+      console.log('listing_id:', order.listing_id);
+      console.log('reviewer_type:', isBuyer ? 'buyer' : 'seller');
+      console.log('rating:', rating);
+      console.log('moderation_status:', 'pending'); // Added by DB default
+      console.log('order_status:', order.status);
+      console.log('would_recommend:', wouldRecommend);
+      console.log('====================================');
+      
+      if (err.code || err.message) {
+        console.log('SUPABASE REVIEW ERROR:');
+        console.log('code:', err.code);
+        console.log('message:', err.message);
+        console.log('details:', err.details);
+        console.log('hint:', err.hint);
+      } else {
+        console.log('ERROR:', err);
+      }
+      console.log('====================================');
+      
+      const errMsg = err.message || 'Failed to submit review'
       alert(errMsg)
     }
   }
@@ -256,20 +321,34 @@ export const OrderDetailPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Status Badge:</span>
           <span className="rounded-full bg-primary/20 px-3 py-1 text-sm font-bold capitalize text-primary">
-            {getOrderStatusDisplayLabel(order.status as any)}
+            {order.status === 'disputed' ? 'Under Review' : getOrderStatusDisplayLabel(order.status as any)}
           </span>
         </div>
       </div>
 
-      {/* Escrow Progress visual tracker */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <h3 className="mb-6 border-b pb-3 font-heading text-sm font-bold text-foreground">
-          Escrow Milestone Stages
-        </h3>
-        <EscrowProgress status={order.status} />
-      </div>
+      {order.status === 'disputed' ? (
+        dispute?.id ? (
+          <DisputeRoom 
+            disputeId={dispute.id} 
+            role={isBuyer ? 'buyer' : 'seller'} 
+          />
+        ) : (
+          <div className="flex h-64 w-full flex-col items-center justify-center text-slate-400 space-y-2">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+            <span className="text-xs">Loading dispute workspace...</span>
+          </div>
+        )
+      ) : (
+        <>
+          {/* Escrow Progress visual tracker */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <h3 className="mb-6 border-b pb-3 font-heading text-sm font-bold text-foreground">
+              Escrow Milestone Stages
+            </h3>
+            <EscrowProgress status={order.status} />
+          </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Left Column: Messages Chat feed and Timeline updates */}
         <div className="space-y-8 lg:col-span-8">
           {/* Timeline Tracking */}
@@ -480,14 +559,26 @@ export const OrderDetailPage: React.FC = () => {
                       Order completed successfully.
                     </div>
 
-                    {isBuyer && (
+                    {(isBuyer || isSeller) && (
                       <div className="space-y-4 border-t pt-4 text-xs">
                         {reviewData && !isEditingReview ? (
                           <div className="bg-muted/30 space-y-2.5 rounded-lg border p-4">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-foreground">
-                                Your Seller Review Feedback
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                <span className="font-bold text-foreground">
+                                  Your {isBuyer ? 'Seller' : 'Buyer'} Review Feedback
+                                </span>
+                                {reviewData.moderation_status === 'pending' && (
+                                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                    Pending Admin Approval
+                                  </span>
+                                )}
+                                {reviewData.moderation_status === 'rejected' && (
+                                  <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">
+                                    Rejected by Admin
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex text-amber-500">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star
@@ -509,7 +600,7 @@ export const OrderDetailPage: React.FC = () => {
                             </p>
                             <div className="flex justify-between text-[10px] text-muted-foreground">
                               <span>
-                                Recommend seller:{' '}
+                                Recommend {isBuyer ? 'seller' : 'buyer'}:{' '}
                                 {reviewData.would_recommend ? 'Yes' : 'No'}
                               </span>
                               {new Date(reviewData.created_at).getTime() >
@@ -531,7 +622,7 @@ export const OrderDetailPage: React.FC = () => {
                               )}
                             </div>
 
-                            {reviewData.seller_reply && (
+                            {reviewData.seller_reply && reviewData.reviewer_type === 'buyer' && (
                               <div className="border-border/50 mt-2 space-y-1 rounded border bg-background p-3 text-[11px]">
                                 <span className="block font-bold text-foreground">
                                   Seller Reply:
@@ -547,12 +638,19 @@ export const OrderDetailPage: React.FC = () => {
                             onSubmit={handleReviewSubmit}
                             className="bg-muted/20 space-y-3.5 rounded-lg border p-4"
                           >
-                            <h4 className="flex items-center gap-1 text-[13px] font-bold text-foreground">
-                              <Star className="h-4 w-4 fill-current text-amber-500" />
-                              {reviewData
-                                ? 'Edit Seller Review Feedback'
-                                : 'Rate Your Seller Order'}
-                            </h4>
+                            <div className="space-y-1 text-center">
+                              <h4 className="flex items-center justify-center gap-1 text-[13px] font-bold text-foreground">
+                                <Star className="h-4 w-4 fill-current text-amber-500" />
+                                {reviewData
+                                  ? `Edit Your ${isBuyer ? 'Seller' : 'Buyer'} Review`
+                                  : `Rate Your ${isBuyer ? 'Seller' : 'Buyer'}`}
+                              </h4>
+                              <p className="text-[10px] text-muted-foreground">
+                                {isBuyer
+                                  ? "Your review will help other buyers evaluate this seller."
+                                  : "Your review will help build this buyer's reputation."}
+                              </p>
+                            </div>
 
                             {/* Stars rating selection */}
                             <div className="flex justify-center gap-1.5 py-2">
@@ -607,7 +705,7 @@ export const OrderDetailPage: React.FC = () => {
                             {/* Would Recommend */}
                             <div className="flex items-center justify-between text-xs">
                               <span className="font-semibold text-foreground">
-                                Would you recommend this seller?
+                                Would you recommend this {isBuyer ? 'seller' : 'buyer'}?
                               </span>
                               <div className="flex gap-2">
                                 <button
@@ -664,12 +762,6 @@ export const OrderDetailPage: React.FC = () => {
                     Order has been cancelled.
                   </div>
                 )}
-
-                {order.status === 'disputed' && (
-                  <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-center text-xs font-semibold text-orange-600">
-                    Escrow under review.
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -706,6 +798,8 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

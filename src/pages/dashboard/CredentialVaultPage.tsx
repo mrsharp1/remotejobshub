@@ -7,7 +7,10 @@ import { getPremiumOrderStatus } from '@/utils/OrderStatusMapper'
 import { EventEngine } from '@/lib/events/EventEngine'
 
 import { VaultHero } from '@/components/vault/VaultHero'
-import { CredentialVault, VaultPayload } from '@/components/vault/CredentialVault'
+import {
+  CredentialVault,
+  VaultPayload,
+} from '@/components/vault/CredentialVault'
 import { VaultSecurity } from '@/components/vault/VaultSecurity'
 import { VaultTimeline } from '@/components/vault/VaultTimeline'
 import { DownloadCenter } from '@/components/vault/DownloadCenter'
@@ -21,10 +24,14 @@ export const CredentialVaultPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  
+
   const [isRevealed, setIsRevealed] = useState(false)
 
-  const { data: order, isLoading, isError } = useQuery({
+  const {
+    data: order,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['vault-order', id],
     queryFn: () => {
       if (!id) throw new Error('No order ID')
@@ -34,19 +41,23 @@ export const CredentialVaultPage: React.FC = () => {
   })
 
   if (isLoading) return <LoadingVault />
-  if (isError || !order || (order.buyer_id !== user?.id)) return <EmptyVault />
+  if (isError || !order || order.buyer_id !== user?.id) return <EmptyVault />
 
   const premiumStatus = getPremiumOrderStatus(order.status)
-  const isReady = premiumStatus === 'BUYER_VERIFYING' || premiumStatus === 'COMPLETED' || premiumStatus === 'CREDENTIALS_DELIVERED'
+  const isReady =
+    premiumStatus === 'BUYER_VERIFYING' ||
+    premiumStatus === 'COMPLETED' ||
+    premiumStatus === 'CREDENTIALS_DELIVERED'
 
   let payload: VaultPayload | null = null
-  if (order.listing?.reason_for_sale?.startsWith('VAULT_SECURE_PAYLOAD:')) {
+  if (order.listing?.vault_data) {
     try {
-      const base64Str = order.listing.reason_for_sale.replace('VAULT_SECURE_PAYLOAD:', '')
-      const decodedStr = atob(base64Str)
-      payload = JSON.parse(decodedStr)
+      payload =
+        typeof order.listing.vault_data === 'string'
+          ? JSON.parse(order.listing.vault_data)
+          : order.listing.vault_data
     } catch (err) {
-      console.error('Failed to parse escrow payload:', err)
+      console.error('Failed to parse vault_data:', err)
     }
   }
 
@@ -59,7 +70,7 @@ export const CredentialVaultPage: React.FC = () => {
       {/* Top Navigation */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/80 p-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <button 
+          <button
             onClick={() => navigate('/dashboard/buyer')}
             className="group flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
           >
@@ -70,7 +81,7 @@ export const CredentialVaultPage: React.FC = () => {
             <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-500">
               Reference ID
             </span>
-            <span className="text-xs font-mono font-bold text-white">
+            <span className="font-mono text-xs font-bold text-white">
               {order.id.slice(0, 8).toUpperCase()}
             </span>
           </div>
@@ -78,30 +89,28 @@ export const CredentialVaultPage: React.FC = () => {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:space-y-8">
-        
         <VerificationBanner order={order} onVerifyClick={handleVerifyClick} />
 
         <VaultHero order={order} />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-          
           {/* Main Vault Panel */}
           <div className="space-y-6 lg:col-span-8">
-            <CredentialVault 
-              isReady={isReady} 
+            <CredentialVault
+              isReady={isReady}
               isRevealed={isRevealed}
               payload={payload}
               onReveal={() => {
                 setIsRevealed(true)
                 EventEngine.publish('VAULT_OPENED', {
                   orderId: order.id,
-                  buyerId: user?.id || ''
+                  buyerId: user?.id || '',
                 })
               }}
             />
-            
+
             <DownloadCenter isRevealed={isRevealed} />
-            
+
             <VaultSecurity />
           </div>
 
@@ -110,7 +119,6 @@ export const CredentialVaultPage: React.FC = () => {
             <VaultTimeline order={order} />
             <HelpSection order={order} />
           </div>
-          
         </div>
       </div>
     </div>

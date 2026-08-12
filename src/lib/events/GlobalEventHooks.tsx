@@ -1,7 +1,8 @@
 import { useEventSubscriber } from '@/hooks/useEventSubscriber'
 import { useAuditLogStore } from '@/stores/auditLogStore'
 import { orderService } from '@/services/marketplace/order.service'
-import { messageService } from '@/services/marketplace/message.service'
+import { messageService, conversationService } from '@/features/messaging/services'
+import { useRealtimeNotifications } from '@/features/notifications/hooks/useRealtimeNotifications'
 
 /**
  * GlobalEventHooks orchestrates background side-effects like Analytics, Audit Logging,
@@ -21,7 +22,7 @@ export const GlobalEventHooks: React.FC = () => {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
         // Messaging
-        const conv = await messageService.createConversation(
+        const conv = await conversationService.createConversation(
           'listing',
           order.listing_id,
           order.buyer_id,
@@ -37,7 +38,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.buyer_id, 'ESCROW_LOCKED', { orderId: payload.orderId })
       }
     } catch (e) { console.error(e) }
@@ -48,7 +49,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.seller_id, 'CREDENTIALS_UPLOADED', { orderId: payload.orderId })
       }
     } catch (e) { console.error(e) }
@@ -63,7 +64,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.buyer_id, 'VERIFICATION_STARTED', { orderId: payload.orderId })
       }
     } catch (e) { console.error(e) }
@@ -74,7 +75,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.buyer_id, 'VERIFICATION_COMPLETED', { orderId: payload.orderId })
       }
     } catch (e) { console.error(e) }
@@ -85,7 +86,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.seller_id, 'ESCROW_RELEASED', { orderId: payload.orderId, amount: payload.amount })
       }
     } catch (e) { console.error(e) }
@@ -101,7 +102,7 @@ export const GlobalEventHooks: React.FC = () => {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
         const targetId = payload.initiatedBy === 'buyer' ? order.seller_id : order.buyer_id
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, targetId, 'DISPUTE_OPENED', { orderId: payload.orderId, initiatedBy: payload.initiatedBy })
       }
     } catch (e) { console.error(e) }
@@ -112,7 +113,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.buyer_id, 'DISPUTE_RESOLVED', { orderId: payload.orderId, resolution: payload.resolution })
       }
     } catch (e) { console.error(e) }
@@ -123,7 +124,7 @@ export const GlobalEventHooks: React.FC = () => {
     try {
       const order = await orderService.getOrder(payload.orderId)
       if (order) {
-        const conv = await messageService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
+        const conv = await conversationService.createConversation('listing', order.listing_id, order.buyer_id, order.seller_id)
         await messageService.createSystemMessage(conv.id, order.buyer_id, 'ORDER_COMPLETED', { orderId: payload.orderId })
       }
     } catch (e) { console.error(e) }
@@ -132,6 +133,8 @@ export const GlobalEventHooks: React.FC = () => {
   useEventSubscriber('REVIEW_SUBMITTED', (payload) => {
     addLog('REVIEW_SUBMITTED', payload)
   })
+
+  useRealtimeNotifications()
 
   return null
 }

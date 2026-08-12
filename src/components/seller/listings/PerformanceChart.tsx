@@ -27,19 +27,19 @@ export const PerformanceChart: React.FC = () => {
   const fillPoints = `50,180 ${points} 530,180`
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5 space-y-4 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-4">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xl text-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-white">Performance Analytics</h4>
-          <p className="text-[10px] text-slate-450 mt-0.5">Weekly engagement traffic and revenue</p>
+          <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">Performance Analytics</h4>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Weekly engagement traffic and revenue</p>
         </div>
 
         {/* Tab triggers */}
-        <div className="flex gap-1.5 bg-slate-950 border border-white/5 rounded-xl p-1 shrink-0 self-start">
+        <div className="flex gap-1.5 bg-muted border border-border rounded-xl p-1 shrink-0 self-start">
           {[
-            { key: 'views', label: 'Views', icon: Eye, color: 'text-purple-400' },
-            { key: 'likes', label: 'Likes', icon: Heart, color: 'text-rose-450' },
-            { key: 'revenue', label: 'Revenue', icon: DollarSign, color: 'text-emerald-450' },
+            { key: 'views', label: 'Views', icon: Eye, color: 'text-purple-650 dark:text-purple-400' },
+            { key: 'likes', label: 'Likes', icon: Heart, color: 'text-rose-600 dark:text-rose-400' },
+            { key: 'revenue', label: 'Revenue', icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-450' },
           ].map((item) => {
             const Icon = item.icon
             const isCurrent = metric === item.key
@@ -49,7 +49,7 @@ export const PerformanceChart: React.FC = () => {
                 type="button"
                 onClick={() => setMetric(item.key as any)}
                 className={`flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold rounded-lg transition ${
-                  isCurrent ? 'bg-purple-650 text-white shadow' : 'text-slate-500 hover:text-slate-350'
+                  isCurrent ? 'bg-purple-600 dark:bg-purple-650 text-white shadow' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -62,7 +62,7 @@ export const PerformanceChart: React.FC = () => {
 
       {/* SVG line graph */}
       <div className="relative">
-        <svg viewBox="0 0 580 200" className="w-full h-auto text-purple-600">
+        <svg viewBox="0 0 580 200" className="w-full h-auto text-purple-600 dark:text-purple-450">
           <defs>
             <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="rgb(168, 85, 247)" stopOpacity="0.18" />
@@ -71,9 +71,9 @@ export const PerformanceChart: React.FC = () => {
           </defs>
 
           {/* Grid lines */}
-          <line x1="50" y1="40" x2="530" y2="40" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-          <line x1="50" y1="110" x2="530" y2="110" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-          <line x1="50" y1="180" x2="530" y2="180" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <line x1="50" y1="40" x2="530" y2="40" stroke="currentColor" opacity="0.05" strokeWidth="1" />
+          <line x1="50" y1="110" x2="530" y2="110" stroke="currentColor" opacity="0.05" strokeWidth="1" />
+          <line x1="50" y1="180" x2="530" y2="180" stroke="currentColor" opacity="0.1" strokeWidth="1" />
 
           {/* Area Fill */}
           <polygon points={fillPoints} fill="url(#chartGrad)" />
@@ -97,7 +97,7 @@ export const PerformanceChart: React.FC = () => {
           {labels.map((l, idx) => {
             const x = 50 + idx * 80
             return (
-              <text key={idx} x={x} y="196" fill="rgba(255,255,255,0.3)" fontSize="9" textAnchor="middle" fontFamily="monospace">
+              <text key={idx} x={x} y="196" fill="currentColor" opacity="0.4" fontSize="9" textAnchor="middle" fontFamily="monospace">
                 {l}
               </text>
             )

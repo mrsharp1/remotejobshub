@@ -7,8 +7,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/auth/auth.service'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FloatingSupportChat } from '@/components/support/FloatingSupportChat'
-
 
 const navLinks = [
   { label: 'Marketplace', to: '/marketplace' },
@@ -16,6 +14,7 @@ const navLinks = [
   { label: 'Pricing', to: '/pricing' },
   { label: 'Community', to: '/community' },
   { label: 'FAQ', to: '/faq' },
+  { label: 'Video Guide', to: '/video-guide' },
   { label: 'Contact', to: '/contact' },
 ]
 
@@ -83,7 +82,7 @@ export const MainLayout: React.FC = () => {
             {user ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to={profile?.role === 'admin' ? '/admin' : '/dashboard'}
                   className="hover:bg-primary/90 flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition"
                 >
                   <LayoutDashboard className="h-4 w-4" />
@@ -160,7 +159,7 @@ export const MainLayout: React.FC = () => {
                   {user ? (
                     <div className="flex flex-col gap-3">
                       <Link
-                        to="/dashboard"
+                        to={profile?.role === 'admin' ? '/admin' : '/dashboard'}
                         onClick={closeMobile}
                         className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary px-4 text-base font-semibold text-primary-foreground shadow-sm transition-transform active:scale-95"
                       >
@@ -230,6 +229,21 @@ export const MainLayout: React.FC = () => {
               <p className="text-sm leading-relaxed mb-6 max-w-sm text-slate-500">
                 The most secure peer-to-peer marketplace for digital assets and remote work profiles.
               </p>
+
+              <div className="mt-6 sm:mt-8 border-t border-slate-800/60 pt-6 flex flex-col sm:items-start items-center text-center sm:text-left">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-4">Remote Jobs Hub Payment Safety</p>
+                <div className="flex flex-col sm:flex-row items-center gap-5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">Powered by</span>
+                    <img src="/images/partners/temu.png" alt="Temu" className="h-6 w-auto object-contain" />
+                  </div>
+                  <div className="hidden sm:block h-4 w-px bg-slate-800"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">Secured by</span>
+                    <img src="/images/partners/paystack.png" alt="Paystack" className="h-6 w-auto rounded-md object-contain" />
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div>
@@ -258,7 +272,6 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
       </footer>
-      <FloatingSupportChat />
     </div>
   )
 }

@@ -1,11 +1,65 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Star, CheckCircle2, ThumbsUp } from 'lucide-react'
-import { useReviewsContent } from '@/services/cms/cms.store'
+import { cmsReviewsService, CMSWrittenReview } from '@/services/cms/cms-reviews.service'
 import { springs } from '@/lib/framer-physics'
 
 export const WrittenReviews: React.FC<{ location?: 'homepage' | 'marketplace' | 'community' | 'about' | 'sellerProfile' }> = ({ location = 'homepage' }) => {
-  const { writtenReviews } = useReviewsContent()
+  const [writtenReviews, setWrittenReviews] = useState<CMSWrittenReview[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchReviews = async () => {
+      try {
+        const data = await cmsReviewsService.getWrittenReviews()
+        if (isMounted) {
+          setWrittenReviews(data)
+          setIsLoading(false)
+        }
+      } catch (err: any) {
+        console.error('Failed to load written reviews:', err)
+        if (isMounted) {
+          setError(err.message || 'Failed to load reviews')
+          setIsLoading(false)
+        }
+      }
+    }
+    fetchReviews()
+    return () => { isMounted = false }
+  }, [])
+
+  if (isLoading) {
+    return (
+      <section className="bg-slate-950 px-4 py-16 flex justify-center">
+        <div className="animate-pulse flex space-x-4">
+          <div className="rounded-full bg-slate-800 h-10 w-10"></div>
+          <div className="flex-1 space-y-6 py-1">
+            <div className="h-2 bg-slate-800 rounded"></div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-2 bg-slate-800 rounded col-span-2"></div>
+                <div className="h-2 bg-slate-800 rounded col-span-1"></div>
+              </div>
+              <div className="h-2 bg-slate-800 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="bg-slate-950 px-4 py-16 flex justify-center">
+        <div className="p-4 rounded-xl border border-red-900 bg-red-950/20 text-red-500 text-sm">
+          Failed to load reviews. Please try again later.
+        </div>
+      </section>
+    )
+  }
+
   const filteredReviews = writtenReviews.filter(r => {
     if (location === 'homepage') return r.showOnHomepage !== false
     if (location === 'marketplace') return r.showOnMarketplace !== false
@@ -15,33 +69,10 @@ export const WrittenReviews: React.FC<{ location?: 'homepage' | 'marketplace' | 
     return true
   })
 
-  // SPRINT 11.3E FORENSIC DUMP
-  if (import.meta.env.DEV) {
-    console.log('--- SPRINT 11.3E RUNTIME EVIDENCE ---')
-    console.log('1. localStorage cms-storage:', JSON.parse(localStorage.getItem('cms-storage') || '{}'))
-    console.log('2. useReviewsContent() output:', { writtenReviews })
-    console.log('3. WrittenReviews props:', { location })
-    console.log('4. Filtered Array output:', filteredReviews)
-    console.log('---------------------------------------')
-  }
-
   if (filteredReviews.length === 0) {
-    if (import.meta.env.DEV) {
-      return (
-        <div className="p-8 m-8 border-4 border-red-500 bg-black text-white font-mono text-xs rounded">
-          <h2 className="text-red-500 text-lg font-bold mb-4">SPRINT 11.3E FORENSIC DUMP - WrittenReviews.tsx</h2>
-          <pre>1. localStorage size: {localStorage.getItem('cms-storage')?.length || 0} bytes</pre>
-          <pre>2. useReviewsContent() hook result length: {writtenReviews.length}</pre>
-          <pre>3. Component props: location={location}</pre>
-          <pre>4. Filtered array length: {filteredReviews.length}</pre>
-          <div className="mt-4 text-gray-400">Please check DevTools Console for the full JSON objects.</div>
-        </div>
-      )
-    }
     return null
   }
 
-  console.log("WRITTEN", writtenReviews)
   return (
     <section className="bg-slate-950 px-4 py-16">
       <div className="mx-auto w-full max-w-7xl">

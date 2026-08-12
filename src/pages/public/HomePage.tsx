@@ -2,6 +2,7 @@ import React from 'react'
 import { useHomepageContent } from '@/services/cms/cms.store'
 
 import { HeroSection } from '@/components/home/HeroSection'
+import { OutlierHowItWorksPreview } from '@/components/home/OutlierHowItWorksPreview'
 import { LivePlatformNumbers } from '@/components/home/LivePlatformNumbers'
 import { MarketplaceShowcase } from '@/components/home/MarketplaceShowcase'
 import { WhyRemoteJobs } from '@/components/home/WhyRemoteJobs'
@@ -14,7 +15,6 @@ import { SecuritySection } from '@/components/home/SecuritySection'
 import { CommunitySection } from '@/components/home/CommunitySection'
 import { FaqAccordion } from '@/components/home/FaqAccordion'
 import { FinalCtaSection } from '@/components/home/FinalCtaSection'
-import { OutlierHowItWorksPreview } from '@/components/home/OutlierHowItWorksPreview'
 
 const SECTION_MAP: Record<string, React.FC> = {
   'hero': HeroSection,
@@ -28,7 +28,6 @@ const SECTION_MAP: Record<string, React.FC> = {
   'reviews': WrittenReviews,
   'video_testimonials': VideoTestimonials,
   'faq': FaqAccordion,
-  'how_it_works': OutlierHowItWorksPreview,
   'community_cta': CommunitySection,
   'final_cta': FinalCtaSection
 }
@@ -47,7 +46,12 @@ export const HomePage: React.FC = () => {
         const Component = SECTION_MAP[section.id]
         if (!Component) return null
         
-        return <Component key={section.id} />
+        return (
+          <React.Fragment key={section.id}>
+            <Component />
+            {section.id === 'hero' && <OutlierHowItWorksPreview />}
+          </React.Fragment>
+        )
       })}
     </div>
   )

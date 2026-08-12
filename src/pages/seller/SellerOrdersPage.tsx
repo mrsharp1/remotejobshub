@@ -426,7 +426,7 @@ export const SellerOrdersPage: React.FC = () => {
           { key: 'buyer_review', label: getOrderStatusDisplayLabel('buyer_review') },
           { key: 'completed', label: getOrderStatusDisplayLabel('completed') },
           { key: 'cancelled', label: getOrderStatusDisplayLabel('cancelled') },
-          { key: 'disputed', label: getOrderStatusDisplayLabel('disputed') },
+          { key: 'disputed', label: 'Under Review' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -520,7 +520,7 @@ export const SellerOrdersPage: React.FC = () => {
                     {order.listing?.platform || 'Asset'}
                   </span>
                   <span className="bg-secondary/80 rounded-full px-2.5 py-0.5 text-[9px] font-bold capitalize text-secondary-foreground">
-                    {order.status.replace('_', ' ')}
+                    {order.status === 'disputed' ? 'under review' : order.status.replace('_', ' ')}
                   </span>
                 </div>
 
@@ -625,12 +625,21 @@ export const SellerOrdersPage: React.FC = () => {
                 )}
 
                 {/* Details router link */}
-                <button
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                  className="flex w-full items-center justify-center gap-1 rounded border border-border py-1.5 text-[10px] font-semibold text-foreground transition-colors hover:bg-muted"
-                >
-                  <ExternalLink className="h-3 w-3" /> View Escrow Panel
-                </button>
+                {order.status === 'disputed' ? (
+                  <button
+                    onClick={() => navigate(`/orders/${order.id}`)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded bg-orange-600 hover:bg-orange-500 py-1.5 text-[10px] font-bold text-white transition-colors"
+                  >
+                    View Dispute
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate(`/orders/${order.id}`)}
+                    className="flex w-full items-center justify-center gap-1 rounded border border-border py-1.5 text-[10px] font-semibold text-foreground transition-colors hover:bg-muted"
+                  >
+                    <ExternalLink className="h-3 w-3" /> View Escrow Panel
+                  </button>
+                )}
               </div>
             </div>
           ))}

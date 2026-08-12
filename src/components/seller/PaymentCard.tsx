@@ -1,173 +1,89 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
-import { Landmark, Loader2, Check } from 'lucide-react'
+import { Landmark, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Profile } from '@/types'
-import { authService } from '@/services/auth/auth.service'
-import { useAuthStore } from '@/stores/authStore'
+import { useWithdrawals } from '@/features/withdrawals/hooks/useWithdrawals'
 
 interface PaymentCardProps {
   profile: Profile | null
-  onPaymentUpdated: (profile: Profile) => void
 }
 
-export const PaymentCard: React.FC<PaymentCardProps> = ({
-  profile,
-  onPaymentUpdated,
-}) => {
-  const [bankName, setBankName] = useState(profile?.company_name || '')
-  const [accountNumber, setAccountNumber] = useState(
-    profile?.company_website || ''
-  )
-  const [accountName, setAccountName] = useState(profile?.full_name || '')
-  const [isEditing, setIsEditing] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const { user } = useAuthStore()
+export const PaymentCard: React.FC<PaymentCardProps> = ({ profile }) => {
+  const navigate = useNavigate()
+  const { data: withdrawals = [], isLoading } = useWithdrawals(profile?.id)
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-    setSaving(true)
-    setErrorMsg(null)
-    try {
-      // Reuse company_name for Bank Name, company_website for Account Number, and full_name for Account Name
-      const updated = await authService.updateProfile(user.id, {
-        company_name: bankName,
-        company_website: accountNumber,
-        full_name: accountName,
-      })
-      if (updated) {
-        onPaymentUpdated(updated)
-        setIsEditing(false)
-      }
-    } catch (err: unknown) {
-      const error = err as Error
-      setErrorMsg(error.message || 'Failed to update payment information.')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const hasPayoutDetails = withdrawals.length > 0
+  const latestPayout = withdrawals[0]
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
+      className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm text-foreground"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Landmark className="h-5 w-5 text-primary" />
           <h3 className="font-heading text-lg font-bold text-foreground">
-            Payment Setup
+            Payment Account
           </h3>
         </div>
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            Manage
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setBankName(profile?.company_name || '')
-                setAccountNumber(profile?.company_website || '')
-                setAccountName(profile?.full_name || '')
-                setIsEditing(false)
-              }}
-              className="text-xs font-semibold text-muted-foreground hover:underline"
-              disabled={saving}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
       </div>
 
-      {errorMsg && (
-        <p className="text-center text-xs text-destructive">{errorMsg}</p>
-      )}
-
-      {isEditing ? (
-        <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground">
-              Bank Name
-            </label>
-            <input
-              type="text"
-              required
-              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
-              placeholder="e.g. Access Bank"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-            />
+      {isLoading ? (
+        <div className="text-center py-4 text-xs text-muted-foreground">
+          Checking wallet payout logs...
+        </div>
+      ) : hasPayoutDetails && latestPayout ? (
+        <div className="space-y-3.5">
+          <div className="bg-emerald-500/10 dark:bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 rounded-xl p-3 flex items-center gap-2.5 text-xs font-semibold">
+            <CheckCircle2 className="h-4.5 w-4.5 flex-shrink-0" />
+            <span>Active payout destination configured in Wallet</span>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground">
-              Account Name
-            </label>
-            <input
-              type="text"
-              required
-              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
-              placeholder="e.g. John Doe"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground">
-              Account Number
-            </label>
-            <input
-              type="text"
-              required
-              pattern="[0-9]*"
-              className="premium-input mt-1 w-full p-2.5 text-sm text-foreground focus:outline-none"
-              placeholder="e.g. 0123456789"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-            />
+          <div className="bg-muted/30 space-y-2 rounded-xl p-4 text-sm border border-border">
+            <div className="border-border/50 flex justify-between border-b pb-2">
+              <span className="text-muted-foreground text-xs">Bank Name</span>
+              <span className="font-semibold text-foreground text-xs">
+                {latestPayout.bank_name}
+              </span>
+            </div>
+            <div className="border-border/50 flex justify-between border-b pb-2">
+              <span className="text-muted-foreground text-xs">Account Name</span>
+              <span className="font-semibold text-foreground text-xs">
+                {latestPayout.account_name}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-xs">Account Number</span>
+              <span className="font-mono font-semibold text-foreground text-xs">
+                {latestPayout.account_number}
+              </span>
+            </div>
           </div>
 
           <button
-            type="submit"
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+            onClick={() => navigate('/seller/wallet')}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/50 hover:bg-muted py-2.5 text-xs font-bold text-foreground transition shadow-sm"
           >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            Save Payment Details
+            <span>Manage Wallet Settlements</span>
+            <ArrowRight className="h-4 w-4" />
           </button>
-        </form>
+        </div>
       ) : (
-        <div className="bg-muted/30 space-y-2 rounded-lg p-4 text-sm">
-          <div className="border-border/50 flex justify-between border-b pb-2">
-            <span className="text-muted-foreground">Bank Name</span>
-            <span className="font-semibold text-foreground">
-              {profile?.company_name || 'Not Configured'}
-            </span>
-          </div>
-          <div className="border-border/50 flex justify-between border-b pb-2">
-            <span className="text-muted-foreground">Account Name</span>
-            <span className="font-semibold text-foreground">
-              {profile?.full_name || 'Not Configured'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Account Number</span>
-            <span className="font-mono font-semibold text-foreground">
-              {profile?.company_website || 'Not Configured'}
-            </span>
-          </div>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            No payment account configured. Withdrawals require bank details setup.
+          </p>
+
+          <button
+            onClick={() => navigate('/seller/wallet')}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground transition shadow-md hover:opacity-90"
+          >
+            <span>Go to Seller Wallet</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       )}
     </motion.div>

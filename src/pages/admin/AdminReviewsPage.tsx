@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Search,
   Star,
-  EyeOff,
-  Eye,
   Trash2,
   AlertTriangle,
   Loader2,
@@ -12,10 +10,12 @@ import {
 import { supabase } from '@/lib/supabase'
 import { reviewService } from '@/services/marketplace/review.service'
 import { Review } from '@/types'
+import { Check, X } from 'lucide-react'
 
 export const AdminReviewsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [ratingFilter, setRatingFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
 
   // Fetch reviews for admin
   const {
@@ -38,12 +38,21 @@ export const AdminReviewsPage: React.FC = () => {
   })
 
   // Handlers
-  const handleToggleHide = async (id: string, currentlyHidden: boolean) => {
+  const handleApprove = async (id: string) => {
     try {
-      await reviewService.hideReview(id, !currentlyHidden)
+      await reviewService.approveReview(id)
       refetch()
     } catch {
-      alert('Failed to update review visibility')
+      alert('Failed to approve review')
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    try {
+      await reviewService.rejectReview(id)
+      refetch()
+    } catch {
+      alert('Failed to reject review')
     }
   }
 
@@ -73,7 +82,9 @@ export const AdminReviewsPage: React.FC = () => {
     const matchesRating =
       ratingFilter === 'all' || r.rating.toString() === ratingFilter
 
-    return matchesSearch && matchesRating
+    const matchesStatus = statusFilter === 'all' || r.moderation_status === statusFilter
+
+    return matchesSearch && matchesRating && matchesStatus
   })
 
   // Statistics calculations
@@ -85,7 +96,8 @@ export const AdminReviewsPage: React.FC = () => {
         ).toFixed(1)
       : '5.0'
 
-  const hiddenCount = reviews.filter((r) => r.admin_hidden).length
+  const pendingCount = reviews.filter((r) => r.moderation_status === 'pending').length
+  const rejectedCount = reviews.filter((r) => r.moderation_status === 'rejected').length
 
   return (
     <div className="space-y-6">
@@ -135,12 +147,29 @@ export const AdminReviewsPage: React.FC = () => {
 
         <div className="space-y-1 rounded-xl border bg-card p-5 shadow-sm">
           <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-            Hidden Reviews
+            Pending / Rejected
           </span>
           <div className="font-heading text-2xl font-bold text-destructive">
-            {hiddenCount} Hidden
+            {pendingCount} Pending / {rejectedCount} Rejected
           </div>
         </div>
+      </div>
+
+      {/* Status Tabs */}
+      <div className="flex gap-2">
+        {['pending', 'approved', 'rejected', 'all'].map((status) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status as any)}
+            className={`rounded-lg border px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+              statusFilter === status
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {status}
+          </button>
+        ))}
       </div>
 
       {/* Filters Bar */}
@@ -195,8 +224,10 @@ export const AdminReviewsPage: React.FC = () => {
             <div
               key={rev.id}
               className={`space-y-4 rounded-xl border bg-card p-5 shadow-sm transition-all ${
-                rev.admin_hidden
+                rev.moderation_status === 'rejected'
                   ? 'border-destructive/30 border-dashed opacity-65'
+                  : rev.moderation_status === 'pending'
+                  ? 'border-amber-500/50'
                   : ''
               }`}
             >
@@ -204,19 +235,19 @@ export const AdminReviewsPage: React.FC = () => {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="font-heading text-sm font-bold text-foreground">
-                    {rev.title}
+                    {rev.title} <span className="ml-2 rounded-full border px-2 py-0.5 text-[9px] uppercase">{rev.reviewer_type} review</span>
                   </h3>
                   <div className="mt-1 flex items-center gap-3 text-[10px] text-muted-foreground">
                     <span>
-                      Buyer:{' '}
+                      Reviewer:{' '}
                       <span className="font-bold">
-                        {rev.buyer_profile?.full_name}
+                        {rev.reviewer_type === 'buyer' ? rev.buyer_profile?.full_name : rev.seller_profile?.full_name}
                       </span>
                     </span>
                     <span>
-                      Seller:{' '}
+                      Target:{' '}
                       <span className="font-bold text-primary">
-                        {rev.seller_profile?.full_name}
+                        {rev.reviewer_type === 'buyer' ? rev.seller_profile?.full_name : rev.buyer_profile?.full_name}
                       </span>
                     </span>
                     <span>
@@ -231,17 +262,33 @@ export const AdminReviewsPage: React.FC = () => {
                     {new Date(rev.created_at).toLocaleDateString()}
                   </span>
 
-                  <button
-                    onClick={() => handleToggleHide(rev.id, rev.admin_hidden)}
-                    className="rounded border p-1.5 text-muted-foreground transition-colors hover:bg-muted"
-                    title={rev.admin_hidden ? 'Show Review' : 'Hide Review'}
-                  >
-                    {rev.admin_hidden ? (
-                      <Eye className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </button>
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] uppercase ${
+                    rev.moderation_status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
+                    rev.moderation_status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
+                    'bg-destructive/10 text-destructive'
+                  }`}>
+                    {rev.moderation_status}
+                  </span>
+
+                  {rev.moderation_status !== 'approved' && (
+                    <button
+                      onClick={() => handleApprove(rev.id)}
+                      className="rounded border p-1.5 text-emerald-500 transition-colors hover:bg-emerald-500/10"
+                      title="Approve Review"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  {rev.moderation_status !== 'rejected' && (
+                    <button
+                      onClick={() => handleReject(rev.id)}
+                      className="rounded border p-1.5 text-muted-foreground transition-colors hover:bg-muted"
+                      title="Reject Review"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
 
                   <button
                     onClick={() => handleDeleteReview(rev.id)}

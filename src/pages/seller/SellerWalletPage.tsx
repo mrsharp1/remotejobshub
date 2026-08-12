@@ -1,23 +1,22 @@
 import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Wallet as WalletIcon,
   ArrowDownLeft,
   Loader2,
-  Calendar,
   DollarSign,
   Briefcase,
   Layers,
-  FileText,
 } from 'lucide-react'
 import { walletService } from '@/services/marketplace/wallet.service'
 import { useAuthStore } from '@/stores/authStore'
-import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/utils/currency'
-import { WithdrawalRequest } from '@/types'
+import { WithdrawalModal, WithdrawalHistory } from '@/features/withdrawals'
 
 export const SellerWalletPage: React.FC = () => {
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false)
 
   // Withdrawal Form state
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -34,27 +33,6 @@ export const SellerWalletPage: React.FC = () => {
   } = useQuery({
     queryKey: ['seller-wallet', user?.id],
     queryFn: () => (user?.id ? walletService.getWallet(user.id) : null),
-    enabled: !!user?.id,
-  })
-
-  // Fetch withdrawal requests list
-  const {
-    data: withdrawals = [],
-    isLoading: isWithdrawLoading,
-    refetch: refetchWithdrawals,
-  } = useQuery({
-    queryKey: ['seller-withdrawals', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return []
-      const { data, error } = await supabase
-        .from('withdrawal_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      return (data || []) as WithdrawalRequest[]
-    },
     enabled: !!user?.id,
   })
 
@@ -83,7 +61,8 @@ export const SellerWalletPage: React.FC = () => {
       setAccountNum('')
       setAccountName('')
       await refetchWallet()
-      await refetchWithdrawals()
+      queryClient.invalidateQueries({ queryKey: ['withdrawals', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['seller-withdrawals', user.id] })
       alert('Withdrawal request submitted successfully!')
     } catch (err) {
       alert(
@@ -137,7 +116,14 @@ export const SellerWalletPage: React.FC = () => {
               Request payouts and inspect your platform balance ledgers.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsWithdrawalModalOpen(true)}
+              className="group flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] min-h-[40px]"
+            >
+              <ArrowDownLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
+              Withdraw Funds
+            </button>
             <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl text-primary">
               <WalletIcon className="h-6 w-6" />
             </div>
@@ -189,68 +175,7 @@ export const SellerWalletPage: React.FC = () => {
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
             {/* Left Column: Withdrawals tracking list */}
             <div className="space-y-4 lg:col-span-8">
-              <div className="rounded-xl border bg-card shadow-sm">
-                <div className="border-b p-4">
-                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
-                    Withdrawal requests logs
-                  </h3>
-                </div>
-
-                <div className="divide-border/50 divide-y">
-                  {isWithdrawLoading ? (
-                    <div className="flex justify-center py-10">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : withdrawals.length === 0 ? (
-                    <div className="py-12 text-center text-xs italic text-muted-foreground">
-                      No withdrawal requests submitted yet.
-                    </div>
-                  ) : (
-                    withdrawals.map((req: WithdrawalRequest) => (
-                      <div
-                        key={req.id}
-                        className="hover:bg-muted/10 flex items-center justify-between p-4 text-xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full border bg-muted font-bold text-muted-foreground">
-                            <FileText className="h-3.5 w-3.5" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-foreground">
-                              Payout to {req.bank_name} (
-                              {req.account_number.slice(-4)})
-                            </p>
-                            <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              Recipient Name: {req.account_name}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="block font-mono font-bold text-foreground">
-                            {formatCurrency(Number(req.amount))}
-                          </span>
-                          <span
-                            className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-extrabold uppercase ${
-                              req.status === 'approved'
-                                ? 'bg-green-500/10 text-green-600'
-                                : req.status === 'rejected'
-                                  ? 'bg-destructive/10 text-destructive'
-                                  : 'bg-amber-500/10 text-amber-500'
-                            }`}
-                          >
-                            {req.status}
-                          </span>
-                          <span className="mt-1.5 flex items-center justify-end gap-1 text-[9px] text-muted-foreground">
-                            <Calendar className="h-2.5 w-2.5" />
-                            {new Date(req.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              <WithdrawalHistory userId={user?.id || ''} />
             </div>
 
             {/* Right Column: Withdrawal form */}
@@ -349,6 +274,13 @@ export const SellerWalletPage: React.FC = () => {
           </div>
         </>
       )}
+
+      <WithdrawalModal
+        isOpen={isWithdrawalModalOpen}
+        onClose={() => setIsWithdrawalModalOpen(false)}
+        userId={user?.id || ''}
+        availableBalance={Number(wallet?.available_balance || 0)}
+      />
     </div>
   )
 }

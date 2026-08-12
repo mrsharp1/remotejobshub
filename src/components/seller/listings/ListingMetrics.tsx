@@ -26,26 +26,26 @@ export const ListingMetrics: React.FC<ListingMetricsProps> = ({ stats }) => {
   ]
 
   return (
-    <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
       {cards.map((c, idx) => {
         const Icon = c.icon
         return (
           <div
             key={idx}
-            className={`rounded-2xl border border-white/5 bg-slate-900/60 p-4 space-y-3 transition duration-300 hover:border-purple-550/20 hover:scale-[1.02] ${
-              idx === cards.length - 1 ? 'col-span-2 md:col-span-1' : ''
+            className={`rounded-2xl border border-border bg-card p-4 space-y-3 transition duration-300 hover:scale-[1.02] ${
+              idx === cards.length - 1 ? 'col-span-2 sm:col-span-1' : ''
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{c.label}</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{c.label}</span>
               <div className={`rounded-lg p-1.5 ${c.color}`}>
                 <Icon className="h-4 w-4" />
               </div>
             </div>
 
             <div>
-              <p className="font-heading text-lg font-black text-white font-mono">{c.val}</p>
-              <span className="text-[9px] text-slate-500 mt-0.5 block leading-tight">{c.trend}</span>
+              <p className="font-heading text-lg font-black text-foreground font-mono">{c.val}</p>
+              <span className="text-[9px] text-muted-foreground mt-0.5 block leading-tight">{c.trend}</span>
             </div>
           </div>
         )

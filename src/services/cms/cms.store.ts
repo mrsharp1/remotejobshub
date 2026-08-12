@@ -697,7 +697,9 @@ export const useCMSStore = create<CMSState>()(
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
-          console.log("HYDRATED STORE", state.reviewsContent)
+          if (import.meta.env.DEV) {
+            console.log("HYDRATED STORE", state.reviewsContent)
+          }
         }
       }
     }

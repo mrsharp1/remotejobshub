@@ -153,16 +153,16 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-80" />
 
         {/* Intelligence Label (Top Left) */}
-        <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
-          <span className="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-md">
+        <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 max-w-[calc(100%-6rem)]">
+          <span className="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-md truncate">
             {listing.platform}
           </span>
           {intelligenceLabel && (
             <span
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-lg backdrop-blur-md ${intelligenceLabel.bg} ${intelligenceLabel.color}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-lg backdrop-blur-md truncate ${intelligenceLabel.bg} ${intelligenceLabel.color}`}
             >
-              <intelligenceLabel.icon className="h-3 w-3" />
-              {intelligenceLabel.label}
+              <intelligenceLabel.icon className="h-3 w-3 shrink-0" />
+              <span className="truncate">{intelligenceLabel.label}</span>
             </span>
           )}
         </div>
@@ -230,7 +230,7 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
             <span className="mx-1 text-white/20">•</span>
             <span>Age: {listing.account_age || 'N/A'}</span>
           </div>
-          <h4 className="line-clamp-2 font-heading text-lg font-black leading-snug text-white transition-colors group-hover:text-indigo-300">
+          <h4 className="line-clamp-2 font-heading text-lg font-black leading-snug text-white transition-colors group-hover:text-indigo-300 break-words" style={{ overflowWrap: 'anywhere' }}>
             {listing.title}
           </h4>
         </div>
