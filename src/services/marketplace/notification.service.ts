@@ -7,6 +7,11 @@ export const notificationService = {
     title: string
     message: string
     type: Notification['type']
+    category?: string | null
+    target_url?: string | null
+    link?: string | null
+    metadata?: Record<string, unknown> | null
+    priority?: Notification['priority']
     reference_type?: string | null
     reference_id?: string | null
   }): Promise<Notification> {
@@ -19,6 +24,11 @@ export const notificationService = {
             title: data.title,
             message: data.message,
             type: data.type,
+            category: data.category ?? null,
+            target_url: data.target_url ?? null,
+            link: data.link ?? null,
+            metadata: data.metadata ?? null,
+            priority: data.priority ?? null,
             reference_type: data.reference_type || null,
             reference_id: data.reference_id || null,
             is_read: false,

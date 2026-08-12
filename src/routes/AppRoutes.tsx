@@ -50,6 +50,14 @@ const NotFoundPage = lazy(() =>
   }))
 )
 
+// --- Added Missing Pages ---
+const CookiesPage = lazy(() => import('@/pages/public/CookiesPage').then(m => ({ default: m.CookiesPage })))
+const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then(m => ({ default: m.PrivacyPage })))
+const TermsPage = lazy(() => import('@/pages/public/TermsPage').then(m => ({ default: m.TermsPage })))
+const HowItWorksPage = lazy(() => import('@/pages/public/HowItWorksPage').then(m => ({ default: m.HowItWorksPage })))
+const VideoGuidePage = lazy(() => import('@/pages/public/VideoGuidePage').then(m => ({ default: m.VideoGuidePage })))
+
+
 // --- Trust & Knowledge Center ---
 const TrustCenterPage = lazy(() => import('@/pages/public/TrustCenterPage').then(m => ({ default: m.TrustCenterPage })))
 const HelpCenterPage = lazy(() => import('@/pages/public/HelpCenterPage').then(m => ({ default: m.HelpCenterPage })))
@@ -173,18 +181,23 @@ const AdminReviewsPage = lazy(() =>
   }))
 )
 const BuyerMessagesPage = lazy(() =>
-  import('@/pages/dashboard/MessagesPage').then((m) => ({
+  import('@/features/messaging/pages/MessagesPage').then((m) => ({
     default: m.MessagesPage,
   }))
 )
 const SellerMessagesPage = lazy(() =>
-  import('@/pages/dashboard/MessagesPage').then((m) => ({
+  import('@/features/messaging/pages/MessagesPage').then((m) => ({
     default: m.MessagesPage,
   }))
 )
 const AdminMessagesPage = lazy(() =>
-  import('@/pages/dashboard/MessagesPage').then((m) => ({
-    default: m.MessagesPage,
+  import('@/features/messaging/pages/AdminMessagesPage').then((m) => ({
+    default: m.AdminMessagesPage,
+  }))
+)
+const SellerSettingsPage = lazy(() =>
+  import('@/pages/seller/SellerSettingsPage').then((m) => ({
+    default: m.SellerSettingsPage,
   }))
 )
 const BuyerWalletPage = lazy(() =>
@@ -584,6 +597,46 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: 'cookies',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <CookiesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'privacy',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <PrivacyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'terms',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <TermsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'how-it-works',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <HowItWorksPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'guides',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <VideoGuidePage />
+          </Suspense>
+        ),
+      },
+      {
         path: '*',
         element: (
           <Suspense fallback={<LoadingScreen />}>
@@ -664,6 +717,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <SellerDashboardPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'seller/settings',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <SellerSettingsPage />
           </Suspense>
         ),
       },

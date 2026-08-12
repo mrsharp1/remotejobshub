@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface NavItem {
@@ -379,7 +379,7 @@ export const DashboardLayout: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-3">
-            <NotificationBell />
+            <NotificationBell userId={user?.id} />
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                 {profile?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}

@@ -7,6 +7,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/auth/auth.service'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { FloatingSupportChat } from '@/components/support/FloatingSupportChat'
+
 
 const navLinks = [
   { label: 'Marketplace', to: '/marketplace' },
@@ -256,6 +258,7 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+      <FloatingSupportChat />
     </div>
   )
 }

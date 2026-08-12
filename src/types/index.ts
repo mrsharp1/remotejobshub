@@ -146,6 +146,23 @@ export interface Notification {
     | 'disputes'
     | 'reviews'
     | 'announcements'
+    | 'message'
+    | 'withdrawal_requested'
+    | 'withdrawal_cancelled'
+    | 'withdrawal_approved'
+    | 'withdrawal_rejected'
+  category?: string | null
+  target_url?: string | null
+  link?: string | null
+  metadata?: {
+    avatar_url?: string;
+    reference_type?: string;
+    reference_id?: string;
+    conversationId?: string;
+    reason?: string;
+    [key: string]: unknown;
+  } | null;
+  priority?: 'critical' | 'high' | 'normal' | 'low' | string | null
   reference_type?: string | null
   reference_id?: string | null
   is_read: boolean
@@ -290,6 +307,8 @@ export interface ConversationViewModel {
   dispute?: Dispute
   created_at: string
   updated_at: string
+  isPinned?: boolean
+  isArchived?: boolean
 }
 
 export interface ConversationParticipant {
@@ -315,6 +334,7 @@ export interface Message {
   updated_at: string
   sender?: Profile
   attachments?: MessageAttachment[]
+  status?: 'sending' | 'sent' | 'delivered' | 'seen'
 }
 
 export interface MessageAttachment {

@@ -9,12 +9,14 @@ import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 import { PricingFAQ } from '@/components/pricing/PricingFAQ'
 import { PricingCommunity } from '@/components/pricing/PricingCommunity'
 import { PricingCTA } from '@/components/pricing/PricingCTA'
+import { BuyerTrustSection } from '@/components/pricing/BuyerTrustSection'
 
 export const PricingPage: React.FC = () => {
   return (
     <div className="flex flex-col bg-background">
       <PricingHero />
       <PricingCards />
+      <BuyerTrustSection />
       <PricingTrust />
       <FeatureComparison />
       <SavingsCalculator />

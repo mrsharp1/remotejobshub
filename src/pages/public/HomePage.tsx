@@ -14,6 +14,7 @@ import { SecuritySection } from '@/components/home/SecuritySection'
 import { CommunitySection } from '@/components/home/CommunitySection'
 import { FaqAccordion } from '@/components/home/FaqAccordion'
 import { FinalCtaSection } from '@/components/home/FinalCtaSection'
+import { OutlierHowItWorksPreview } from '@/components/home/OutlierHowItWorksPreview'
 
 const SECTION_MAP: Record<string, React.FC> = {
   'hero': HeroSection,
@@ -27,6 +28,7 @@ const SECTION_MAP: Record<string, React.FC> = {
   'reviews': WrittenReviews,
   'video_testimonials': VideoTestimonials,
   'faq': FaqAccordion,
+  'how_it_works': OutlierHowItWorksPreview,
   'community_cta': CommunitySection,
   'final_cta': FinalCtaSection
 }

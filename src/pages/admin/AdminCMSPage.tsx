@@ -32,6 +32,7 @@ import { FounderManager } from '@/components/admin/cms/FounderManager'
 import { CoreValuesManager } from '@/components/admin/cms/CoreValuesManager'
 import { CommunityEventsManager } from '@/components/admin/cms/CommunityEventsManager'
 import { GlobalStatisticsManager } from '@/components/admin/cms/GlobalStatisticsManager'
+import { VideoGuideManager } from '@/components/admin/cms/VideoGuideManager'
 import { useCMSStore } from '@/services/cms/cms.store'
 
 type CMSSection =
@@ -51,6 +52,7 @@ type CMSSection =
   | 'seo'
   | 'policies'
   | 'reviews'
+  | 'video_guides'
 
 export const AdminCMSPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<CMSSection>('publish_center')
@@ -108,6 +110,7 @@ export const AdminCMSPage: React.FC = () => {
         { id: 'timeline', label: 'Company Timeline', icon: Clock, tags: 'history milestones timeline year' },
         { id: 'core_values', label: 'Core Values', icon: Star, tags: 'values principles icons' },
         { id: 'community_events', label: 'Community Events', icon: Calendar, tags: 'events meetups webinars dates' },
+        { id: 'video_guides', label: 'Video Guides', icon: HelpCircle, tags: 'video guides tutorials help' },
       ]
     },
     {
@@ -151,6 +154,7 @@ export const AdminCMSPage: React.FC = () => {
       case 'seo': return <div className="p-6 text-slate-500">SEO Manager Placeholder</div>
       case 'policies': return <PolicyManager />
       case 'reviews': return <ReviewManager />
+      case 'video_guides': return <VideoGuideManager />
       default: return <PublishCenter />
     }
   }
