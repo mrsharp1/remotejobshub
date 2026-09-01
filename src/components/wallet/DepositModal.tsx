@@ -57,7 +57,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       onSuccess()
       onClose()
     } catch (err) {
-      setError('Failed to prepare deposit. Please try again.')
+      console.error(err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : JSON.stringify(err)
+      )
     } finally {
       setIsProcessing(false)
     }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { MoreVertical, ShieldCheck, User, ChevronLeft, Pin, Archive } from 'lucide-react'
+import { MoreVertical, ChevronLeft, Pin, Archive } from 'lucide-react'
 import type { ConversationViewModel } from '@/types'
 import { conversationService } from '@/features/messaging/services'
 import { useQueryClient } from '@tanstack/react-query'
+import { ConversationAvatar } from './ConversationAvatar'
 
 
 interface ChatHeaderProps {
@@ -53,20 +54,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = React.memo(({
           </button>
         )}
         <div className="relative shrink-0">
-          {otherUser.avatar_url && !isSupport ? (
-            <img src={otherUser.avatar_url} alt={name} className="h-10 w-10 rounded-full object-cover" />
-          ) : (
-            <div className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${isSupport ? 'bg-indigo-500' : 'bg-primary'}`}>
-              {isSupport ? <ShieldCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
-            </div>
-          )}
+          <ConversationAvatar name={name} role={otherUser.role} />
           {otherUser.online && !isSupport && (
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 z-10" />
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="font-heading font-semibold text-foreground flex items-center gap-1.5 sm:gap-2">
-            <span className="truncate block max-w-[100px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-none">{name}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <h2 className="font-heading font-semibold text-foreground truncate max-w-[150px] xs:max-w-[180px] sm:max-w-none">
+              {name}
+            </h2>
             {isSupport && (
               <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-indigo-500 shrink-0">
                 Support
@@ -78,7 +75,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = React.memo(({
             {conversation.isArchived && (
               <Archive className="h-3 w-3 text-muted-foreground shrink-0" />
             )}
-          </h2>
+          </div>
           {isTyping ? (
             <p className="text-xs text-primary font-medium animate-pulse truncate">Typing...</p>
           ) : otherUser.online && !isSupport ? (

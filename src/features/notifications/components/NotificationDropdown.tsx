@@ -84,8 +84,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
   const unreadCount = notifications.filter(n => !n.is_read).length
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-xl border border-border bg-card shadow-lg ring-1 ring-black/5 flex flex-col overflow-hidden z-50">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+    <div className="fixed inset-x-4 top-16 sm:absolute sm:inset-auto sm:right-0 sm:-right-2 sm:top-full sm:mt-2 sm:w-96 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 shadow-2xl ring-1 ring-black/5 flex flex-col overflow-hidden z-[100] origin-top-right">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-slate-50 dark:bg-slate-900">
         <h3 className="font-semibold text-foreground flex items-center gap-2">
           Notifications
           {unreadCount > 0 && (
@@ -106,19 +106,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
         )}
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto overscroll-contain">
         {isLoading ? (
           <div className="flex justify-center p-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+          <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-white dark:bg-slate-950">
             <Bell className="w-10 h-10 mb-3 opacity-20 text-primary" />
             <p className="text-sm font-medium">You're all caught up!</p>
             <p className="text-xs mt-1">No new notifications right now.</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border bg-white dark:bg-slate-950">
             {notifications.map((notification) => {
               const avatar = notification.metadata?.avatar_url
               const priorityStyles = getPriorityStyles(notification.priority)
@@ -128,25 +128,25 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
                 <button
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`w-full text-left flex items-start gap-3 p-4 transition-colors focus-visible:outline-none focus-visible:bg-muted/80 ${!notification.is_read ? 'bg-primary/[0.03] hover:bg-primary/10' : 'hover:bg-muted/50'}`}
+                  className={`w-full text-left flex items-start gap-3 p-4 transition-colors focus-visible:outline-none focus-visible:bg-slate-100 dark:focus-visible:bg-slate-800 ${!notification.is_read ? 'bg-primary/5 hover:bg-primary/10' : 'bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                   aria-label={`${notification.is_read ? 'Read' : 'Unread'} notification: ${notification.title}`}
                 >
                   <div className="relative shrink-0 pt-0.5">
                     {avatar ? (
                       <img src={avatar} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-background" />
                     ) : (
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border ${priorityStyles}`}>
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border bg-white dark:bg-slate-950 ${priorityStyles}`}>
                         {icon}
                       </div>
                     )}
                     {!notification.is_read && (
-                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary border-2 border-card" aria-hidden="true" />
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary border-2 border-white dark:border-slate-950" aria-hidden="true" />
                     )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm ${!notification.is_read ? 'font-bold text-foreground' : 'font-medium text-foreground/80'}`}>
+                      <p className={`text-sm break-words whitespace-normal ${!notification.is_read ? 'font-bold text-foreground' : 'font-medium text-foreground/80'}`}>
                         {notification.title}
                       </p>
                       {notification.priority === 'critical' && (
@@ -155,10 +155,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
                         </span>
                       )}
                     </div>
-                    <p className={`text-xs mt-1 line-clamp-2 ${!notification.is_read ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs mt-1 break-words whitespace-normal ${!notification.is_read ? 'text-foreground/90 font-medium' : 'text-muted-foreground'}`}>
                       {notification.message}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center flex-wrap gap-2 mt-2">
                       <span className="text-[10px] text-muted-foreground font-medium">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </span>
@@ -180,10 +180,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
       </div>
       
       {notifications.length > 0 && (
-        <div className="border-t border-border p-2 bg-muted/20">
+        <div className="border-t border-border p-2 bg-slate-50 dark:bg-slate-900">
           <button 
             onClick={handleViewAll}
-            className="w-full py-2 text-xs font-semibold text-foreground hover:bg-muted rounded-md transition-colors text-center"
+            className="w-full py-2 text-xs font-semibold text-foreground hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-center"
           >
             View all notifications
           </button>

@@ -6,15 +6,23 @@ import {
 } from 'lucide-react'
 import { EventEngine } from '@/lib/events/EventEngine'
 
-// 4. Smarter Location Data
-const LOCATIONS = [
-  'United Kingdom', 'Canada', 'United States', 'Australia', 'Germany', 
-  'France', 'Netherlands', 'Ireland', 'Nigeria', 'Ghana', 'South Africa'
-]
+
 
 // 5. Humanized Time Labels
 const TIME_LABELS = [
   'Just now', '1 minute ago', '3 minutes ago', '7 minutes ago', '12 minutes ago'
+]
+
+const NAMES = [
+  'Smith', 'John Ebube', 'David', 'Chioma', 'Alex', 'Fatima', 
+  'Michael', 'Oluwaseun', 'Sarah', 'Ibrahim', 'James', 'Grace', 
+  'Daniel', 'Amaka', 'Chris', 'Emeka', 'A customer', 'A buyer'
+]
+
+const ACCOUNT_TYPES = [
+  'Outlier account', 'Handshake account', 'Freelancer account', 
+  'Upwork account', 'Toptal account', 'Fiverr account', 
+  'remote-work account', 'verified account'
 ]
 
 type EventCategory = 'MARKETPLACE' | 'ESCROW' | 'COMMUNITY' | 'KYC' | 'REVIEW' | 'SECURITY' | 'PLATFORM' | 'WALLET'
@@ -42,35 +50,59 @@ const CATEGORY_MAP: Record<EventCategory, { icon: any, color: string, bg: string
 
 // 3. Much Larger Event Pool Generation
 const generateRandomText = (): { category: EventCategory, text: string } => {
-  const loc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
-  const scenarios = [
-    { category: 'MARKETPLACE', text: 'Someone purchased a Freelancer account.' },
-    { category: 'MARKETPLACE', text: 'Someone purchased an Upwork account.' },
-    { category: 'MARKETPLACE', text: 'Someone purchased a Toptal account.' },
-    { category: 'MARKETPLACE', text: 'Someone purchased an Outlier account.' },
-    { category: 'MARKETPLACE', text: 'Someone listed a new Fiverr account.' },
-    { category: 'MARKETPLACE', text: 'A premium seller listed a verified account.' },
-    { category: 'MARKETPLACE', text: 'A featured listing was published.' },
-    { category: 'ESCROW', text: 'Escrow payment secured.' },
-    { category: 'ESCROW', text: 'Escrow released successfully.' },
-    { category: 'ESCROW', text: 'Buyer completed verification.' },
-    { category: 'ESCROW', text: 'Seller received payout.' },
-    { category: 'COMMUNITY', text: `New member joined from ${loc}.` },
-    { category: 'COMMUNITY', text: 'Community reached another milestone.' },
-    { category: 'KYC', text: 'Seller verified successfully.' },
-    { category: 'KYC', text: 'Identity approved.' },
-    { category: 'KYC', text: 'KYC completed.' },
-    { category: 'REVIEW', text: 'Buyer left a 5-star review.' },
-    { category: 'REVIEW', text: 'Seller earned Top Rated badge.' },
-    { category: 'REVIEW', text: 'New testimonial added.' },
-    { category: 'SECURITY', text: 'AI blocked suspicious login.' },
-    { category: 'SECURITY', text: 'Device verified.' },
-    { category: 'SECURITY', text: 'Secure vault accessed.' },
-    { category: 'SECURITY', text: 'Credentials encrypted successfully.' },
-    { category: 'PLATFORM', text: 'New verified seller onboarded.' },
-    { category: 'PLATFORM', text: 'New premium listing approved.' },
-    { category: 'PLATFORM', text: 'Marketplace crossed another milestone.' },
-  ] as const
+  const name = NAMES[Math.floor(Math.random() * NAMES.length)]
+  const account = ACCOUNT_TYPES[Math.floor(Math.random() * ACCOUNT_TYPES.length)]
+
+  const scenarios: { category: EventCategory, text: string }[] = [
+    // PURCHASE ACTIVITY
+    { category: 'MARKETPLACE', text: `🛒 ${name} just purchased an ${account}.` },
+    { category: 'MARKETPLACE', text: `🛒 A customer just completed a marketplace purchase.` },
+    { category: 'MARKETPLACE', text: `💼 A ${account} was successfully purchased.` },
+    { category: 'MARKETPLACE', text: `🌍 A new marketplace transaction was completed.` },
+    { category: 'MARKETPLACE', text: `🔥 An ${account} was purchased a few minutes ago.` },
+    { category: 'MARKETPLACE', text: `⚡ A buyer just secured a verified account.` },
+    
+    // CUSTOMER REVIEWS
+    { category: 'REVIEW', text: `⭐ "The whole buying process was completely secure."` },
+    { category: 'REVIEW', text: `⭐ "I received my account immediately after the payment was released."` },
+    { category: 'REVIEW', text: `⭐ "The escrow system made me feel safe."` },
+    { category: 'REVIEW', text: `⭐ "The seller delivered exactly as described."` },
+    { category: 'REVIEW', text: `⭐ "Very professional support team."` },
+    { category: 'REVIEW', text: `⭐ "The transaction process was transparent from beginning to end."` },
+    { category: 'REVIEW', text: `⭐ "I would definitely use this platform again."` },
+    { category: 'REVIEW', text: `⭐ "The account handoff process was smoother than I expected."` },
+
+    // SELLER ACTIVITY
+    { category: 'PLATFORM', text: `✅ A seller just completed verification.` },
+    { category: 'PLATFORM', text: `🛡️ A verified seller published a new listing.` },
+    { category: 'MARKETPLACE', text: `📦 A new account listing is now available.` },
+    { category: 'MARKETPLACE', text: `💼 A new marketplace opportunity has been published.` },
+    { category: 'PLATFORM', text: `🌟 A seller just earned a new verification badge.` },
+
+    // PAYMENT SECURITY
+    { category: 'SECURITY', text: `🔒 Buyer protection is currently active.` },
+    { category: 'SECURITY', text: `🛡️ Protected transactions help reduce payment risk.` },
+    { category: 'SECURITY', text: `🔐 Funds remain protected until the transaction is completed.` },
+    { category: 'SECURITY', text: `💳 Secure payment processing is available.` },
+    { category: 'ESCROW', text: `✓ Escrow protection is enabled for eligible purchases.` },
+    { category: 'ESCROW', text: `🔒 Protected funds are not released immediately to sellers.` },
+
+    // SUPPORT
+    { category: 'COMMUNITY', text: `💬 Need help? Support is available.` },
+    { category: 'COMMUNITY', text: `🟢 WhatsApp support is online.` },
+    { category: 'COMMUNITY', text: `📨 Contact support if you need help with an order.` },
+    { category: 'COMMUNITY', text: `🤝 Our team is available to assist buyers and sellers.` },
+    { category: 'COMMUNITY', text: `🛟 Marketplace support is available when needed.` },
+
+    // TRUST BUILDERS
+    { category: 'PLATFORM', text: `🌟 Verified customer reviews are available.` },
+    { category: 'PLATFORM', text: `🛡️ Review seller profiles before purchasing.` },
+    { category: 'PLATFORM', text: `✓ Verified sellers display trust indicators.` },
+    { category: 'ESCROW', text: `🔒 Transactions follow a protected workflow.` },
+    { category: 'COMMUNITY', text: `🌍 Buyers from multiple countries use the platform.` },
+    { category: 'MARKETPLACE', text: `💼 Browse active marketplace opportunities.` },
+    { category: 'REVIEW', text: `⭐ Customer feedback helps improve the marketplace.` }
+  ]
 
   return scenarios[Math.floor(Math.random() * scenarios.length)]
 }

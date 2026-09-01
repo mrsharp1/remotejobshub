@@ -81,7 +81,7 @@ export const AdminDisputesPage: React.FC = () => {
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         {/* Left Column: Disputes List */}
-        <div className="space-y-3 rounded-xl border bg-card p-4 shadow-sm lg:col-span-4 text-white">
+        <div className="space-y-3 rounded-xl border bg-card p-4 shadow-sm lg:col-span-4">
           <h3 className="mb-2 font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Dispute Logs
           </h3>
@@ -131,7 +131,7 @@ export const AdminDisputesPage: React.FC = () => {
           {selectedDisputeId ? (
             <DisputeRoom disputeId={selectedDisputeId} role="admin" />
           ) : (
-            <div className="flex flex-col items-center justify-center space-y-3 rounded-xl border border-dashed bg-card py-20 text-center shadow-sm text-white">
+            <div className="flex flex-col items-center justify-center space-y-3 rounded-xl border border-dashed bg-card py-20 text-center shadow-sm">
               <FolderOpen className="h-10 w-10 text-muted-foreground animate-bounce" />
               <div>
                 <h3 className="text-sm font-bold text-foreground">

@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase'
-import { notificationService } from '@/features/notifications/services'
 import type { WithdrawalRequest } from '../types'
 
 export const withdrawalService = {
@@ -28,17 +27,7 @@ export const withdrawalService = {
       }
 
       // Send self-notification (Allowed by RLS)
-      await notificationService.createNotification({
-        user_id: userId,
-        title: 'Withdrawal Request Submitted',
-        message: 'Your withdrawal request has been submitted successfully and is awaiting admin review.',
-        type: 'withdrawal_requested',
-        link: '/dashboard/wallet',
-        metadata: {
-          reference_type: 'withdrawal',
-          reference_id: data.request_id,
-        }
-      })
+      
 
       return {
         id: data.request_id,
@@ -72,17 +61,7 @@ export const withdrawalService = {
         throw new Error(data.message)
       }
 
-      await notificationService.createNotification({
-        user_id: withdrawal.user_id,
-        title: 'Withdrawal Cancelled',
-        message: 'Your withdrawal request has been cancelled successfully.',
-        type: 'withdrawal_cancelled',
-        link: '/dashboard/wallet',
-        metadata: {
-          reference_type: 'withdrawal',
-          reference_id: requestId,
-        }
-      })
+      
     } catch (err) {
       console.error('Error in cancelWithdrawal:', err)
       throw err
@@ -141,17 +120,7 @@ export const withdrawalService = {
         throw new Error(data.message)
       }
 
-      await notificationService.createNotification({
-        user_id: withdrawal.user_id,
-        title: 'Withdrawal Approved',
-        message: 'Your withdrawal has been approved and payment is being processed.',
-        type: 'withdrawal_approved',
-        link: '/dashboard/wallet',
-        metadata: {
-          reference_type: 'withdrawal',
-          reference_id: requestId,
-        }
-      })
+      
     } catch (err) {
       console.error('Error in adminApproveWithdrawal:', err)
       throw err
@@ -175,18 +144,7 @@ export const withdrawalService = {
         throw new Error(data.message)
       }
 
-      await notificationService.createNotification({
-        user_id: withdrawal.user_id,
-        title: 'Withdrawal Rejected',
-        message: 'Your withdrawal request has been rejected. Any held balance has been returned to your wallet.',
-        type: 'withdrawal_rejected',
-        link: '/dashboard/wallet',
-        metadata: {
-          reference_type: 'withdrawal',
-          reference_id: requestId,
-          reason,
-        }
-      })
+      
     } catch (err) {
       console.error('Error in adminRejectWithdrawal:', err)
       throw err

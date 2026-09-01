@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { Listing } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
-
 export const listingService = {
   async createListing(
     listingData: Omit<
@@ -144,14 +142,7 @@ export const listingService = {
       if (error) throw error
 
       if (listing) {
-        await notificationService.createNotification({
-          user_id: listing.seller_id,
-          title: 'Listing Deleted',
-          message: `Your listing "${listing.title}" has been deleted from the platform.`,
-          type: 'listing',
-          reference_type: 'system',
-          reference_id: id,
-        })
+        
       }
     } catch (err) {
       console.error('Error in deleteListing:', err)
@@ -344,14 +335,7 @@ export const listingService = {
     }
 
     try {
-      await notificationService.createNotification({
-        user_id: listing.seller_id,
-        title: 'Listing Approved 🎉',
-        message: `Your listing "${listing.title}" has been approved and is now live on the marketplace.`,
-        type: 'listing',
-        reference_type: 'listing',
-        reference_id: id,
-      })
+      
     } catch (notificationError) {
       if (import.meta.env.DEV) {
         console.warn('Notification failed:', notificationError)
@@ -382,14 +366,7 @@ export const listingService = {
       if (error) throw error
 
       // Notify seller
-      await notificationService.createNotification({
-        user_id: listing.seller_id,
-        title: 'Listing Rejected',
-        message: `Your listing "${listing.title}" was rejected. Reason: ${notes}`,
-        type: 'listing',
-        reference_type: 'listing',
-        reference_id: id,
-      })
+      
     } catch (err) {
       console.error('Error in rejectListing:', err)
       throw err
@@ -416,14 +393,7 @@ export const listingService = {
       if (error) throw error
 
       // Notify seller
-      await notificationService.createNotification({
-        user_id: listing.seller_id,
-        title: 'Changes Requested',
-        message: `Changes are requested for your listing "${listing.title}". Reason: ${notes}`,
-        type: 'listing',
-        reference_type: 'listing',
-        reference_id: id,
-      })
+      
     } catch (err) {
       console.error('Error in requestListingChanges:', err)
       throw err
@@ -449,16 +419,7 @@ export const listingService = {
       if (error) throw error
 
       // Notify seller
-      await notificationService.createNotification({
-        user_id: listing.seller_id,
-        title: isFeatured ? 'Listing Featured ⭐' : 'Listing Unfeatured',
-        message: isFeatured
-          ? `Your listing "${listing.title}" is now featured on the marketplace homepage!`
-          : `Your listing "${listing.title}" is no longer featured.`,
-        type: 'listing',
-        reference_type: 'listing',
-        reference_id: id,
-      })
+      
     } catch (err) {
       console.error('Error in featureListing:', err)
       throw err
@@ -479,14 +440,7 @@ export const listingService = {
       if (error) throw error
 
       // Notify seller
-      await notificationService.createNotification({
-        user_id: listing.seller_id,
-        title: 'Listing Archived',
-        message: `Your listing "${listing.title}" has been archived.`,
-        type: 'listing',
-        reference_type: 'listing',
-        reference_id: id,
-      })
+      
     } catch (err) {
       console.error('Error in archiveListing:', err)
       throw err

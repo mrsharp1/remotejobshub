@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { Settings, User, Bell, Shield, Loader2 } from 'lucide-react'
 import { DeviceNotificationControl } from '@/features/notifications/components/DeviceNotificationControl'
+import { notificationSoundService } from '@/features/notifications/services/notification-sound.service'
 
 export const SellerSettingsPage: React.FC = () => {
   const { profile, setProfile, sandboxSession, setSandboxSession } = useAuthStore()
@@ -13,6 +14,9 @@ export const SellerSettingsPage: React.FC = () => {
   const [fullName, setFullName] = useState(profile?.full_name || '')
   const [country, setCountry] = useState(profile?.country || '')
   const [bio, setBio] = useState(profile?.bio || '')
+  
+  // Notification settings state
+  const [soundEnabled, setSoundEnabled] = useState(notificationSoundService.isSoundEnabled())
   
   // Sandbox states
   const [sandboxEnabled, setSandboxEnabled] = useState(sandboxSession.enabled)
@@ -191,6 +195,23 @@ export const SellerSettingsPage: React.FC = () => {
                   <p className="text-[10px] text-muted-foreground mt-0.5">Allow AI suggestions updates on pricing optimization sweeps.</p>
                 </div>
                 <input type="checkbox" className="h-4 w-4 accent-primary" />
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/10 p-4">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">In-App Notification Sounds</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Play a short sound when important real-time events occur, including messages, order updates, and seller verification notifications.</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={soundEnabled}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setSoundEnabled(val);
+                    notificationSoundService.setSoundEnabled(val);
+                  }}
+                  className="h-4 w-4 accent-primary" 
+                />
               </div>
               </div>
             </div>

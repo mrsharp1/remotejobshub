@@ -3,8 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Search,
   Loader2,
+  Filter,
+  ShieldCheck,
+  CheckCircle2,
   XCircle,
+  AlertTriangle,
   Eye,
+  ArrowUpDown,
   Fingerprint,
   Info,
   FileText,
@@ -15,6 +20,7 @@ import {
   Download,
   Check,
 } from 'lucide-react'
+import { PrivateImage } from '@/components/admin/PrivateImage'
 import { kycService } from '@/services/marketplace/kyc.service'
 import { SellerVerification } from '@/types'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -600,11 +606,10 @@ export const AdminVerificationPage: React.FC = () => {
                   </span>
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                     {selectedKyc.documents && selectedKyc.documents.length > 0 ? (
-                      <img
-                        src={selectedKyc.documents[0].file_url}
+                      <PrivateImage
+                        path={selectedKyc.documents[0].file_url}
                         alt="Government ID"
                         className="max-h-40 w-full cursor-zoom-in object-cover hover:scale-[1.02] transition"
-                        onClick={() => window.open(selectedKyc.documents![0].file_url, '_blank')}
                       />
                     ) : (
                       <div className="flex h-32 items-center justify-center text-xs text-slate-400">

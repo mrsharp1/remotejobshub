@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { Review, SellerRating, Profile } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
-
 export const reviewService = {
   async createReview(reviewData: {
     order_id: string
@@ -26,35 +24,14 @@ export const reviewService = {
       try {
         // Notify Target User based on reviewer_type
         if (reviewData.reviewer_type === 'buyer') {
-          await notificationService.createNotification({
-            user_id: reviewData.seller_id,
-            title: 'New Review Received ⭐',
-            message: `A buyer left a ${reviewData.rating}-star review on your listing. It is currently pending admin approval.`,
-            type: 'system',
-            reference_type: 'order',
-            reference_id: reviewData.order_id,
-          })
+          
         } else {
-          await notificationService.createNotification({
-            user_id: reviewData.buyer_id,
-            title: 'New Review Received ⭐',
-            message: `A seller left a ${reviewData.rating}-star review on your profile. It is currently pending admin approval.`,
-            type: 'system',
-            reference_type: 'order',
-            reference_id: reviewData.order_id,
-          })
+          
         }
 
         // Notify Reviewer
         const authorId = reviewData.reviewer_type === 'buyer' ? reviewData.buyer_id : reviewData.seller_id;
-        await notificationService.createNotification({
-          user_id: authorId,
-          title: 'Review Submitted',
-          message: `Your review has been successfully submitted and is awaiting admin approval.`,
-          type: 'system',
-          reference_type: 'order',
-          reference_id: reviewData.order_id,
-        })
+        
       } catch (notifErr) {
         console.error('REVIEW INSERT: SUCCESS')
         console.error('NOTIFICATION: FAILED', notifErr)

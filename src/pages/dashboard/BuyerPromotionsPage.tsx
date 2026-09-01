@@ -54,25 +54,16 @@ export const BuyerPromotionsPage: React.FC = () => {
       const coupon = await promotionService.validateCoupon(couponCode, user.id)
       setValidationResult({
         type: 'success',
-        message: `Coupon "${coupon.code}" is valid! Discount: ${
-          coupon.discount_type === 'percentage'
-            ? `${coupon.discount_value}%`
-            : `₦${coupon.discount_value.toLocaleString()}`
-        }`,
+        message: `Coupon "${coupon.code}" is valid! Discount: ₦${coupon.discount_value.toLocaleString()}`,
       })
 
-      // Simulate applying coupon for sample order
       if (
         confirm(
-          `Would you like to simulate applying this coupon for a ₦5,000 order discount credit?`
+          `Redeem ${coupon.code} for ₦${coupon.discount_value.toLocaleString()} wallet credit?`
         )
       ) {
-        const amt =
-          coupon.discount_type === 'percentage'
-            ? 5000 * (coupon.discount_value / 100)
-            : coupon.discount_value
-        await promotionService.applyDiscount(coupon.id, user.id, null, amt)
-        alert('Coupon redeemed and added to your discounts history!')
+        await promotionService.redeemCouponToWallet(coupon.code)
+        alert(`₦${coupon.discount_value.toLocaleString()} has been added to your wallet.`)
         setCouponCode('')
         setValidationResult(null)
         refetchHistory()
@@ -271,7 +262,7 @@ export const BuyerPromotionsPage: React.FC = () => {
                       </span>
                     </div>
                     <span className="font-bold text-green-500">
-                      +₦{Number(r.discount_applied).toLocaleString()} Saved
+                      +₦{Number(r.discount_amount).toLocaleString()} Wallet Credit
                     </span>
                   </div>
                 ))}

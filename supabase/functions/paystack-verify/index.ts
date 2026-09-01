@@ -43,9 +43,29 @@ serve(async (req) => {
       throw new Error('Transaction reference is required')
     }
 
-    const paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    let paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')
+
+    try {
+      const { data: config } = await supabaseAdmin
+        .from('payment_gateway_settings')
+        .select('live_secret_key')
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (config && config.live_secret_key) {
+        paystackSecret = config.live_secret_key
+      }
+    } catch (dbError) {
+      console.error('Failed to fetch dynamic paystack configuration:', dbError)
+    }
+
     if (!paystackSecret) {
-      throw new Error('Paystack secret key not configured')
+      throw new Error('Paystack secret key not configured in environment or database.')
     }
 
     // Verify with Paystack
@@ -79,12 +99,6 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Initialize Supabase with SERVICE ROLE to execute secure RPC
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
 
     // Call idempotent RPC — safe against concurrent double-submissions
     const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('process_paystack_deposit', {

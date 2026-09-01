@@ -17,7 +17,7 @@ export const ConversationLayout: React.FC<ConversationLayoutProps> = ({
   hasActiveId = false,
 }) => {
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
+    <div className="flex h-full w-full overflow-hidden bg-background">
       {/* Left Panel: Conversation List */}
       <div className={`${hasActiveId ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 border-r border-border flex-col lg:w-96`}>
         {leftPanel}

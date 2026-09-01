@@ -47,9 +47,12 @@ export const promotionService = {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('EXACT PROMOTION ERROR:', JSON.stringify(error, null, 2))
+        throw error
+      }
       return data as Promotion
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating promotion:', err)
       throw err
     }
@@ -105,9 +108,15 @@ export const promotionService = {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('EXACT COUPON ERROR:', JSON.stringify(error, null, 2))
+        if (error.code === '23505') {
+          throw new Error('A coupon with this code already exists.')
+        }
+        throw error
+      }
       return data as Coupon
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating coupon:', err)
       throw err
     }
@@ -131,23 +140,24 @@ export const promotionService = {
         .from('coupons')
         .select('*')
         .eq('code', code.toUpperCase())
-        .eq('active', true)
+        .eq('is_active', true)
         .maybeSingle()
 
       if (error) throw error
       if (!coupon) throw new Error('Invalid or inactive coupon code.')
 
+      if (coupon.discount_type !== 'fixed') {
+        throw new Error('This coupon is reserved for future order-level checkout and cannot be added as wallet credit.')
+      }
+
       // 2. Check dates
       const now = new Date()
-      if (
-        now < new Date(coupon.start_date) ||
-        now > new Date(coupon.end_date)
-      ) {
-        throw new Error('Coupon has expired or is not yet active.')
+      if (now > new Date(coupon.expires_at)) {
+        throw new Error('Coupon has expired.')
       }
 
       // 3. Check remaining uses limits
-      if (coupon.usage_limit !== null && coupon.remaining_uses <= 0) {
+      if (coupon.usage_limit !== null && coupon.usage_count <= 0) {
         throw new Error('Coupon usage limit reached.')
       }
 
@@ -156,7 +166,7 @@ export const promotionService = {
         .from('coupon_redemptions')
         .select('id')
         .eq('coupon_id', coupon.id)
-        .eq('buyer_id', buyerId)
+        .eq('user_id', buyerId)
         .maybeSingle()
 
       if (previous) {
@@ -170,45 +180,17 @@ export const promotionService = {
     }
   },
 
-  async applyDiscount(
-    couponId: string,
-    buyerId: string,
-    orderId: string | null,
-    discountApplied: number
-  ): Promise<void> {
+  async redeemCouponToWallet(code: string): Promise<void> {
     try {
-      // 1. Insert redemption log
-      const { error: insErr } = await supabase
-        .from('coupon_redemptions')
-        .insert([
-          {
-            coupon_id: couponId,
-            buyer_id: buyerId,
-            order_id: orderId,
-            discount_applied: discountApplied,
-          },
-        ])
-
-      if (insErr) throw insErr
-
-      // 2. Decrement remaining uses limit
-      const { data: coupon } = await supabase
-        .from('coupons')
-        .select('remaining_uses, usage_limit')
-        .eq('id', couponId)
-        .single()
-
-      if (coupon && coupon.usage_limit !== null) {
-        await supabase
-          .from('coupons')
-          .update({
-            remaining_uses: Math.max(0, coupon.remaining_uses - 1),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', couponId)
+      const { data, error } = await supabase.rpc('rpc_redeem_coupon_to_wallet', {
+        p_coupon_code: code,
+      })
+      if (error) throw error
+      if (!data.success) {
+        throw new Error(data.message)
       }
     } catch (err) {
-      console.error('Error applying coupon discount:', err)
+      console.error('Error redeeming coupon:', err)
       throw err
     }
   },
@@ -218,7 +200,7 @@ export const promotionService = {
       const { data, error } = await supabase
         .from('coupon_redemptions')
         .select('*, coupon:coupon_id(*)')
-        .eq('buyer_id', buyerId)
+        .eq('user_id', buyerId)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -233,7 +215,7 @@ export const promotionService = {
     try {
       const { data, error } = await supabase
         .from('coupon_redemptions')
-        .select('*, coupon:coupon_id(*), buyer:buyer_id(*)')
+        .select('*, coupon:coupon_id(*), buyer:user_id(*)')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -250,14 +232,14 @@ export const promotionService = {
       // Deactivate coupons
       await supabase
         .from('coupons')
-        .update({ active: false })
-        .lt('end_date', now)
+        .update({ is_active: false })
+        .lt('expires_at', now)
 
       // Deactivate promotions
       await supabase
         .from('promotions')
-        .update({ active: false })
-        .lt('end_date', now)
+        .update({ is_active: false })
+        .lt('expires_at', now)
     } catch (err) {
       console.error('Error in automatic expiration routine:', err)
     }

@@ -187,7 +187,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
 
   if (loading) {
     return (
-      <div className="flex h-64 w-full flex-col items-center justify-center text-slate-400 space-y-2">
+      <div className="flex h-64 w-full flex-col items-center justify-center text-muted-foreground space-y-2">
         <Clock className="h-8 w-8 animate-spin text-indigo-400" />
         <span className="text-xs">Loading dispute details...</span>
       </div>
@@ -229,7 +229,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
       default:
         return {
           label: 'Closed',
-          bg: 'bg-slate-500/10 border-slate-500/20 text-slate-400'
+          bg: 'bg-slate-500/10 border-slate-500/20 text-muted-foreground'
         }
     }
   }
@@ -332,31 +332,31 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
       : 'Escrow Released'
 
     return (
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-white space-y-4 shadow-lg animate-in fade-in duration-200">
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-emerald-900 dark:text-emerald-100 space-y-4 shadow-lg animate-in fade-in duration-200">
         <div className="flex items-center gap-2 text-emerald-400">
           <CheckCircle2 className="h-6 w-6" />
           <span className="font-heading text-base font-bold uppercase tracking-wider">✓ CASE CLOSED</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs border-b border-emerald-500/10 pb-4">
           <div className="space-y-1">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Winner</span>
-            <div className="font-semibold text-white">{winner}</div>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Winner</span>
+            <div className="font-semibold text-foreground">{winner}</div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Escrow Action</span>
-            <div className="font-semibold text-white">{refundDetails}</div>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Escrow Action</span>
+            <div className="font-semibold text-foreground">{refundDetails}</div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Resolved By</span>
-            <div className="font-semibold text-white">{dispute.admin?.full_name || 'Administrator'}</div>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Resolved By</span>
+            <div className="font-semibold text-foreground">{dispute.admin?.full_name || 'Administrator'}</div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Resolution Date</span>
-            <div className="font-semibold text-white">{resolvedDate}</div>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Resolution Date</span>
+            <div className="font-semibold text-foreground">{resolvedDate}</div>
           </div>
         </div>
         {dispute.resolution_notes && (
-          <div className="pt-1 text-xs text-slate-300">
+          <div className="pt-1 text-xs text-foreground">
             <span className="block text-[10px] uppercase font-bold text-emerald-400 mb-1">Resolution notes:</span>
             <p className="whitespace-pre-line leading-relaxed italic">
               "{dispute.resolution_notes}"
@@ -380,7 +380,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
               const isOwn = msg.sender_id === user?.id
 
               // Role colors bubble styling
-              let bubbleStyles = 'bg-slate-900 border border-white/5 text-slate-300 rounded-tl-sm'
+              let bubbleStyles = 'bg-muted border border-border text-foreground rounded-tl-sm'
               if (isOwn) {
                 if (isBuyer) bubbleStyles = 'bg-blue-600 text-white rounded-tr-sm shadow-md'
                 else if (isSeller) bubbleStyles = 'bg-emerald-600 text-white rounded-tr-sm shadow-md'
@@ -399,14 +399,14 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                   }`}
                 >
                   {/* Avatar */}
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-slate-300 text-xs font-bold shrink-0 border border-white/5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted-foreground/20 text-foreground text-xs font-bold shrink-0 border border-border">
                     {msg.sender?.full_name?.[0]?.toUpperCase() || 'P'}
                   </div>
 
                   {/* Message content */}
                   <div className={`space-y-1 max-w-[calc(100%-2.5rem)] ${isOwn ? 'text-right' : ''}`}>
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 justify-start">
-                      <span className="font-semibold text-slate-200">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground justify-start">
+                      <span className="font-semibold text-foreground">
                         {msg.sender?.full_name || 'Participant'}
                       </span>
                       {isBuyer && (
@@ -436,7 +436,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
               )
             })
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs py-8">
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-xs py-8">
               <MessageSquare className="h-8 w-8 mb-2 opacity-30" />
               <span>No messages in this dispute room yet.</span>
             </div>
@@ -446,23 +446,23 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
 
         {/* Composer Form */}
         {isResolved ? (
-          <div className="border-t border-white/5 pt-4 text-center text-xs text-slate-400">
+          <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
             This dispute has been resolved. No further messages or evidence can be submitted.
           </div>
         ) : (
-          <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-white/5 pt-4 shrink-0">
+          <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-border pt-4 shrink-0">
             <input
               type="text"
               placeholder="Type message to dispute participants..."
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
-              className="flex-1 rounded-lg border border-white/10 bg-slate-950 p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 rounded-lg border border-border bg-background p-2.5 text-xs text-foreground placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               disabled={sending}
             />
             <button
               type="submit"
               disabled={sending || !chatMessage.trim()}
-              className="flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-4 text-xs font-bold transition-colors gap-1.5 animate-in fade-in"
+              className="flex items-center justify-center rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-4 text-xs font-bold transition-colors gap-1.5 animate-in fade-in"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               <span>Send</span>
@@ -478,9 +478,9 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
     return (
       <div className="flex-1 overflow-y-auto min-h-[380px] h-[380px] pr-2 scrollbar-thin space-y-6 py-4">
         {events.length > 0 ? (
-          <div className="relative pl-6 border-l border-white/5 space-y-6 text-left text-xs ml-3">
+          <div className="relative pl-6 border-l border-border space-y-6 text-left text-xs ml-3">
             {events.map((ev, idx) => {
-              let dotColor = 'bg-slate-700'
+              let dotColor = 'bg-muted-foreground'
               if (ev.type === 'open') dotColor = 'bg-indigo-500'
               else if (ev.type === 'evidence') dotColor = 'bg-amber-500'
               else if (ev.type === 'join') dotColor = 'bg-purple-500'
@@ -494,10 +494,10 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                   </span>
                   <div>
-                    <span className="text-[9px] text-slate-500 font-mono block">
+                    <span className="text-[9px] text-muted-foreground font-mono block">
                       {ev.date.toLocaleString()}
                     </span>
-                    <p className="font-semibold text-slate-200 mt-0.5">
+                    <p className="font-semibold text-foreground mt-0.5">
                       {ev.label}
                     </p>
                   </div>
@@ -506,7 +506,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
             })}
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">
             No events registered yet.
           </div>
         )}
@@ -526,15 +526,15 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4 scrollbar-thin">
           {/* Submit form */}
           {isResolved ? (
-            <div className="bg-slate-950/40 border border-white/5 rounded-xl p-3.5 text-center text-xs text-slate-400">
+            <div className="bg-muted/40 border border-border rounded-xl p-3.5 text-center text-xs text-muted-foreground">
               This dispute has been resolved. No further messages or evidence can be submitted.
             </div>
           ) : (
             <form
               onSubmit={handleUploadEvidence}
-              className="bg-slate-950/40 border border-white/5 rounded-xl p-3.5 space-y-3 shrink-0"
+              className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-3 shrink-0"
             >
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Upload className="h-3.5 w-3.5" /> Submit Conflict Evidence
               </h4>
               <div className="space-y-2">
@@ -542,7 +542,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                   placeholder="Description of the screenshot details or files..."
                   value={evidenceDesc}
                   onChange={(e) => setEvidenceDesc(e.target.value)}
-                  className="w-full h-14 rounded-lg border border-white/10 bg-slate-950 p-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full h-14 rounded-lg border border-border bg-background p-2 text-xs text-foreground placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                   required
                   disabled={submittingEvidence}
                 />
@@ -552,13 +552,13 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                     placeholder="File link URL (e.g. PNG, JPG, JPEG, WEBP, PDF)"
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    className="flex-1 rounded-lg border border-white/10 bg-slate-950 p-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    className="flex-1 rounded-lg border border-border bg-background p-2 text-xs text-foreground placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                     disabled={submittingEvidence}
                   />
                   <button
                     type="submit"
                     disabled={submittingEvidence || !evidenceDesc.trim()}
-                    className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-3 text-xs font-bold transition-colors flex items-center gap-1 shrink-0"
+                    className="rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-3 text-xs font-bold transition-colors flex items-center gap-1 shrink-0"
                   >
                     {submittingEvidence ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Upload'}
                   </button>
@@ -578,16 +578,16 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                 return (
                   <div
                     key={ev.id}
-                    className="rounded-xl border border-white/5 bg-slate-900/40 p-3 space-y-3 animate-in fade-in"
+                    className="rounded-xl border border-border bg-card p-3 space-y-3 animate-in fade-in"
                   >
                     <div className="flex items-center justify-between">
                       {/* Uploader info with avatar */}
                       <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-white/5 shrink-0">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted-foreground/20 text-foreground text-[10px] font-bold border border-border shrink-0">
                           {ev.submitted_by_profile?.full_name?.[0]?.toUpperCase() || 'P'}
                         </div>
                         <div className="flex flex-col text-left">
-                          <span className="text-xs font-semibold text-slate-200 line-clamp-1">
+                          <span className="text-xs font-semibold text-foreground line-clamp-1">
                             {ev.submitted_by_profile?.full_name || 'Participant'}
                           </span>
                           <div className="flex items-center gap-1.5 mt-0.5">
@@ -605,26 +605,26 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                       </div>
 
                       {/* Date */}
-                      <span className="text-[9px] text-slate-500">
+                      <span className="text-[9px] text-muted-foreground">
                         {new Date(ev.created_at).toLocaleDateString()}
                       </span>
                     </div>
 
                     {/* Description */}
-                    <p className="text-xs text-slate-300 leading-normal text-left whitespace-pre-wrap">
+                    <p className="text-xs text-foreground leading-normal text-left whitespace-pre-wrap">
                       {ev.description}
                     </p>
 
                     {/* File Attachment Card */}
                     {ev.file_url && (
-                      <div className="flex items-center justify-between gap-2.5 rounded-lg bg-slate-950/60 p-2.5 border border-white/5 text-left">
+                      <div className="flex items-center justify-between gap-2.5 rounded-lg bg-muted/60 p-2.5 border border-border text-left">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-indigo-400 shrink-0 border border-white/5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-indigo-400 shrink-0 border border-border">
                             {getFileIcon(ev.file_url)}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold text-slate-300">{fileName}</p>
-                            <span className="text-[9px] text-slate-500 flex items-center gap-1">
+                            <p className="truncate text-xs font-semibold text-foreground">{fileName}</p>
+                            <span className="text-[9px] text-muted-foreground flex items-center gap-1">
                               {isImg ? '🖼 Image Preview' : '📄 Document File'} • 1.8 MB
                             </span>
                           </div>
@@ -644,7 +644,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                             href={ev.file_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors shrink-0"
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                             title="Download Evidence"
                           >
                             <Download className="h-3.5 w-3.5" />
@@ -656,7 +656,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                 )
               })
             ) : (
-              <div className="flex flex-col items-center justify-center text-slate-500 text-xs py-10">
+              <div className="flex flex-col items-center justify-center text-muted-foreground text-xs py-10">
                 <FileText className="h-8 w-8 mb-2 opacity-30" />
                 <span>No conflict evidence submitted yet.</span>
               </div>
@@ -668,55 +668,55 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
   }
 
   return (
-    <div className="space-y-6 w-full text-white">
+    <div className="space-y-6 w-full text-foreground">
       {/* CASE CLOSED banner */}
       {renderResolutionBanner()}
 
       {/* SECTION 1: Header */}
-      <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 backdrop-blur-sm space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-6 backdrop-blur-sm space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
               Dispute Workspace Room
             </span>
-            <h2 className="font-heading text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
               Case File: <span className="font-mono text-sm opacity-80">#{disputeId.slice(0, 8)}</span>
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Status:</span>
+            <span className="text-xs text-muted-foreground">Status:</span>
             <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${statusBadge.bg}`}>
               {statusBadge.label}
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-white/5 pt-4 text-xs">
-          <div className="flex items-center gap-2 text-slate-400">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-border pt-4 text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Shield className="h-4 w-4 text-indigo-400" />
-            <span>Order Reference: <strong className="font-mono text-white">#{orderId.slice(0, 8)}</strong></span>
+            <span>Order Reference: <strong className="font-mono text-foreground">#{orderId.slice(0, 8)}</strong></span>
           </div>
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4 text-indigo-400" />
-            <span>Opened: <strong className="text-white">{createdDate}</strong></span>
+            <span>Opened: <strong className="text-foreground">{createdDate}</strong></span>
           </div>
           {role === 'admin' && (
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4 text-indigo-400" />
-              <span>Assigned Moderator: <strong className="text-white">{dispute?.admin?.full_name || 'Unassigned'}</strong></span>
+              <span>Assigned Moderator: <strong className="text-foreground">{dispute?.admin?.full_name || 'Unassigned'}</strong></span>
             </div>
           )}
         </div>
       </div>
 
       {/* SECTION 2: Tabs Switcher (Visible on Mobile to switch, or highlighting current active context) */}
-      <div className="md:hidden flex border-b border-white/5 text-sm font-semibold">
+      <div className="md:hidden flex border-b border-border text-sm font-semibold">
         <button
           onClick={() => setActiveTab('conversation')}
           className={`flex-1 pb-3 text-center border-b-2 transition-all ${
             activeTab === 'conversation'
               ? 'border-indigo-500 text-indigo-400 font-bold'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Conversation
@@ -726,7 +726,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
           className={`flex-1 pb-3 text-center border-b-2 transition-all ${
             activeTab === 'timeline'
               ? 'border-indigo-500 text-indigo-400 font-bold'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Timeline
@@ -736,7 +736,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
           className={`flex-1 pb-3 text-center border-b-2 transition-all ${
             activeTab === 'evidence'
               ? 'border-indigo-500 text-indigo-400 font-bold'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Evidence
@@ -744,13 +744,13 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
       </div>
 
       {/* Desktop view tabs switcher for Left panel only */}
-      <div className="hidden md:flex border-b border-white/5 text-sm font-semibold max-w-[65%]">
+      <div className="hidden md:flex border-b border-border text-sm font-semibold max-w-[65%]">
         <button
           onClick={() => setActiveTab(activeTab === 'evidence' ? 'conversation' : activeTab)}
           className={`pb-3 pr-6 border-b-2 transition-all ${
             activeTab !== 'evidence' && activeTab === 'conversation'
               ? 'border-indigo-500 text-indigo-400 font-bold'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Conversation
@@ -760,7 +760,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
           className={`pb-3 pr-6 border-b-2 transition-all ${
             activeTab === 'timeline'
               ? 'border-indigo-500 text-indigo-400 font-bold'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Timeline
@@ -773,17 +773,17 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
           {/* Desktop view: side-by-side layout (65% Left, 35% Right) */}
           <div className="hidden md:grid md:grid-cols-[65%_35%] gap-6">
             {/* Left Area (Conversation or Timeline) */}
-            <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 flex flex-col min-h-[450px]">
-              <div className="flex items-center gap-2 border-b border-white/5 pb-4 mb-4">
+            <div className="rounded-2xl border border-border bg-card p-6 flex flex-col min-h-[450px]">
+              <div className="flex items-center gap-2 border-b border-border pb-4 mb-4">
                 {activeTab === 'timeline' ? (
                   <>
                     <Clock className="h-5 w-5 text-indigo-400" />
-                    <h3 className="font-heading text-sm font-bold text-white">Dispute History Timeline</h3>
+                    <h3 className="font-heading text-sm font-bold text-foreground">Dispute History Timeline</h3>
                   </>
                 ) : (
                   <>
                     <MessageSquare className="h-5 w-5 text-indigo-400" />
-                    <h3 className="font-heading text-sm font-bold text-white">Shared Conversation</h3>
+                    <h3 className="font-heading text-sm font-bold text-foreground">Shared Conversation</h3>
                   </>
                 )}
               </div>
@@ -791,10 +791,10 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
             </div>
 
             {/* Evidence Area (right 35%) */}
-            <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 flex flex-col min-h-[450px]">
-              <div className="flex items-center gap-2 border-b border-white/5 pb-4 mb-4">
+            <div className="rounded-2xl border border-border bg-card p-6 flex flex-col min-h-[450px]">
+              <div className="flex items-center gap-2 border-b border-border pb-4 mb-4">
                 <FileText className="h-5 w-5 text-indigo-400" />
-                <h3 className="font-heading text-sm font-bold text-white">Conflict Evidence</h3>
+                <h3 className="font-heading text-sm font-bold text-foreground">Conflict Evidence</h3>
               </div>
               {renderEvidenceTab()}
             </div>
@@ -803,21 +803,21 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
           {/* Mobile view: tabbed rendering */}
           <div className="md:hidden">
             {activeTab === 'conversation' && (
-              <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 flex flex-col min-h-[350px]">
+              <div className="rounded-2xl border border-border bg-card p-6 flex flex-col min-h-[350px]">
                 {renderConversationTab()}
               </div>
             )}
             {activeTab === 'timeline' && (
-              <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 flex flex-col min-h-[350px]">
-                <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-3 text-left">
+              <div className="rounded-2xl border border-border bg-card p-6 flex flex-col min-h-[350px]">
+                <div className="flex items-center gap-2 border-b border-border pb-3 mb-3 text-left">
                   <Clock className="h-4 w-4 text-indigo-400" />
-                  <h3 className="font-heading text-xs font-bold text-white">Dispute History Timeline</h3>
+                  <h3 className="font-heading text-xs font-bold text-foreground">Dispute History Timeline</h3>
                 </div>
                 {renderTimelineTab()}
               </div>
             )}
             {activeTab === 'evidence' && (
-              <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6 flex flex-col min-h-[350px]">
+              <div className="rounded-2xl border border-border bg-card p-6 flex flex-col min-h-[350px]">
                 {renderEvidenceTab()}
               </div>
             )}
@@ -826,17 +826,17 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
 
         {/* SECTION 5: Admin Panel sidebar */}
         {role === 'admin' && (
-          <div className="w-full lg:w-80 rounded-2xl border border-white/5 bg-slate-900/30 p-6 backdrop-blur-sm space-y-4 shrink-0 h-fit">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+          <div className="w-full lg:w-80 rounded-2xl border border-border bg-card p-6 backdrop-blur-sm space-y-4 shrink-0 h-fit">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
               <Scale className="h-5 w-5 text-rose-500" />
-              <h3 className="font-heading text-sm font-bold text-white">Admin Control Panel</h3>
+              <h3 className="font-heading text-sm font-bold text-foreground">Admin Control Panel</h3>
             </div>
             <div className="flex flex-col gap-2.5">
               {!dispute?.admin_id ? (
                 <button 
                   type="button"
                   onClick={handleAssignAdmin}
-                  className="w-full rounded-xl bg-destructive hover:bg-destructive/95 py-3 text-xs font-bold text-white transition-colors"
+                  className="w-full rounded-xl bg-destructive hover:bg-destructive/90 py-3 text-xs font-bold text-destructive-foreground transition-colors"
                 >
                   Assign to Me
                 </button>
@@ -858,13 +858,13 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                       setActionTarget('release')
                       setResolutionNotes('')
                     }}
-                    className="w-full rounded-xl bg-indigo-600 py-3 text-xs font-bold text-white hover:bg-indigo-500 transition-colors"
+                    className="w-full rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Release Seller Payment
                   </button>
                 </>
               ) : (
-                <div className="text-center text-xs text-slate-500 py-2">
+                <div className="text-center text-xs text-muted-foreground py-2">
                   No actions available under status: <span className="capitalize">{dispute.status}</span>
                 </div>
               )}
@@ -873,7 +873,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
                 <button 
                   type="button"
                   onClick={handleCloseCase}
-                  className="w-full rounded-xl border border-white/10 hover:bg-slate-800 py-3 text-xs font-bold text-slate-300 hover:text-white transition-all"
+                  className="w-full rounded-xl border border-border hover:bg-muted-foreground/20 py-3 text-xs font-bold text-foreground hover:text-foreground transition-all"
                 >
                   Close Case
                 </button>
@@ -886,28 +886,28 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
       {/* Resolution decision input modal overlay */}
       {actionTarget && (
         <div className="backdrop-blur-sm fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-100">
-          <div className="animate-in fade-in zoom-in-95 w-full max-w-md space-y-4 rounded-xl border border-white/10 bg-slate-900 p-6 shadow-2xl duration-150 text-white">
-            <h3 className="font-heading text-sm font-bold text-white">
+          <div className="animate-in fade-in zoom-in-95 w-full max-w-md space-y-4 rounded-xl border border-border bg-muted p-6 shadow-2xl duration-150 text-foreground">
+            <h3 className="font-heading text-sm font-bold text-foreground">
               {actionTarget === 'refund'
                 ? 'Confirm Payout Refund to Buyer'
                 : 'Release Escrow Payout to Seller'}
             </h3>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-slate-400">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">
                 Resolution Decision Notes
               </label>
               <textarea
                 placeholder="Detail the case findings and settlement decision notes..."
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
-                className="h-28 w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="h-28 w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:outline-none focus:border-indigo-500"
                 disabled={resolving}
               />
             </div>
             <div className="flex justify-end gap-2 text-xs font-bold">
               <button
                 onClick={() => setActionTarget(null)}
-                className="rounded border border-white/10 px-3 py-2 hover:bg-slate-800 transition-colors"
+                className="rounded border border-border px-3 py-2 hover:bg-muted-foreground/20 transition-colors"
                 disabled={resolving}
               >
                 Cancel
@@ -915,7 +915,7 @@ export const DisputeRoom: React.FC<DisputeRoomProps> = ({ disputeId, role }) => 
               <button
                 onClick={handleResolveAction}
                 disabled={resolving || !resolutionNotes.trim()}
-                className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                className="rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-indigo-500 disabled:opacity-40 transition-colors flex items-center gap-1.5"
               >
                 {resolving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Confirm Settlement

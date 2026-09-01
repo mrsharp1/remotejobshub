@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   Ticket,
   ShieldAlert,
-  Activity,
+  CreditCard,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -67,15 +67,16 @@ export const AdminLayout: React.FC = () => {
     { label: 'Campaigns & Coupons', to: '/admin/promotions', icon: Ticket },
     { label: 'Risk Control', to: '/admin/risk', icon: ShieldAlert },
     { label: 'CMS Manager', to: '/admin/cms', icon: Settings },
-    { label: 'AI Insights', to: '/admin/ai-insights', icon: Shield },
-    { label: 'Automation', to: '/admin/automation', icon: Activity },
     { label: 'Notifications', to: '/admin?view=notifications', icon: Bell },
     { label: 'Analytics', to: '/admin/analytics', icon: BarChart2 },
     { label: 'Settings', to: '/admin?view=settings', icon: Settings },
+    { label: 'Payment Gateway', to: '/admin/settings/payment-gateway', icon: CreditCard },
   ]
 
+  const isChat = location.pathname.includes('/messages')
+
   return (
-    <div className="flex min-h-screen bg-slate-50 text-foreground dark:bg-background">
+    <div className={`flex bg-slate-50 text-foreground dark:bg-background ${isChat ? 'h-[100dvh] overflow-hidden' : 'min-h-[100dvh]'}`}>
       {/* Desktop Sidebar (Premium Deep Navy) */}
       <aside className="hidden w-64 flex-col border-r border-slate-800 bg-slate-900 shadow-2xl md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
@@ -155,9 +156,10 @@ export const AdminLayout: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-95"
+                  className="flex h-14 w-14 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-95 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-primary -mr-2"
+                  aria-label="Close menu"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-6 w-6 pointer-events-none" />
                 </button>
               </div>
               <nav className="scrollbar-hide flex-1 space-y-1 overflow-y-auto p-4">
@@ -201,13 +203,14 @@ export const AdminLayout: React.FC = () => {
       </AnimatePresence>
 
       {/* Main Panel Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b bg-background px-6">
+      <div className="flex min-w-0 flex-1 flex-col h-[100dvh]">
+        <header className="flex shrink-0 h-16 items-center justify-between border-b bg-background px-6">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="rounded p-2 hover:bg-muted md:hidden flex h-11 w-11 items-center justify-center"
+            className="relative z-50 flex h-14 w-14 items-center justify-center rounded-xl hover:bg-muted md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary touch-manipulation -ml-2"
+            aria-label="Open menu"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6 pointer-events-none" />
           </button>
           <div className="border-destructive/20 bg-destructive/5 flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive hidden sm:flex">
             <Lock className="h-3 w-3" /> SECURE CONSOLE
@@ -220,7 +223,7 @@ export const AdminLayout: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className={`flex-1 ${isChat ? 'overflow-hidden flex flex-col' : 'overflow-y-auto p-4 sm:p-6'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -228,6 +231,7 @@ export const AdminLayout: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
+              className={isChat ? 'flex-1 flex flex-col min-h-0 h-full' : ''}
             >
               <Outlet />
             </motion.div>

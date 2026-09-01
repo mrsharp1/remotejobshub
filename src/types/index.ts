@@ -432,6 +432,13 @@ export interface Referral {
   referred?: Profile
 }
 
+export interface ReferralSettings {
+  id?: string
+  reward_amount: number
+  minimum_purchase_amount: number
+  is_enabled: boolean
+}
+
 export interface ReferralReward {
   id: string
   referral_id: string
@@ -481,14 +488,15 @@ export interface VerificationAuditLog {
 export interface Promotion {
   id: string
   user_id?: string | null
+  listing_id?: string | null
   title: string
   description?: string | null
   discount_type: 'percentage' | 'fixed'
   discount_value: number
   campaign_type: 'seasonal' | 'seller_boost' | 'flash_sale'
-  start_date: string
-  end_date: string
-  active: boolean
+  starts_at: string
+  ends_at: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }
@@ -499,10 +507,9 @@ export interface Coupon {
   discount_type: 'percentage' | 'fixed' | 'first_purchase' | 'referral'
   discount_value: number
   usage_limit?: number | null
-  remaining_uses?: number | null
-  start_date: string
-  end_date: string
-  active: boolean
+  usage_count: number
+  expires_at: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }
@@ -510,12 +517,12 @@ export interface Coupon {
 export interface CouponRedemption {
   id: string
   coupon_id: string
-  buyer_id: string
-  order_id?: string | null
-  discount_applied: number
-  created_at: string
+  user_id: string
+  payment_id?: string | null
+  discount_amount: number
+  redeemed_at: string
   coupon?: Coupon
-  buyer?: Profile
+  user?: Profile
 }
 
 export interface PromotionalBanner {

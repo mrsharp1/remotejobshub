@@ -69,16 +69,22 @@ export const AdminPromotionsPage: React.FC = () => {
         discount_type: couponDiscType,
         discount_value: couponValue,
         usage_limit: couponLimit,
-        remaining_uses: couponLimit,
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        active: true,
+        usage_count: couponLimit,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        is_active: true,
       })
       alert('Coupon code created successfully!')
       setCode('')
       refetchCoupons()
-    } catch {
-      alert('Failed to create coupon code.')
+    } catch (err: any) {
+      console.error('FRONTEND CATCH ERROR:', {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        raw: err
+      })
+      alert(err?.message || 'Unable to create coupon. Please check the coupon details and try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -96,15 +102,22 @@ export const AdminPromotionsPage: React.FC = () => {
         discount_type: promoDiscType,
         discount_value: promoValue,
         campaign_type: promoType,
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        active: true,
+        starts_at: new Date().toISOString(),
+        ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        is_active: true,
       })
       alert('Promotional campaign created successfully!')
       setTitle('')
       refetchPromos()
-    } catch {
-      alert('Failed to create campaign.')
+    } catch (err: any) {
+      console.error('FRONTEND CATCH ERROR:', {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        raw: err
+      })
+      alert(err?.message || 'Unable to create campaign. Please check the promotion details and try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -133,7 +146,7 @@ export const AdminPromotionsPage: React.FC = () => {
 
   // Analytics Math
   const totalSaved = redemptions.reduce(
-    (sum, r) => sum + Number(r.discount_applied),
+    (sum, r) => sum + Number(r.discount_amount),
     0
   )
 
@@ -172,7 +185,7 @@ export const AdminPromotionsPage: React.FC = () => {
         <div className="flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm">
           <div>
             <span className="text-[10px] font-semibold uppercase text-muted-foreground">
-              Discounts Issued
+              Wallet Credit Issued
             </span>
             <h3 className="mt-1 text-xl font-bold text-emerald-500">
               ₦{totalSaved.toLocaleString()}
@@ -189,8 +202,8 @@ export const AdminPromotionsPage: React.FC = () => {
               Active Campaigns
             </span>
             <h3 className="mt-1 text-xl font-bold text-foreground">
-              {coupons.filter((c) => c.active).length +
-                promotions.filter((p) => p.active).length}
+              {coupons.filter((c) => c.is_active).length +
+                promotions.filter((p) => p.is_active).length}
             </h3>
           </div>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
@@ -249,7 +262,7 @@ export const AdminPromotionsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
-                    Discount Type
+                    Reward Type
                   </label>
                   <select
                     value={couponDiscType}
@@ -258,9 +271,10 @@ export const AdminPromotionsPage: React.FC = () => {
                         e.target.value as Coupon['discount_type']
                       )
                     }
+                    className="w-full rounded-lg border bg-background p-2.5 text-foreground"
                   >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₦)</option>
+                    <option value="fixed">Fixed Wallet Credit (₦)</option>
+                    <option value="percentage">Percentage Discount (%)</option>
                   </select>
                 </div>
 
@@ -338,7 +352,7 @@ export const AdminPromotionsPage: React.FC = () => {
 
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
-                    Discount Type
+                    Reward Type
                   </label>
                   <select
                     value={promoDiscType}
@@ -424,7 +438,7 @@ export const AdminPromotionsPage: React.FC = () => {
                             : `₦${c.discount_value}`}
                         </td>
                         <td className="p-3 text-muted-foreground">
-                          {c.remaining_uses} / {c.usage_limit} left
+                          {c.usage_count} / {c.usage_limit} left
                         </td>
                         <td className="p-3 text-right">
                           <button

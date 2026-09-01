@@ -4,10 +4,10 @@ import { TrendingUp, CheckCircle2 } from 'lucide-react'
 import { springs } from '@/lib/framer-physics'
 
 const successStories = [
-  { name: 'David M.', country: '🇺🇸', platform: 'Upwork', monthlyIncome: 8500, niche: 'Mobile Dev', accountAge: '4 Years' },
-  { name: 'Elena R.', country: '🇪🇸', platform: 'Fiverr', monthlyIncome: 4200, niche: 'Illustration', accountAge: '2 Years' },
-  { name: 'Ahmad K.', country: '🇦🇪', platform: 'Toptal', monthlyIncome: 12000, niche: 'Data Science', accountAge: '5 Years' },
-  { name: 'Sarah J.', country: '🇬🇧', platform: 'Upwork', monthlyIncome: 6300, niche: 'Copywriting', accountAge: '3 Years' },
+  { name: 'David M.', country: '🇺🇸', platform: 'Upwork', monthlyIncome: 8500000, niche: 'Mobile Dev', accountAge: '4 Years' },
+  { name: 'Elena R.', country: '🇪🇸', platform: 'Fiverr', monthlyIncome: 4200000, niche: 'Illustration', accountAge: '2 Years' },
+  { name: 'Ahmad K.', country: '🇦🇪', platform: 'Toptal', monthlyIncome: 12000000, niche: 'Data Science', accountAge: '5 Years' },
+  { name: 'Sarah J.', country: '🇬🇧', platform: 'Upwork', monthlyIncome: 6300000, niche: 'Copywriting', accountAge: '3 Years' },
 ]
 
 export const SuccessWallPreview: React.FC = () => {
@@ -17,9 +17,8 @@ export const SuccessWallPreview: React.FC = () => {
         <h2 className="mb-4 font-heading text-4xl font-black tracking-tight text-white md:text-5xl">
           Real Results. Real Revenue.
         </h2>
-        <p className="mx-auto mb-16 max-w-2xl text-lg font-medium text-slate-400">
-          Our buyers are generating hundreds of thousands in monthly revenue
-          using acquired remote assets.
+        <p className="mx-auto mb-16 max-w-2xl text-lg font-medium text-slate-400 px-4">
+          Our buyers are generating millions in monthly revenue using acquired remote assets.
         </p>
 
         {/* Carousel Container */}
@@ -53,10 +52,10 @@ export const SuccessWallPreview: React.FC = () => {
                   Current Monthly Rev
                 </p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="font-heading text-3xl font-black text-emerald-400">
+                  <span className="font-heading text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight whitespace-nowrap">
                     ₦{story.monthlyIncome.toLocaleString()}
                   </span>
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 shrink-0" />
                 </div>
               </div>
 

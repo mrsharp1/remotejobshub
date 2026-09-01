@@ -11,7 +11,6 @@ import {
   Bell,
   Award,
   ShieldCheck,
-  BarChart2,
   Ticket,
   ShieldAlert,
   ShoppingBag,
@@ -25,6 +24,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useVisualViewport } from '@/hooks/useVisualViewport'
 
 interface NavItem {
   label: string
@@ -77,12 +77,7 @@ const navItems: NavItem[] = [
     icon: Award,
     roles: ['buyer', 'admin'],
   },
-  {
-    label: 'Analytics',
-    to: '/dashboard/analytics',
-    icon: BarChart2,
-    roles: ['buyer', 'admin'],
-  },
+
   {
     label: 'Security',
     to: '/dashboard/security',
@@ -130,18 +125,6 @@ const navItems: NavItem[] = [
     label: 'Boost Listings',
     to: '/seller/promotions',
     icon: Ticket,
-    roles: ['seller', 'admin'],
-  },
-  {
-    label: 'Seller Referrals',
-    to: '/seller/referrals',
-    icon: Award,
-    roles: ['seller', 'admin'],
-  },
-  {
-    label: 'Seller Analytics',
-    to: '/seller/analytics',
-    icon: BarChart2,
     roles: ['seller', 'admin'],
   },
   {
@@ -213,8 +196,20 @@ export const DashboardLayout: React.FC = () => {
     location.pathname === path ||
     (path !== '/dashboard' && location.pathname.startsWith(path))
 
+  const isChat = location.pathname.includes('/messages')
+  const { height, offsetTop } = useVisualViewport()
+
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-background">
+    <div 
+      className={`flex bg-slate-50 dark:bg-background ${isChat ? 'overflow-hidden w-full' : 'min-h-[100dvh]'}`}
+      style={isChat && height > 0 ? { 
+        height: `${height}px`, 
+        position: 'fixed', 
+        top: offsetTop || 0, 
+        left: 0,
+        right: 0
+      } : {}}
+    >
       {/* Desktop Sidebar (Premium Deep Navy) */}
       <aside
         className={`hidden flex-col bg-slate-900 transition-all duration-300 ease-in-out md:flex ${
@@ -320,9 +315,10 @@ export const DashboardLayout: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-95"
+                  className="flex h-14 w-14 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-95 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-primary -mr-2"
+                  aria-label="Close menu"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-6 w-6 pointer-events-none" />
                 </button>
               </div>
 
@@ -368,14 +364,14 @@ export const DashboardLayout: React.FC = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b bg-background px-4 shadow-sm">
+      <div className={`flex min-w-0 flex-1 flex-col ${isChat ? 'h-full' : 'min-h-[100dvh]'}`}>
+        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 shadow-sm">
           <button
             onClick={() => setMobileOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted md:hidden"
+            className="relative z-50 flex h-14 w-14 items-center justify-center rounded-xl hover:bg-muted md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary touch-manipulation -ml-2"
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6 pointer-events-none" />
           </button>
 
           <div className="flex items-center gap-3">
@@ -396,7 +392,7 @@ export const DashboardLayout: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 pb-32 pb-safe md:p-6">
+        <main className={`flex-1 ${isChat ? 'overflow-hidden flex flex-col' : 'overflow-y-auto p-4 pb-32 pb-safe md:p-6'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -404,6 +400,7 @@ export const DashboardLayout: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
+              className={isChat ? 'flex-1 flex flex-col min-h-0 h-full' : ''}
             >
               <Outlet />
             </motion.div>

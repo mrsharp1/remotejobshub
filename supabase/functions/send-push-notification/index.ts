@@ -1,10 +1,36 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import webpush from 'npm:web-push@3.6.7'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+// Import firebase-admin via esm.sh or npm (Supabase supports both, npm: is often easier if supported, but let's use standard Firebase REST or esm.sh if possible)
+// But since the old one used npm:web-push, we can use npm:firebase-admin
+import admin from 'npm:firebase-admin@12.1.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Initialize Firebase Admin lazily to prevent errors if env vars are missing during deployment
+let firebaseInitialized = false
+
+function initFirebaseAdmin() {
+  if (firebaseInitialized) return
+
+  const serviceAccountStr = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
+  
+  if (!serviceAccountStr) {
+    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable')
+  }
+
+  try {
+    const serviceAccount = JSON.parse(serviceAccountStr)
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    })
+    firebaseInitialized = true
+  } catch (err) {
+    console.error('Failed to initialize Firebase Admin:', err)
+    throw err
+  }
 }
 
 serve(async (req) => {
@@ -15,14 +41,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
-    // For VAPID keys, you must set them in Edge Function secrets:
-    // supabase secrets set VAPID_PUBLIC_KEY=your_public_key VAPID_PRIVATE_KEY=your_private_key
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
 
-    if (!supabaseUrl || !supabaseServiceKey || !vapidPublicKey || !vapidPrivateKey) {
-      throw new Error('Missing necessary environment variables (URL, Service Key, or VAPID Keys).')
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing necessary environment variables (URL, Service Key).')
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -41,10 +62,10 @@ serve(async (req) => {
 
     const { user_id, title, message, link, target_url, type, id, category, priority } = notification
 
-    // Retrieve user push subscriptions
+    // Retrieve user push subscriptions from fcm_tokens table
     const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('*')
+      .from('fcm_tokens')
+      .select('id, token, sound_enabled')
       .eq('user_id', user_id)
 
     if (error) {
@@ -58,56 +79,52 @@ serve(async (req) => {
       })
     }
 
-    webpush.setVapidDetails(
-      'mailto:admin@remotejobshub.com',
-      vapidPublicKey,
-      vapidPrivateKey
-    )
-
-    // Build the standardized payload
-    const pushPayload = JSON.stringify({
-      title: title || 'Remote Jobs Hub',
-      body: message || 'You have a new notification.',
-      url: target_url || link || '/',
-      notification_id: id || new Date().toISOString(),
-      type: type || 'system',
-      category: category || 'system',
-      priority: priority || 'informational'
-    })
+    // Initialize Firebase
+    initFirebaseAdmin()
 
     const results = await Promise.all(
       subscriptions.map(async (sub) => {
         try {
-          await webpush.sendNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: {
-                p256dh: sub.p256dh_key,
-                auth: sub.auth_key,
-              },
+          // Construct specific payload per subscription to handle individual sound preference
+          const targetUrl = target_url || link || '/'
+          const notificationId = id || new Date().toISOString()
+          
+          const payload = {
+            data: {
+              title: String(title || 'Remote Jobs Hub'),
+              body: String(message || 'You have a new notification.'),
+              url: String(targetUrl),
+              notification_id: String(notificationId),
+              type: String(type || 'system'),
+              category: String(category || 'system'),
+              priority: String(priority || 'informational'),
+              silent: sub.sound_enabled === false ? 'true' : 'false'
             },
-            pushPayload
-          )
+            token: sub.token
+          }
+
+          // Firebase Admin SDK send message
+          await admin.messaging().send(payload)
           
           // Optionally update last_used_at for analytics
           await supabase
-            .from('push_subscriptions')
+            .from('fcm_tokens')
             .update({ last_used_at: new Date().toISOString() })
             .eq('id', sub.id)
             
-          return { success: true, endpoint: sub.endpoint }
+          return { success: true, token: sub.token }
         } catch (err: any) {
-          // If the subscription is gone/expired, remove it from the database
-          if (err.statusCode === 404 || err.statusCode === 410) {
-            console.log(`Subscription expired/invalid for user ${user_id}. Removing endpoint.`)
+          // If the subscription is gone/expired (e.g. messaging/registration-token-not-registered)
+          if (err.code === 'messaging/registration-token-not-registered' || err.code === 'messaging/invalid-registration-token') {
+            console.log(`Token expired/invalid for user ${user_id}. Removing token.`)
             await supabase
-              .from('push_subscriptions')
+              .from('fcm_tokens')
               .delete()
               .eq('id', sub.id)
           } else {
             console.error('Failed to send push notification:', err)
           }
-          return { success: false, endpoint: sub.endpoint, error: err.message }
+          return { success: false, token: sub.token, error: err.message }
         }
       })
     )

@@ -1,10 +1,11 @@
 import React from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import type { ConversationViewModel } from '@/types'
-import { ShieldCheck, User, Pin, Archive } from 'lucide-react'
+import { Pin, Archive } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { conversationService } from '@/features/messaging/services'
+import { ConversationAvatar } from './ConversationAvatar'
 
 interface ConversationCardProps {
   conversation: ConversationViewModel
@@ -58,41 +59,37 @@ export const ConversationCard: React.FC<ConversationCardProps> = React.memo(({
       >
         <div className="flex items-center gap-3 pr-16">
           <div className="relative flex-shrink-0">
-            {otherUser.avatar_url && !isSupport ? (
-              <img src={otherUser.avatar_url} alt={name} className="h-10 w-10 rounded-full object-cover" />
-            ) : (
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${isSupport ? 'bg-indigo-500' : 'bg-primary'}`}>
-                {isSupport ? <ShieldCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
-              </div>
-            )}
+            <ConversationAvatar name={name} role={otherUser.role} />
             {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white z-10">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
             {otherUser.online && !isSupport && (
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 z-10" />
             )}
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h3 className={`truncate text-sm font-semibold flex items-center gap-1 ${unreadCount > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {name}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                <h3 className={`truncate text-sm font-semibold ${unreadCount > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {name}
+                </h3>
                 {conversation.isPinned && <Pin className="w-3 h-3 text-primary fill-primary flex-shrink-0" />}
                 {conversation.isArchived && <Archive className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
-              </h3>
-              <span className="whitespace-nowrap text-xs text-muted-foreground ml-2">
+              </div>
+              <span className="whitespace-nowrap text-xs text-muted-foreground shrink-0">
                 {timeAgo}
               </span>
             </div>
             
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-1 gap-2">
               <p className={`truncate text-xs ${unreadCount > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                 {lastMessageText}
               </p>
               {isSupport && (
-                <span className="ml-2 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-indigo-500">
+                <span className="shrink-0 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-indigo-500">
                   Support
                 </span>
               )}

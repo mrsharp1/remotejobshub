@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { Dispute, DisputeMessage, DisputeEvidence } from '@/types'
-import { paymentService } from './payment.service'
 
 export const disputeService = {
   async createDispute(disputeData: {
@@ -9,38 +8,27 @@ export const disputeService = {
     reason: string
   }): Promise<Dispute> {
     try {
-      // 1. Insert dispute row
-      const { data: dispute, error } = await supabase
-        .from('disputes')
-        .insert([
-          {
-            ...disputeData,
-            status: 'pending',
-          },
-        ])
-        .select()
-        .single()
+      // 1. Call atomic RPC to create dispute securely
+      const { data, error } = await supabase.rpc('rpc_create_dispute', {
+        p_order_id: disputeData.order_id,
+        p_reason: disputeData.reason,
+      })
 
       if (error) throw error
+      
+      // Check for application-level errors returned as JSON
+      if (data && data.success === false) {
+        throw new Error(data.message || 'Failed to create dispute')
+      }
 
-      // 2. Set order status to disputed and insert order timeline log
-      const { data: order } = await supabase
-        .from('orders')
-        .update({ status: 'disputed' })
-        .eq('id', disputeData.order_id)
-        .select()
+      // Fetch the newly created dispute to return
+      const { data: dispute, error: fetchError } = await supabase
+        .from('disputes')
+        .select('*')
+        .eq('id', data.dispute_id)
         .single()
 
-      if (order) {
-        await supabase.from('order_timeline').insert([
-          {
-            order_id: disputeData.order_id,
-            status: 'disputed',
-            notes: `Dispute opened. Reason: ${disputeData.reason}`,
-          },
-        ])
-
-      }
+      if (fetchError) throw fetchError
 
       return dispute as Dispute
     } catch (err) {
@@ -205,58 +193,12 @@ export const disputeService = {
 
   async resolveBuyer(id: string, notes: string): Promise<void> {
     try {
-      // 1. Fetch Dispute details to find order
-      const { data: dispute } = await supabase
-        .from('disputes')
-        .select('*, order:orders(*)')
-        .eq('id', id)
-        .single()
-
-      if (!dispute) throw new Error('Dispute not found')
-
-      // Fetch payment record
-      const { data: payment, error: payError } = await supabase
-        .from('payments')
-        .select('id')
-        .eq('order_id', dispute.order_id)
-        .single()
-
-      if (payError || !payment) throw new Error('Payment record not found')
-
-      // Execute secure database RPC refund settlement
-      const { error: rpcError } = await supabase.rpc('rpc_mark_payment_refunded', {
-        p_payment_id: payment.id,
+      const { error: rpcError } = await supabase.rpc('rpc_admin_resolve_dispute', {
+        p_dispute_id: id,
+        p_resolution: 'buyer',
+        p_notes: notes,
       })
       if (rpcError) throw rpcError
-
-      // 2. Set dispute status to resolved_buyer and resolution notes
-      const { error: disputeError } = await supabase
-        .from('disputes')
-        .update({
-          status: 'resolved_buyer',
-          resolution_notes: notes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-
-      if (disputeError) throw disputeError
-
-      // 3. Update order status to cancelled (refunded buyer)
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ status: 'cancelled' })
-        .eq('id', dispute.order_id)
-
-      if (orderError) throw orderError
-
-      // 4. Update order timeline
-      await supabase.from('order_timeline').insert([
-        {
-          order_id: dispute.order_id,
-          status: 'cancelled',
-          notes: `Dispute resolved in favor of buyer. Refund processed. Notes: ${notes}`,
-        },
-      ])
     } catch (err) {
       console.error('Error in resolveBuyer:', err)
       throw err
@@ -265,55 +207,12 @@ export const disputeService = {
 
   async resolveSeller(id: string, notes: string): Promise<void> {
     try {
-      // 1. Fetch Dispute details to find order
-      const { data: dispute } = await supabase
-        .from('disputes')
-        .select('*, order:orders(*)')
-        .eq('id', id)
-        .single()
-
-      if (!dispute) throw new Error('Dispute not found')
-
-      // Fetch payment record
-      const { data: payment, error: payError } = await supabase
-        .from('payments')
-        .select('id')
-        .eq('order_id', dispute.order_id)
-        .single()
-
-      if (payError || !payment) throw new Error('Payment record not found')
-
-      // Call the existing payment service wrapper that executes rpc_release_escrow()
-      await paymentService.markReleased(payment.id)
-
-      // 2. Set dispute status to resolved_seller and resolution notes
-      const { error: disputeError } = await supabase
-        .from('disputes')
-        .update({
-          status: 'resolved_seller',
-          resolution_notes: notes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-
-      if (disputeError) throw disputeError
-
-      // 3. Update order status to completed (funds released to seller)
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ status: 'completed' })
-        .eq('id', dispute.order_id)
-
-      if (orderError) throw orderError
-
-      // 4. Update order timeline
-      await supabase.from('order_timeline').insert([
-        {
-          order_id: dispute.order_id,
-          status: 'completed',
-          notes: `Dispute resolved in favor of seller. Payout released. Notes: ${notes}`,
-        },
-      ])
+      const { error: rpcError } = await supabase.rpc('rpc_admin_resolve_dispute', {
+        p_dispute_id: id,
+        p_resolution: 'seller',
+        p_notes: notes,
+      })
+      if (rpcError) throw rpcError
     } catch (err) {
       console.error('Error in resolveSeller:', err)
       throw err

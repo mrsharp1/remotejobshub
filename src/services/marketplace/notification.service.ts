@@ -119,5 +119,52 @@ export const notificationService = {
       return 0
     }
   },
+
+  async notifyAdmins(data: {
+    title: string
+    message: string
+    type: string
+    category?: string | null
+    priority?: 'critical' | 'important' | 'informational' | 'promotional' | null
+    target_url?: string | null
+    link?: string | null
+    metadata?: Record<string, any> | null
+    reference_type?: string | null
+    reference_id?: string | null
+  }): Promise<void> {
+    try {
+      const { data: admins, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+
+      if (profileError) throw profileError
+
+      if (admins && admins.length > 0) {
+        const payloads = admins.map((admin) => ({
+          user_id: admin.id,
+          title: data.title,
+          message: data.message,
+          type: data.type,
+          category: data.category || null,
+          priority: data.priority || null,
+          target_url: data.target_url || data.link || null,
+          link: data.link || data.target_url || null,
+          metadata: data.metadata || null,
+          reference_type: data.reference_type || null,
+          reference_id: data.reference_id || null,
+          is_read: false,
+        }))
+
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert(payloads)
+
+        if (insertError) throw insertError
+      }
+    } catch (err) {
+      console.error('Error in notifyAdmins:', err)
+    }
+  },
 }
 export default notificationService

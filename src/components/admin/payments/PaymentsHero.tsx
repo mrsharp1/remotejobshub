@@ -1,12 +1,13 @@
 import React from 'react'
 import { DollarSign, Wallet, ArrowUpRight, TrendingUp, Clock } from 'lucide-react'
-import { Payment } from '@/types'
+import { Payment, WithdrawalRequest } from '@/types'
 
 interface PaymentsHeroProps {
   payments: Payment[]
+  withdrawals?: WithdrawalRequest[]
 }
 
-export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments }) => {
+export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments, withdrawals = [] }) => {
   // Real calculations
   const totalVolume = payments
     .filter((p) => p.payment_status === 'success' || p.payment_status === 'released')
@@ -30,8 +31,9 @@ export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments }) => {
     )
     .reduce((sum, p) => sum + Number(p.amount), 0) * 0.1
 
-  // Mock withdrawal requests sum for realism
-  const pendingWithdrawals = 4850
+  // Real withdrawal requests sum
+  const pendingRequests = withdrawals.filter((w) => w.status === 'pending')
+  const pendingWithdrawalsAmount = pendingRequests.reduce((sum, w) => sum + Number(w.amount), 0)
 
   const metrics = [
     {
@@ -68,8 +70,8 @@ export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments }) => {
     },
     {
       title: 'Pending Withdrawals',
-      value: `₦${pendingWithdrawals.toLocaleString()}`,
-      change: '3 Requests',
+      value: `₦${pendingWithdrawalsAmount.toLocaleString()}`,
+      change: `${pendingRequests.length} Requests`,
       icon: Clock,
       color: 'from-rose-500 to-pink-600',
       description: 'Withdrawal queue awaiting release',
@@ -83,13 +85,13 @@ export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments }) => {
         return (
           <div
             key={idx}
-            className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-900/60 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-border/80 hover:shadow-2xl"
           >
             {/* Ambient Background Glow */}
             <div className={`absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${m.color} opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-20`} />
 
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 {m.title}
               </span>
               <div className={`rounded-xl bg-gradient-to-br ${m.color} p-2 text-white shadow-lg`}>
@@ -98,14 +100,14 @@ export const PaymentsHero: React.FC<PaymentsHeroProps> = ({ payments }) => {
             </div>
 
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-black tracking-tight text-white sm:text-3xl">
+              <span className="font-mono text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                 {m.value}
               </span>
             </div>
 
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-[10px] font-medium text-slate-400">{m.description}</span>
-              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-bold text-white uppercase">
+              <span className="text-[10px] font-medium text-muted-foreground">{m.description}</span>
+              <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-bold text-foreground uppercase border border-border">
                 {m.change}
               </span>
             </div>

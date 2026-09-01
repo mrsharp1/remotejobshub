@@ -17,7 +17,6 @@ import { RevenueAnalytics } from '@/components/listing/RevenueAnalytics'
 import { TrustCenter } from '@/components/listing/TrustCenter'
 import { SellerProfile } from '@/components/listing/SellerProfile'
 import { PurchaseTimeline } from '@/components/listing/PurchaseTimeline'
-import { RoiCalculator } from '@/components/listing/RoiCalculator'
 import { FAQ } from '@/components/listing/FAQ'
 import { SimilarListings } from '@/components/listing/SimilarListings'
 import { StickyPurchaseCard } from '@/components/listing/StickyPurchaseCard'
@@ -316,8 +315,6 @@ export const ListingDetailPage: React.FC = () => {
             )}
 
             <PurchaseTimeline />
-
-            <RoiCalculator listing={listing} />
 
             <FAQ />
 

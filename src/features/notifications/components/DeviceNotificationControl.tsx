@@ -27,24 +27,20 @@ export const DeviceNotificationControl: React.FC<DeviceNotificationControlProps>
     }
 
     if (Notification.permission === 'granted') {
-       try {
-         const registration = await navigator.serviceWorker.getRegistration('/sw.js')
-         if (registration) {
-           const subscription = await registration.pushManager.getSubscription()
-           if (subscription) {
-             const isInDb = await pushNotificationService.verifySubscriptionInDb(subscription.endpoint)
-             if (isInDb) {
-               setPushState('enabled')
-               return
-             }
-             // If not in DB but exists in browser, we shouldn't show it as enabled.
-             // We'll clean up the dangling browser subscription quietly.
-             await subscription.unsubscribe().catch(() => {})
-           }
-         }
-       } catch (e) {
-         console.error(e)
-       }
+      try {
+        const { getFirebaseToken } = await import('@/lib/firebase')
+        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+        const token = await getFirebaseToken(vapidKey)
+        if (token) {
+          const isInDb = await pushNotificationService.verifySubscriptionInDb(token)
+          if (isInDb) {
+            setPushState('enabled')
+            return
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      }
     }
     
     setPushState('not_enabled')

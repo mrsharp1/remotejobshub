@@ -222,6 +222,11 @@ const AdminCMSPage = lazy(() =>
     default: m.AdminCMSPage,
   }))
 )
+const AdminPaymentGatewayPage = lazy(() =>
+  import('@/pages/admin/AdminPaymentGatewayPage').then((m) => ({
+    default: m.AdminPaymentGatewayPage,
+  }))
+)
 const AdminBroadcastsPage = lazy(() =>
   import('@/pages/admin/AdminBroadcastsPage').then((m) => ({
     default: m.AdminBroadcastsPage,
@@ -235,11 +240,6 @@ const NotificationPreferencesPage = lazy(() =>
 const BuyerReferralPage = lazy(() =>
   import('@/pages/dashboard/BuyerReferralPage').then((m) => ({
     default: m.BuyerReferralPage,
-  }))
-)
-const SellerReferralPage = lazy(() =>
-  import('@/pages/seller/SellerReferralPage').then((m) => ({
-    default: m.SellerReferralPage,
   }))
 )
 const AdminReferralsPage = lazy(() =>
@@ -262,16 +262,7 @@ const AdminAnalyticsPage = lazy(() =>
     default: m.AdminAnalyticsPage,
   }))
 )
-const SellerAnalyticsPage = lazy(() =>
-  import('@/pages/seller/SellerAnalyticsPage').then((m) => ({
-    default: m.SellerAnalyticsPage,
-  }))
-)
-const BuyerAnalyticsPage = lazy(() =>
-  import('@/pages/dashboard/BuyerAnalyticsPage').then((m) => ({
-    default: m.BuyerAnalyticsPage,
-  }))
-)
+
 const BuyerPromotionsPage = lazy(() =>
   import('@/pages/dashboard/BuyerPromotionsPage').then((m) => ({
     default: m.BuyerPromotionsPage,
@@ -310,16 +301,6 @@ const AdminRiskPage = lazy(() =>
 const AdminSecurityPage = lazy(() =>
   import('@/pages/admin/AdminSecurityPage').then((m) => ({
     default: m.AdminSecurityPage,
-  }))
-)
-const AdminAIInsightsPage = lazy(() =>
-  import('@/pages/admin/AdminAIInsightsPage').then((m) => ({
-    default: m.AdminAIInsightsPage,
-  }))
-)
-const AdminAutomationPage = lazy(() =>
-  import('@/pages/admin/AdminAutomationPage').then((m) => ({
-    default: m.AdminAutomationPage,
   }))
 )
 
@@ -853,34 +834,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'seller/referrals',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <SellerReferralPage />
-          </Suspense>
-        ),
-      },
-      {
         path: 'seller/verification',
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <SellerVerificationPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'dashboard/analytics',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <BuyerAnalyticsPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'seller/analytics',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <SellerAnalyticsPage />
           </Suspense>
         ),
       },
@@ -1043,26 +1000,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'admin/ai-insights',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <AdminAIInsightsPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'admin/automation',
-        element: (
-          <Suspense fallback={<LoadingScreen />}>
-            <AdminAutomationPage />
-          </Suspense>
-        ),
-      },
-      {
         path: 'admin/cms',
         element: (
           <Suspense fallback={<LoadingScreen />}>
             <AdminCMSPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'admin/settings/payment-gateway',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminPaymentGatewayPage />
           </Suspense>
         ),
       },

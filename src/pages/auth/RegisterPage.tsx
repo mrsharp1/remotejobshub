@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import {
@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { authService } from '@/services/auth/auth.service'
+import { referralService } from '@/services/marketplace/referral.service'
 import { zodResolver } from '@/utils/resolver'
 import { useAuthStore } from '@/stores/authStore'
 import { springs } from '@/lib/framer-physics'
@@ -42,20 +43,16 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>
 
 export const RegisterPage: React.FC = () => {
+  const [searchParams] = useSearchParams()
+  const referralCode = searchParams.get('ref')
+  
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
   const [passwordValue, setPasswordValue] = useState('')
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    if (scrollHeight - scrollTop <= clientHeight + 10) {
-      setHasScrolledToBottom(true)
-    }
-  }
 
   const {
     register,
@@ -68,7 +65,7 @@ export const RegisterPage: React.FC = () => {
       fullName: '',
       email: '',
       phone: '',
-      country: '',
+      country: 'Nigeria',
       password: '',
       confirmPassword: '',
       agreeToTerms: false,
@@ -113,6 +110,12 @@ export const RegisterPage: React.FC = () => {
             phone: data.phone || null,
             country: data.country,
           })
+
+          if (referralCode) {
+            await referralService.processRegistrationReferral(user.id, referralCode).catch(err => {
+              console.error('Failed to process referral attribution:', err)
+            })
+          }
 
           // Sync auth store immediately if session was created automatically
           if (session && updatedProfile) {
@@ -194,8 +197,8 @@ export const RegisterPage: React.FC = () => {
         </motion.div>
       )}
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-4">
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-3">
           <div>
             <label
               htmlFor="fullName"
@@ -295,18 +298,33 @@ export const RegisterPage: React.FC = () => {
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-muted-foreground">
                   <Globe className="h-5 w-5" />
                 </span>
-                <input
+                <select
                   id="country"
-                  type="text"
                   aria-invalid={errors.country ? "true" : "false"}
                   aria-describedby={errors.country ? "country-error" : undefined}
-                  className={`focus:ring-primary/20 block w-full min-h-[48px] rounded-xl border bg-white py-4 pl-11 pr-4 text-[16px] text-foreground placeholder-muted-foreground shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-4 dark:bg-background ${
+                  className={`focus:ring-primary/20 block w-full min-h-[48px] rounded-xl border bg-white py-4 pl-11 pr-10 text-[16px] text-foreground shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-4 dark:bg-background appearance-none cursor-pointer ${
                     errors.country ? 'border-destructive' : 'border-input'
                   }`}
-                  placeholder="Nigeria"
                   disabled={isLoading}
                   {...register('country')}
-                />
+                >
+                  <option value="" disabled>Select a country</option>
+                  <option value="Nigeria">Nigeria</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Germany">Germany</option>
+                  <option value="France">France</option>
+                  <option value="South Africa">South Africa</option>
+                  <option value="Kenya">Kenya</option>
+                  <option value="Ghana">Ghana</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
               {errors.country && (
                 <p id="country-error" className="mt-1.5 text-xs font-medium text-destructive">
@@ -432,43 +450,27 @@ export const RegisterPage: React.FC = () => {
             )}
           </div>
 
-          <div className="flex flex-col gap-3">
-            <label className="block text-sm font-medium text-foreground">Terms & Conditions</label>
-            <div 
-              className="h-32 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground"
-              onScroll={handleScroll}
-            >
-              <h4 className="font-bold text-foreground mb-2">Remote Jobs Hub Platform Agreement</h4>
-              <p className="mb-2">1. Acceptance of Terms: By creating an account, you agree to these terms.</p>
-              <p className="mb-2">2. Escrow Services: All transactions must go through our official escrow system. Attempting to bypass escrow will result in immediate account termination.</p>
-              <p className="mb-2">3. KYC Verification: Sellers must provide accurate identity verification documents.</p>
-              <p className="mb-2">4. Prohibited Assets: You may not sell stolen accounts, illegal services, or accounts that violate third-party terms of service.</p>
-              <p className="mb-2">5. Dispute Resolution: Our dispute team's decisions are final. Both parties must cooperate fully during investigations.</p>
-              <p className="mb-2">6. Privacy Policy: We collect and store your data as outlined in our Privacy Policy.</p>
-              <p className="mb-2">7. Fees: Buyers are responsible for the escrow protection fee. Sellers are not charged listing fees.</p>
-              <p className="mb-2">8. Account Security: You are responsible for maintaining the security of your account and enabling 2FA.</p>
-              <p className="mb-2">9. Termination: We reserve the right to suspend or terminate accounts that violate our policies.</p>
-              <p>10. Liability: Remote Jobs Hub is not liable for losses incurred due to negligence or failure to follow security guidelines.</p>
-            </div>
-
-            <div className="flex items-start mt-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start">
               <div className="flex h-5 items-center">
                 <input
                   id="agreeToTerms"
                   type="checkbox"
-                  disabled={!hasScrolledToBottom || isLoading}
+                  disabled={isLoading}
                   aria-invalid={errors.agreeToTerms ? "true" : "false"}
-                  className="premium-input h-5 w-5 sm:h-4 sm:w-4 rounded border-input text-primary focus:ring-primary disabled:opacity-50"
+                  className="premium-input h-5 w-5 sm:h-4 sm:w-4 rounded border-input text-primary focus:ring-primary disabled:opacity-50 cursor-pointer"
                   {...register('agreeToTerms')}
                 />
               </div>
               <div className="ml-3 sm:ml-2 text-sm">
-                <label htmlFor="agreeToTerms" className={`font-medium cursor-pointer transition-colors select-none ${hasScrolledToBottom ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  I have read and agree to the Terms of Service
-                  {!hasScrolledToBottom && <span className="block text-xs text-destructive mt-0.5">Please scroll to the bottom of the terms to agree.</span>}
+                <label htmlFor="agreeToTerms" className="font-medium cursor-pointer transition-colors select-none text-foreground">
+                  I agree to the{' '}
+                  <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </label>
                 {errors.agreeToTerms && (
-                  <p className="mt-1.5 text-xs font-medium text-destructive">
+                  <p className="mt-1 text-xs font-medium text-destructive">
                     {errors.agreeToTerms.message}
                   </p>
                 )}

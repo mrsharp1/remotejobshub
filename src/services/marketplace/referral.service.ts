@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Referral, ReferralReward } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
+import { Referral, ReferralSettings } from '@/types'
 
 export const referralService = {
   async validateReferralCode(code: string): Promise<string | null> {
@@ -19,146 +18,23 @@ export const referralService = {
     }
   },
 
-  async recordReferral(
-    referrerId: string,
+  async processRegistrationReferral(
     referredId: string,
     referralCode: string
-  ): Promise<Referral> {
+  ): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('referrals')
-        .insert([
-          {
-            referrer_id: referrerId,
-            referred_id: referredId,
-            referral_code: referralCode.toUpperCase(),
-            status: 'pending',
-            reward_amount: 1000.0, // ₦1,000
-          },
-        ])
-        .select()
-        .single()
+      if (!referralCode || !referralCode.trim()) return
 
-      if (error) throw error
-      return data as Referral
-    } catch (err) {
-      console.error('Error in recordReferral:', err)
-      throw err
-    }
-  },
+      const { error } = await supabase.rpc('rpc_register_user_with_referral', {
+        p_referred_id: referredId,
+        p_referral_code: referralCode.trim(),
+      })
 
-  async recordSuccessfulPurchase(referredId: string): Promise<void> {
-    try {
-      // 1. Check if referral exists in pending status
-      const { data: ref, error } = await supabase
-        .from('referrals')
-        .select('*')
-        .eq('referred_id', referredId)
-        .eq('status', 'pending')
-        .maybeSingle()
-
-      if (error) throw error
-      if (!ref) return // No pending referral found
-
-      // 2. Transition referral to qualified
-      const { error: updateError } = await supabase
-        .from('referrals')
-        .update({
-          status: 'qualified',
-          first_purchase_date: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', ref.id)
-
-      if (updateError) throw updateError
-
-      // 3. Create referral reward log
-      const { data: reward, error: rewardError } = await supabase
-        .from('referral_rewards')
-        .insert([
-          {
-            referral_id: ref.id,
-            amount: ref.reward_amount,
-            status: 'pending',
-          },
-        ])
-        .select()
-        .single()
-
-      if (rewardError) throw rewardError
-
-      // 4. Automatically approve and credit referrer's wallet
-      await this.approveReward(reward.id)
-    } catch (err) {
-      console.error('Error in recordSuccessfulPurchase:', err)
-    }
-  },
-
-  async approveReward(rewardId: string): Promise<void> {
-    try {
-      const { data, error } = await supabase.rpc(
-        'rpc_approve_referral_reward',
-        { p_reward_id: rewardId }
-      )
-
-      if (error) throw error
-      if (!data.success) {
-        throw new Error(data.message)
-      }
-
-      // We still need to notify the user, which is safe client-side logic
-      // But we need the amount. Let's just fetch it quickly if not returned by RPC,
-      // or we can just fetch the reward first to get the amount.
-      const { data: reward } = await supabase
-        .from('referral_rewards')
-        .select('*, referral:referrals(*)')
-        .eq('id', rewardId)
-        .single()
-
-      if (reward) {
-        const referral = reward.referral as unknown as Referral
-        const referrerId = referral.referrer_id
-
-        await notificationService.createNotification({
-          user_id: referrerId,
-          title: '🎉 Referral Bonus Credited!',
-          message: `Your referral bonus of ₦${Number(reward.amount).toLocaleString()} has been credited to your available wallet balance.`,
-          type: 'system',
-          reference_type: 'order',
-          reference_id: referral.id,
-        })
+      if (error) {
+        console.error('RPC Error in processRegistrationReferral:', error)
       }
     } catch (err) {
-      console.error('Error in approveReward:', err)
-      throw err
-    }
-  },
-
-  async rejectReward(rewardId: string): Promise<void> {
-    try {
-      const { data: reward, error } = await supabase
-        .from('referral_rewards')
-        .select('*, referral:referrals(*)')
-        .eq('id', rewardId)
-        .single()
-
-      if (error) throw error
-
-      const referral = reward.referral as unknown as Referral
-
-      // Update status
-      await supabase
-        .from('referral_rewards')
-        .update({ status: 'rejected', updated_at: new Date().toISOString() })
-        .eq('id', rewardId)
-
-      await supabase
-        .from('referrals')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-        .eq('id', referral.id)
-    } catch (err) {
-      console.error('Error in rejectReward:', err)
-      throw err
+      console.error('Error in processRegistrationReferral:', err)
     }
   },
 
@@ -193,35 +69,63 @@ export const referralService = {
     }
   },
 
-  async getReferralRewards(userId: string): Promise<ReferralReward[]> {
+  async getAdminSettings(): Promise<ReferralSettings> {
+    const defaultSettings: ReferralSettings = {
+      reward_amount: 1000,
+      minimum_purchase_amount: 5000,
+      is_enabled: true
+    }
+    
     try {
       const { data, error } = await supabase
-        .from('referral_rewards')
-        .select('*, referral:referrals(*)')
-        .order('created_at', { ascending: false })
+        .from('referral_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle()
 
       if (error) throw error
-      return (data || []).filter(
-        (r) => (r.referral as unknown as Referral)?.referrer_id === userId
-      ) as ReferralReward[]
+      
+      if (data) {
+        return {
+          reward_amount: data.reward_amount,
+          minimum_purchase_amount: data.minimum_purchase_amount ?? 5000,
+          is_enabled: data.is_enabled ?? true
+        }
+      }
+      return defaultSettings
     } catch (err) {
-      console.error('Error in getReferralRewards:', err)
-      return []
+      console.error('Error fetching admin referral settings:', err)
+      return defaultSettings
     }
   },
 
-  async getAllReferralRewards(): Promise<ReferralReward[]> {
+  async updateAdminSettings(amount: number): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('referral_rewards')
-        .select('*, referral:referrals(*)')
-        .order('created_at', { ascending: false })
+      const { data, error: selectError } = await supabase
+        .from('referral_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle()
 
-      if (error) throw error
-      return (data || []) as ReferralReward[]
+      if (selectError) throw selectError
+
+      if (data) {
+        const { error, data: updatedData } = await supabase
+          .from('referral_settings')
+          .update({ reward_amount: amount, updated_at: new Date().toISOString() })
+          .eq('id', data.id)
+          .select()
+        if (error) throw error
+        if (!updatedData || updatedData.length === 0) throw new Error("Permission denied. Could not save settings.")
+      } else {
+        const { error } = await supabase
+          .from('referral_settings')
+          .insert([{ reward_amount: amount }])
+        if (error) throw error
+      }
     } catch (err) {
-      console.error('Error in getAllReferralRewards:', err)
-      return []
+      console.error('Error updating admin referral settings:', err)
+      throw err
     }
-  },
+  }
 }

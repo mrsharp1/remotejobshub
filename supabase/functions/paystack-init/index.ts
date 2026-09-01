@@ -37,9 +37,29 @@ serve(async (req) => {
       throw new Error('Invalid amount')
     }
 
-    const paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    let paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')
+
+    try {
+      const { data: config } = await serviceClient
+        .from('payment_gateway_settings')
+        .select('live_secret_key')
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (config && config.live_secret_key) {
+        paystackSecret = config.live_secret_key
+      }
+    } catch (dbError) {
+      console.error('Failed to fetch dynamic paystack configuration:', dbError)
+    }
+
     if (!paystackSecret) {
-      throw new Error('Paystack secret key not configured')
+      throw new Error('Paystack secret key not configured in environment or database.')
     }
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {

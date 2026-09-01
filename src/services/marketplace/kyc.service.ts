@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { SellerVerification } from '@/types'
-import { notificationService } from '@/features/notifications/services'
-
 export const kycService = {
   async getVerification(userId: string): Promise<SellerVerification | null> {
     try {
@@ -202,13 +200,7 @@ export const kycService = {
             .eq('id', vRecord.user_id)
             
           if (status === 'approved') {
-            await notificationService.createNotification({
-              user_id: vRecord.user_id,
-              type: 'verification',
-              title: 'Verification Approved',
-              message: 'Your seller account has been approved!',
-              link: '/seller'
-            })
+            
           }
         }
       }

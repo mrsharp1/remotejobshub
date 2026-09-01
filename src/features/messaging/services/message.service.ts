@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import type { Message } from '@/types'
-import { notificationService } from '@/features/notifications/services'
-
 export const messageService = {
   async sendMessage(
     conversationId: string,
@@ -47,17 +45,8 @@ export const messageService = {
         .neq('user_id', senderId)
 
       if (participants) {
-        for (const p of participants) {
-          await notificationService.createNotification({
-            user_id: p.user_id,
-            title: 'New Message',
-            message: 'You received a new message.',
-            type: 'message',
-            category: 'message',
-            priority: 'important',
-            target_url: `/dashboard/messages?conversation=${conversationId}`,
-            link: '/dashboard/messages'
-          })
+        for (const _ of participants) {
+          // No operation for now – placeholder for future notification logic
         }
       }
 

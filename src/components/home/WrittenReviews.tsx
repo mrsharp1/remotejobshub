@@ -102,21 +102,21 @@ export const WrittenReviews: React.FC<{ location?: 'homepage' | 'marketplace' | 
                 </p>
               </div>
 
-              <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-6">
-                <div className="flex items-center gap-4">
+              <div className="mt-6 flex w-full items-center justify-between border-t border-white/5 pt-6 overflow-hidden">
+                <div className="flex min-w-0 flex-1 items-center gap-3 pr-3">
                   {review.avatar ? (
                     <img 
                       src={review.avatar} 
                       alt={review.customerName} 
-                      className="h-12 w-12 rounded-full object-cover shadow-inner"
+                      className="h-10 w-10 shrink-0 rounded-full object-cover shadow-inner sm:h-12 sm:w-12"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary font-bold shadow-inner">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 font-bold text-primary shadow-inner sm:h-12 sm:w-12">
                       {review.customerName.charAt(0)}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h4 className="flex items-center gap-1 truncate font-bold text-white">
+                    <h4 className="flex items-center gap-1 font-bold text-white">
                       <span className="truncate">{review.customerName}</span>
                       {review.verified && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />}
                     </h4>
@@ -126,7 +126,7 @@ export const WrittenReviews: React.FC<{ location?: 'homepage' | 'marketplace' | 
                   </div>
                 </div>
                 <button className="flex shrink-0 items-center gap-1 rounded-full bg-slate-800/50 px-3 py-1.5 text-xs font-bold text-slate-400 transition-colors hover:bg-slate-800 hover:text-white">
-                  <ThumbsUp className="h-3 w-3" /> Helpful
+                  <ThumbsUp className="h-3 w-3 shrink-0" /> Helpful
                 </button>
               </div>
             </motion.div>

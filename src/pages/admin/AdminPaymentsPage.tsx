@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { paymentService } from '@/services/marketplace/payment.service'
-import { Payment } from '@/types'
+import { disputeService } from '@/services/marketplace/dispute.service'
+import { Payment, WithdrawalRequest } from '@/types'
 
 // Component Imports
 import { PaymentsHero } from '@/components/admin/payments/PaymentsHero'
@@ -23,8 +24,8 @@ export const AdminPaymentsPage: React.FC = () => {
   // Fetch all payments
   const {
     data: payments = [],
-    refetch,
-    isLoading,
+    refetch: refetchPayments,
+    isLoading: isLoadingPayments,
   } = useQuery({
     queryKey: ['admin-all-payments'],
     queryFn: async () => {
@@ -40,11 +41,41 @@ export const AdminPaymentsPage: React.FC = () => {
     },
   })
 
+  // Fetch all withdrawals
+  const {
+    data: withdrawals = [],
+    refetch: refetchWithdrawals,
+    isLoading: isLoadingWithdrawals,
+  } = useQuery({
+    queryKey: ['admin-all-withdrawals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('withdrawal_requests')
+        .select('*, user:profiles(*)')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return (data || []) as (WithdrawalRequest & { user: any })[]
+    },
+  })
+
+  // Fetch all disputes
+  const {
+    data: disputes = [],
+    refetch: refetchDisputes,
+    isLoading: isLoadingDisputes,
+  } = useQuery({
+    queryKey: ['admin-all-disputes'],
+    queryFn: async () => {
+      return await disputeService.getDisputes()
+    },
+  })
+
   // Action Handlers
   const handleReleaseEscrow = async (id: string) => {
     try {
       await paymentService.markReleased(id)
-      refetch()
+      refetchPayments()
       setSelectedPayment(null)
     } catch {
       alert('Failed to release escrow funds')
@@ -54,7 +85,7 @@ export const AdminPaymentsPage: React.FC = () => {
   const handleRefundEscrow = async (id: string) => {
     try {
       await paymentService.markRefunded(id)
-      refetch()
+      refetchPayments()
       setSelectedPayment(null)
     } catch {
       alert('Failed to refund escrow funds')
@@ -83,21 +114,23 @@ export const AdminPaymentsPage: React.FC = () => {
     return matchesSearch && matchesStatus
   })
 
+  const isLoading = isLoadingPayments || isLoadingWithdrawals || isLoadingDisputes
+
   return (
     <div className="space-y-8 pb-12">
       {/* Title */}
-      <div className="border-b border-white/5 pb-4">
+      <div className="border-b border-border/50 pb-4">
         <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
           Security Administrator Control Console
         </span>
-        <h1 className="font-heading text-2xl font-bold text-white mt-1">
+        <h1 className="font-heading text-2xl font-bold text-foreground mt-1">
           Platform Payments & Escrow Logs
         </h1>
-        <p className="text-xs text-slate-400">Manage transaction volumes, releases, and audits</p>
+        <p className="text-xs text-muted-foreground">Manage transaction volumes, releases, and audits</p>
       </div>
 
       {/* Executive Hero metrics */}
-      <PaymentsHero payments={payments} />
+      <PaymentsHero payments={payments} withdrawals={withdrawals} />
 
       {/* Interactive Revenue curve & simulated centers */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -105,7 +138,7 @@ export const AdminPaymentsPage: React.FC = () => {
           <RevenueOverview payments={payments} />
         </div>
         <div>
-          <FraudDetection />
+          <FraudDetection payments={payments} disputes={disputes} />
         </div>
       </div>
 
@@ -129,8 +162,8 @@ export const AdminPaymentsPage: React.FC = () => {
             <EscrowQueue payments={filteredPayments} onInspect={setSelectedPayment} />
           </div>
           <div className="space-y-6">
-            <WithdrawalsCenter />
-            <RefundRequests />
+            <WithdrawalsCenter withdrawals={withdrawals} onRefresh={refetchWithdrawals} />
+            <RefundRequests disputes={disputes} onRefresh={refetchDisputes} />
           </div>
         </div>
       )}

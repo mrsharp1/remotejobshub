@@ -336,26 +336,6 @@ export const SellerDashboardPage: React.FC = () => {
 
         <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border-4 border-slate-900 bg-slate-800 shadow-md">
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt="Profile"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="font-heading text-2xl font-bold text-slate-300">
-                    {profile?.full_name?.charAt(0) || 'S'}
-                  </span>
-                )}
-              </div>
-              {profile?.seller_verified && (
-                <div className="absolute -bottom-2 -right-2 rounded-xl bg-emerald-500 p-1.5 shadow-lg shadow-emerald-500/20">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-              )}
-            </div>
 
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
@@ -691,10 +671,6 @@ export const SellerDashboardPage: React.FC = () => {
 
                 <ProfileCompletionCard
                   profile={profile}
-                  onAvatarUpdated={(url) =>
-                    profile &&
-                    handleProfileUpdated({ ...profile, avatar_url: url })
-                  }
                 />
                 <SellerBioCard
                   profile={profile}

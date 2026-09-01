@@ -9,11 +9,9 @@ import {
   MessageSquare,
   Bell,
   ArrowRight,
-  TrendingUp,
   Package,
   ShieldCheck,
   Loader2,
-  BarChart2,
   Award,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
@@ -107,13 +105,7 @@ export const DashboardOverviewPage: React.FC = () => {
             color: 'text-amber-500',
             bg: 'bg-amber-500/10',
           },
-          {
-            label: 'Analytics',
-            to: '/dashboard/analytics',
-            icon: BarChart2,
-            color: 'text-rose-500',
-            bg: 'bg-rose-500/10',
-          },
+
           {
             label: 'Referrals',
             to: '/dashboard/referrals',
@@ -147,25 +139,11 @@ export const DashboardOverviewPage: React.FC = () => {
             bg: 'bg-violet-500/10',
           },
           {
-            label: 'Analytics',
-            to: '/seller/analytics',
-            icon: TrendingUp,
-            color: 'text-amber-500',
-            bg: 'bg-amber-500/10',
-          },
-          {
             label: 'KYC Verification',
             to: '/seller/verification',
             icon: ShieldCheck,
             color: 'text-rose-500',
             bg: 'bg-rose-500/10',
-          },
-          {
-            label: 'Referrals',
-            to: '/seller/referrals',
-            icon: Award,
-            color: 'text-orange-500',
-            bg: 'bg-orange-500/10',
           },
         ]
       : []),

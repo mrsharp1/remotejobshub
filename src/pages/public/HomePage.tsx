@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { useHomepageContent } from '@/services/cms/cms.store'
 
 import { HeroSection } from '@/components/home/HeroSection'
@@ -15,6 +15,8 @@ import { SecuritySection } from '@/components/home/SecuritySection'
 import { CommunitySection } from '@/components/home/CommunitySection'
 import { FaqAccordion } from '@/components/home/FaqAccordion'
 import { FinalCtaSection } from '@/components/home/FinalCtaSection'
+import { PaymentSafetyBanner } from '@/components/home/PaymentSafetyBanner'
+
 
 const SECTION_MAP: Record<string, React.FC> = {
   'hero': HeroSection,
@@ -40,6 +42,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="flex flex-col bg-slate-950">
+      <PaymentSafetyBanner />
       {sortedLayout.map(section => {
         if (!section.enabled) return null
         
@@ -56,3 +59,5 @@ export const HomePage: React.FC = () => {
     </div>
   )
 }
+
+

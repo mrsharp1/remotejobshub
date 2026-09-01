@@ -1,174 +1,138 @@
 import { supabase } from '@/lib/supabase'
+import { getFirebaseToken } from '@/lib/firebase'
+import { UAParser } from 'ua-parser-js'
 
 export const pushNotificationService = {
   isPushNotificationSupported(): boolean {
     return 'serviceWorker' in navigator && 'PushManager' in window
   },
 
-  async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-    if (!this.isPushNotificationSupported()) return null
-    
-    try {
-      return await navigator.serviceWorker.register('/sw.js')
-    } catch (error) {
-      console.error('Service Worker registration failed:', error)
-      return null
-    }
-  },
-
-  async getExistingPushSubscription(registration: ServiceWorkerRegistration): Promise<PushSubscription | null> {
-    return await registration.pushManager.getSubscription()
-  },
-
   async requestPushPermission(): Promise<NotificationPermission> {
     if (!('Notification' in window)) {
       return 'denied'
     }
-    
-    const permission = await Notification.requestPermission()
-    return permission
+    return await Notification.requestPermission()
+  },
+
+  getDeviceType(): string {
+    try {
+      const parser = new UAParser()
+      const result = parser.getResult()
+      const browserName = result.browser.name || 'Unknown Browser'
+      const osName = result.os.name || 'Unknown OS'
+      return `${browserName} on ${osName}`
+    } catch {
+      return 'Unknown Device'
+    }
   },
 
   async subscribeToPushNotifications(userId: string): Promise<{ success: boolean; error?: string }> {
-    const registration = await this.registerServiceWorker()
-    if (!registration) return { success: false, error: 'Service worker registration failed or unavailable on this browser.' }
+    if (!this.isPushNotificationSupported()) return { success: false, error: 'Push notifications not supported on this browser.' }
 
     const permission = await this.requestPushPermission()
     if (permission !== 'granted') return { success: false, error: `Browser permission denied. Current state: ${permission}` }
 
     try {
-      // We need the Public VAPID key from environment variables
-      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
-      if (!vapidPublicKey) {
-        throw new Error('VAPID public key is missing from environment variables')
-      }
-
-      console.log('Diagnostic: Current VAPID public key fingerprint:', vapidPublicKey.substring(0, 8) + '...' + vapidPublicKey.substring(vapidPublicKey.length - 8))
-
-      const existingSubscription = await this.getExistingPushSubscription(registration)
-      if (existingSubscription) {
-        console.log('Diagnostic: Existing browser subscription: YES')
-        console.log('Diagnostic: Existing subscription endpoint:', existingSubscription.endpoint)
-        try {
-          await existingSubscription.unsubscribe()
-          console.log('Diagnostic: Old subscription removed: YES')
-        } catch (error) {
-          console.warn('Failed to unsubscribe stale push subscription:', error)
-          console.log('Diagnostic: Old subscription removed: NO')
+      // Get Firebase config / token
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY // Firebase can also use a VAPID key to generate tokens for web push
+      
+      // We will first explicitly unregister the old /sw.js to prevent conflicts
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const reg of registrations) {
+        if (reg.active?.scriptURL.endsWith('/sw.js')) {
+          await reg.unregister()
+          console.log('Unregistered legacy VAPID service worker')
         }
-      } else {
-        console.log('Diagnostic: Existing browser subscription: NO')
+      }
+      
+      const token = await getFirebaseToken(vapidKey)
+      
+      if (!token) {
+        throw new Error('Failed to generate FCM token from Firebase.')
       }
 
-      const applicationServerKey = this.urlBase64ToUint8Array(vapidPublicKey)
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey
-      })
-      console.log('Diagnostic: New subscription created: YES')
+      console.log('Diagnostic: New FCM token generated: YES')
 
       try {
-        // Clean up database before saving new one
-        await supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', userId)
+        await this.savePushSubscription(userId, token)
 
-        await this.savePushSubscription(userId, subscription)
-
-        // Verify database persistence
-        const isInDb = await this.verifySubscriptionInDb(subscription.endpoint)
+        const isInDb = await this.verifySubscriptionInDb(token)
         if (!isInDb) {
           throw new Error('Database persistence verification failed')
         }
-        console.log('Diagnostic: New subscription saved to database: YES')
+        console.log('Diagnostic: FCM token saved to database: YES')
       } catch (saveError) {
-        // Rollback: if database save fails, remove the browser subscription so they don't get out of sync
-        console.log('Diagnostic: New subscription saved to database: NO')
-        await subscription.unsubscribe().catch(() => {})
+        console.log('Diagnostic: FCM token saved to database: NO')
         throw saveError
       }
 
       return { success: true }
     } catch (error: any) {
-      console.error('Failed to subscribe to push notifications:', error)
+      console.error('Failed to subscribe to push notifications via FCM:', error)
       return { success: false, error: error.message || 'Unknown error occurred during subscription' }
     }
   },
 
-  async savePushSubscription(userId: string, subscription: PushSubscription): Promise<void> {
-    const subscriptionJson = subscription.toJSON()
+  async savePushSubscription(_userId: string, token: string): Promise<void> {
+    const deviceType = this.getDeviceType()
     
-    if (!subscriptionJson.endpoint || !subscriptionJson.keys?.p256dh || !subscriptionJson.keys?.auth) {
-      throw new Error('Invalid subscription data generated by browser.')
-    }
-
-    // Try to insert the subscription. 
-    // Use an UPSERT or just rely on the unique constraint on 'endpoint' to avoid duplicates.
-    const { error } = await supabase.from('push_subscriptions').upsert(
-      {
-        user_id: userId,
-        endpoint: subscriptionJson.endpoint,
-        p256dh_key: subscriptionJson.keys.p256dh,
-        auth_key: subscriptionJson.keys.auth,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: 'endpoint' }
-    )
+    // Use the secure RPC to bypass RLS when claiming an existing token 
+    // from a shared browser session.
+    const { error } = await supabase.rpc('register_fcm_token', {
+      p_token: token,
+      p_device_type: deviceType
+    })
 
     if (error) {
-      console.error('Failed to save push subscription to Supabase:', error)
+      console.error('Failed to save FCM token to Supabase:', error)
       throw error
     }
   },
 
   async unsubscribeFromPushNotifications(): Promise<{ success: boolean; error?: string }> {
     try {
-      const registration = await navigator.serviceWorker.ready
-      const subscription = await registration.pushManager.getSubscription()
+      // In Firebase web, we can delete the token if we want, or just remove it from DB.
+      // Usually, removing from DB is sufficient so the backend stops sending.
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+      const token = await getFirebaseToken(vapidKey)
       
-      if (subscription) {
-        // 1. Remove from database
+      if (token) {
         try {
-          await this.removePushSubscription(subscription.endpoint)
+          await this.removePushSubscription(token)
         } catch (dbError: any) {
           console.error('Failed to remove from DB:', dbError)
           return { success: false, error: 'Failed to remove subscription from database.' }
         }
         
-        // 2. Unsubscribe in the browser
-        try {
-          await subscription.unsubscribe()
-        } catch (unsubError: any) {
-          console.warn('Browser unsubscribe failed, but DB record removed:', unsubError)
-        }
+        // Note: Firebase `deleteToken` could be called here if we wanted to fully invalidate,
+        // but removing from our DB stops the sends and allows clean re-opt-in.
         return { success: true }
       }
-      return { success: true } // If no browser subscription exists, consider it disabled.
+      return { success: true } // If no token exists, consider it disabled.
     } catch (error: any) {
       console.error('Failed to unsubscribe from push notifications:', error)
       return { success: false, error: error.message || 'Unknown error during unsubscribe.' }
     }
   },
 
-  async removePushSubscription(endpoint: string): Promise<void> {
+  async removePushSubscription(token: string): Promise<void> {
     const { error } = await supabase
-      .from('push_subscriptions')
+      .from('fcm_tokens')
       .delete()
-      .eq('endpoint', endpoint)
+      .eq('token', token)
 
     if (error) {
-      console.error('Failed to remove push subscription from Supabase:', error)
+      console.error('Failed to remove FCM token from Supabase:', error)
       throw error
     }
   },
 
-  async verifySubscriptionInDb(endpoint: string): Promise<boolean> {
+  async verifySubscriptionInDb(token: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
-        .from('push_subscriptions')
+        .from('fcm_tokens')
         .select('id')
-        .eq('endpoint', endpoint)
+        .eq('token', token)
         .maybeSingle()
 
       if (error) return false
@@ -176,21 +140,5 @@ export const pushNotificationService = {
     } catch {
       return false
     }
-  },
-
-  // Helper utility function for VAPID conversion
-  urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4)
-    const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
-      .replace(/_/g, '/')
-  
-    const rawData = window.atob(base64)
-    const outputArray = new Uint8Array(rawData.length)
-  
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i)
-    }
-    return outputArray
   }
 }

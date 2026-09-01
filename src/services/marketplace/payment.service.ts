@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { Payment } from '@/types'
-import { notificationService } from '@/services/marketplace/notification.service'
+
 import { notificationService as featureNotificationService } from '@/features/notifications/services'
 
 export const paymentService = {
@@ -97,39 +97,19 @@ export const paymentService = {
 
       if (payment) {
         // Buyer Notification: payment_completed
-        await featureNotificationService.createNotification({
-          user_id: payment.buyer_id,
-          title: 'Order Completed',
-          message: 'Your order has been completed successfully.',
-          type: 'payment_completed',
-          category: 'order',
-          priority: 'important',
-          target_url: `/dashboard/orders/${payment.order_id}`,
-          link: `/dashboard/orders/${payment.order_id}`,
-          metadata: {
-            reference_type: 'order',
-            reference_id: payment.order_id,
-          }
-        })
+        
 
         // Seller Notification: escrow_released
-        await featureNotificationService.createNotification({
-          user_id: payment.seller_id,
-          title: 'Payment Released',
-          message: 'Funds from your completed order have been released to your wallet.',
-          type: 'escrow_released',
-          category: 'wallet',
-          priority: 'important',
-          target_url: `/seller/orders/${payment.order_id}`,
-          link: `/seller/orders/${payment.order_id}`,
-          metadata: {
-            reference_type: 'order',
-            reference_id: payment.order_id,
-          }
-        })
+        
       }
     } catch (err) {
       console.error('Error in markReleased:', err)
+      await featureNotificationService.notifyAdmins({
+        type: 'payment',
+        title: 'Critical Payment Issue',
+        message: 'Escrow release failed.',
+        priority: 'critical',
+      })
       throw err
     }
   },
@@ -150,20 +130,16 @@ export const paymentService = {
 
       if (payment) {
         // Notify buyer
-        await notificationService.createNotification({
-          user_id: payment.buyer_id,
-          title: 'Escrow Funds Refunded 💸',
-          message: `Escrow payment of $${payment.amount} has been refunded back to your account.`,
-          type: 'payment',
-          category: 'wallet',
-          priority: 'important',
-          target_url: `/dashboard/orders/${payment.order_id}`,
-          reference_type: 'order',
-          reference_id: payment.order_id,
-        })
+        
       }
     } catch (err) {
       console.error('Error in markRefunded:', err)
+      await featureNotificationService.notifyAdmins({
+        type: 'payment',
+        title: 'Critical Payment Issue',
+        message: 'Refund processing failed.',
+        priority: 'critical',
+      })
       throw err
     }
   },

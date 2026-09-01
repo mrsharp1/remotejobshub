@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, ArrowRight, Lock, Shield, Cpu, Activity, BadgeCheck, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Shield, Cpu, Activity, BadgeCheck, CheckCircle2 } from 'lucide-react'
 import { useHomepageContent } from '@/services/cms/cms.store'
 
 export const HeroSection: React.FC = () => {
@@ -58,19 +58,11 @@ export const HeroSection: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="mb-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
+              className="mb-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
             >
               <div className="flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold text-indigo-300 backdrop-blur-md">
-                <Lock className="h-3.5 w-3.5" />
-                Escrow Protected
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-semibold text-purple-300 backdrop-blur-md">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                KYC Verified
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-300 backdrop-blur-md hidden sm:flex">
-                <Cpu className="h-3.5 w-3.5" />
-                AI Risk Score
+                <span className="text-sm">💎</span>
+                REMOTE ARENA
               </div>
             </motion.div>
 
@@ -80,7 +72,7 @@ export const HeroSection: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="font-heading text-4xl sm:text-5xl font-black leading-[1.1] tracking-tight text-white md:text-6xl xl:text-7xl drop-shadow-2xl"
             >
-              {data?.hero.headline || 'Trade Verified Digital Assets Instantly'}
+              Buy & Sell Remote Work Accounts — Securely.
             </motion.h1>
 
             <motion.p
@@ -89,8 +81,46 @@ export const HeroSection: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="mt-6 max-w-xl text-base sm:text-lg text-slate-300 mx-auto lg:mx-0 leading-relaxed"
             >
-              {data?.hero.subheadline || 'The enterprise escrow standard for secure credential delivery. Buy and sell with total confidence.'}
+              Find and purchase remote work accounts for platforms like Outlier, Handshake, Upwork, and more. Read account descriptions and chat with sellers to learn more about the account and its advantages.
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-2xl mx-auto lg:mx-0"
+            >
+              <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎓</span>
+                  <h4 className="text-sm font-bold text-indigo-300">Beginner?</h4>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Every account purchase comes with 1 week of free training to help you get started.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🛡️</span>
+                  <h4 className="text-sm font-bold text-emerald-300">Secure Transactions</h4>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Your payment is protected. Sellers only receive their funds after you confirm that the account works for you.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.28, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="mt-6 flex flex-col items-center lg:items-start gap-1 text-xs text-slate-400"
+            >
+              <p><strong className="text-slate-300">₦20K and above Accounts:</strong> Selected accounts may include Proxy & RDP, depending on the account.</p>
+              <p><strong className="text-slate-300">Requirements:</strong> Phone or laptop.</p>
+              <p className="text-indigo-400 font-medium mt-1">Shop with confidence. Start your remote-work journey today.</p>
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}

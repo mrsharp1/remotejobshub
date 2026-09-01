@@ -31,7 +31,12 @@ export const storageService = {
         throw new Error(error.message || 'Unknown storage error')
       }
 
-      // 2. Fetch and return public access URL
+      // 2. Fetch and return public access URL (or path for private buckets)
+      if (bucket === 'kyc-documents') {
+        // For private buckets, we return the path so the UI can generate a signed URL later
+        return data.path
+      }
+
       const { data: publicUrlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path)
@@ -67,6 +72,25 @@ export const storageService = {
       )
       throw err
     }
+  },
+
+  /**
+   * Get a temporary signed URL for a private file
+   */
+  async getSignedUrl(
+    bucket: 'kyc-documents',
+    path: string,
+    expiresIn: number = 3600
+  ): Promise<string> {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresIn)
+    
+    if (error) {
+      console.error(`Failed to generate signed URL for ${path}`, error)
+      throw error
+    }
+    return data.signedUrl
   },
 }
 export default storageService

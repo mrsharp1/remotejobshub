@@ -110,16 +110,18 @@ export const KycWizard: React.FC<KycWizardProps> = ({ userId: _userId, onSubmit 
 
     setIsUploadingGovId(true)
     try {
-      const path = `${_userId}/gov-id-${Date.now()}`
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${_userId}/gov-id-${Date.now()}.${ext}`
       const url = await storageService.uploadFile('kyc-documents', path, file)
       setGovIdUrl(url)
       setGovIdFileName(file.name)
     } catch (error) {
       console.error("GOV ID UPLOAD ERROR", error)
+      const errMsg = error instanceof Error ? error.message : JSON.stringify(error, null, 2)
       alert(
-        error instanceof Error
-          ? error.message
-          : JSON.stringify(error, null, 2)
+        errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')
+          ? 'Unable to upload your document. Please check your connection and try again.'
+          : errMsg
       )
     } finally {
       setIsUploadingGovId(false)
