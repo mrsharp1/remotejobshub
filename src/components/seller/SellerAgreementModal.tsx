@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ShieldCheck, Loader2, Check } from 'lucide-react'
 import { broadcastService } from '@/services/marketplace/broadcast.service'
 import { useAuthStore } from '@/stores/authStore'
@@ -13,6 +13,7 @@ export const SellerAgreementModal: React.FC<Props> = ({ onAccept }) => {
   const [selectedPlan, setSelectedPlan] = useState<'OptionA' | 'OptionB'>(
     'OptionA'
   )
+  const queryClient = useQueryClient()
   const [isChecked, setIsChecked] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -42,6 +43,7 @@ export const SellerAgreementModal: React.FC<Props> = ({ onAccept }) => {
       await broadcastService.createSellerAgreement(user.id, selectedPlan)
       setIsOpen(false)
       onAccept()
+    queryClient.invalidateQueries({ queryKey: ['seller-revenue-agreement', user?.id] })
       alert('Revenue share plan accepted successfully!')
     } catch (error) {
       console.error('SELLER AGREEMENT ERROR:', error)
