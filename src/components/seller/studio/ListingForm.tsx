@@ -321,7 +321,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
             </h4>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Listing Title
                 </label>
                 <input
@@ -329,12 +329,12 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. Outlier AI Reinforced Learning Level 3 account"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Country Code
                 </label>
                 <input
@@ -342,12 +342,12 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. US, NG, GB"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Account Age
                 </label>
                 <input
@@ -355,12 +355,12 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. 1 year, 6 months"
                   value={accountAge}
                   onChange={(e) => setAccountAge(e.target.value)}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Monthly Revenue (NGN)
                 </label>
                 <input
@@ -368,12 +368,12 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="0"
                   value={monthlyRevenue || ''}
                   onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Hours worked per week
                 </label>
                 <input
@@ -381,12 +381,12 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. 15-20 hours"
                   value={hoursWorked}
                   onChange={(e) => setHoursWorked(e.target.value)}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Required Skills
                 </label>
                 <input
@@ -394,35 +394,32 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. Python, SQL, reinforcement learning"
                   value={skills}
                   onChange={(e) => setSkills(e.target.value)}
-                  className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
-                Detailed Description
-              </label>
-              <textarea
-                placeholder="Detail account standing, reviews feedback logs, and transaction conditions..."
-                value={longDesc}
-                onChange={(e) => setLongDesc(e.target.value)}
-                rows={3}
-                className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">
-                Reason for Sale
-              </label>
-              <textarea
-                placeholder="Why are you selling this account?"
-                value={reasonForSale}
-                onChange={(e) => setReasonForSale(e.target.value)}
-                rows={2}
-                className="placeholder-slate-650 w-full rounded-xl border border-white/5 bg-slate-950 p-3 text-xs text-white focus:outline-none"
-              />
+              <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
+                  Detailed Description
+                </label>
+                <textarea
+                  placeholder="Detail account standing, reviews feedback logs, and transaction conditions..."
+                  value={longDesc}
+                  onChange={(e) => setLongDesc(e.target.value)}
+                  rows={3}
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
+                  Reason for Sale
+                </label>
+                <textarea
+                  placeholder="Why are you selling this account?"
+                  value={reasonForSale}
+                  onChange={(e) => setReasonForSale(e.target.value)}
+                  rows={2}
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
             </div>
           </div>
         )}
