@@ -329,7 +329,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. Outlier AI Reinforced Learning Level 3 account"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -342,7 +342,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. US, NG, GB"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -355,7 +355,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. 1 year, 6 months"
                   value={accountAge}
                   onChange={(e) => setAccountAge(e.target.value)}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -368,7 +368,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="0"
                   value={monthlyRevenue || ''}
                   onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -381,7 +381,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. 15-20 hours"
                   value={hoursWorked}
                   onChange={(e) => setHoursWorked(e.target.value)}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -394,7 +394,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="e.g. Python, SQL, reinforcement learning"
                   value={skills}
                   onChange={(e) => setSkills(e.target.value)}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
@@ -408,7 +408,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                   value={longDesc}
                   onChange={(e) => setLongDesc(e.target.value)}
                   rows={3}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 bg-gray-800 p-3 text-xs text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
                   Reason for Sale
