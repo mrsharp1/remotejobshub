@@ -30,7 +30,6 @@ export const reviewService = {
         }
 
         // Notify Reviewer
-        const authorId = reviewData.reviewer_type === 'buyer' ? reviewData.buyer_id : reviewData.seller_id;
         
       } catch (notifErr) {
         console.error('REVIEW INSERT: SUCCESS')
