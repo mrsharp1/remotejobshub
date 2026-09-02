@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react';
+import { Component, ReactNode } from 'react';
 
 // Simple error boundary that catches render errors and displays a minimal UI.
 export class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean; error: Error | null}> {

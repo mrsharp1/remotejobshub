@@ -1,15 +1,10 @@
-import React, { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   Loader2,
-  Filter,
-  ShieldCheck,
-  CheckCircle2,
   XCircle,
-  AlertTriangle,
   Eye,
-  ArrowUpDown,
   Fingerprint,
   Info,
   FileText,
@@ -19,7 +14,7 @@ import {
   Calendar,
   Download,
   Check,
-} from 'lucide-react'
+} from 'lucide-react';
 import { PrivateImage } from '@/components/admin/PrivateImage'
 import { kycService } from '@/services/marketplace/kyc.service'
 import { SellerVerification } from '@/types'

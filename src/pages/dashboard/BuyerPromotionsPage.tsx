@@ -81,8 +81,8 @@ export const BuyerPromotionsPage: React.FC = () => {
     }
   }
 
-  const activeCoupons = coupons.filter((c) => c.active)
-  const activePromotions = promotions.filter((p) => p.active)
+  const activeCoupons = coupons.filter((c) => c.is_active);
+  const activePromotions = promotions.filter((p) => p.is_active);
 
   return (
     <div className="space-y-6">
@@ -183,7 +183,7 @@ export const BuyerPromotionsPage: React.FC = () => {
                       <p className="text-muted-foreground">{p.description}</p>
                     )}
                     <div className="pt-2 text-[10px] text-muted-foreground">
-                      Ends: {new Date(p.end_date).toLocaleDateString()}
+                      Ends: {new Date(p.ends_at).toLocaleDateString()}
                     </div>
                   </div>
                 ))}
@@ -216,7 +216,7 @@ export const BuyerPromotionsPage: React.FC = () => {
                         {c.code}
                       </span>
                       <span className="mt-1 block text-[10px] text-muted-foreground">
-                        Expiry: {new Date(c.end_date).toLocaleDateString()}
+                        Expiry: {new Date(c.expires_at).toLocaleDateString()}
                       </span>
                     </div>
                     <span className="font-bold text-emerald-500">
@@ -258,7 +258,7 @@ export const BuyerPromotionsPage: React.FC = () => {
                         {r.coupon?.code || 'COUPON'}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(r.created_at).toLocaleDateString()}
+                        {new Date(r.redeemed_at).toLocaleDateString()}
                       </span>
                     </div>
                     <span className="font-bold text-green-500">

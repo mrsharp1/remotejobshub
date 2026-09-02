@@ -132,18 +132,8 @@ export const listingService = {
 
   async deleteListing(id: string): Promise<void> {
     try {
-      const { data: listing } = await supabase
-        .from('listings')
-        .select('seller_id, title')
-        .eq('id', id)
-        .single()
-
       const { error } = await supabase.from('listings').delete().eq('id', id)
       if (error) throw error
-
-      if (listing) {
-        
-      }
     } catch (err) {
       console.error('Error in deleteListing:', err)
       throw err
@@ -312,7 +302,7 @@ export const listingService = {
   },
 
   async approveListing(id: string, adminId: string): Promise<void> {
-    const { data: listing, error } = await supabase
+    const { error } = await supabase
       .from('listings')
       .update({
         approval_status: 'approved',
@@ -329,47 +319,31 @@ export const listingService = {
       alert(JSON.stringify(error, null, 2))
       throw error
     }
-
-    if (import.meta.env.DEV) {
-      console.log('Listing approved successfully:', listing)
-    }
-
-    try {
-      
-    } catch (notificationError) {
-      if (import.meta.env.DEV) {
-        console.warn('Notification failed:', notificationError)
-      }
-    }
-
-    return
   },
 
+  // New method: rejectListing
   async rejectListing(
     id: string,
     notes: string,
     adminId: string
   ): Promise<void> {
     try {
-      const { data: listing, error } = await supabase
+      // Log notes for audit purposes; could be stored in a notes column/table later
+      console.log('Reject notes:', notes);
+      const { error } = await supabase
         .from('listings')
         .update({
           approval_status: 'rejected',
           status: 'draft',
           approved_by: adminId,
-          approved_at: new Date().toISOString(),
+          // notes: notes, // column not present in schema currently
         })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Notify seller
-      
+        .eq('id', id);
+      if (error) throw error;
+      // TODO: Notify seller about rejection (e.g., via notifications table)
     } catch (err) {
-      console.error('Error in rejectListing:', err)
-      throw err
+      console.error('Error in rejectListing:', err);
+      throw err;
     }
   },
 
@@ -379,24 +353,21 @@ export const listingService = {
     adminId: string
   ): Promise<void> {
     try {
-      const { data: listing, error } = await supabase
+      console.log('Request notes:', notes);
+      const { error } = await supabase
         .from('listings')
         .update({
           approval_status: 'pending',
           status: 'draft',
           approved_by: adminId,
+          // notes: notes,
         })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Notify seller
-      
+        .eq('id', id);
+      if (error) throw error;
+      // Notify seller about requested changes
     } catch (err) {
-      console.error('Error in requestListingChanges:', err)
-      throw err
+      console.error('Error in requestListingChanges:', err);
+      throw err;
     }
   },
 
@@ -406,44 +377,35 @@ export const listingService = {
     featuredUntil?: string
   ): Promise<void> {
     try {
-      const { data: listing, error } = await supabase
+      const { error } = await supabase
         .from('listings')
         .update({
           is_featured: isFeatured,
           featured_until: featuredUntil || null,
         })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
+        .eq('id', id);
+      if (error) throw error;
       // Notify seller
-      
     } catch (err) {
-      console.error('Error in featureListing:', err)
-      throw err
+      console.error('Error in featureListing:', err);
+      throw err;
     }
   },
 
   async archiveListing(id: string): Promise<void> {
     try {
-      const { data: listing, error } = await supabase
+      const { error } = await supabase
         .from('listings')
         .update({
           status: 'archived',
         })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
+        .eq('id', id);
+      if (error) throw error;
       // Notify seller
-      
     } catch (err) {
-      console.error('Error in archiveListing:', err)
-      throw err
+      console.error('Error in archiveListing:', err);
+      throw err;
     }
   },
+
 }
