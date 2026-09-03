@@ -8,7 +8,7 @@ export const FAQ: React.FC = () => {
   const faqs = [
     {
       q: 'How does the account handoff work?',
-      a: 'Once a purchase is agreed upon, the funds are held securely in the Remote Jobs Hub Escrow vault. The seller uploads credentials, our team verifies them, and guides both parties through the account ownership transfer.',
+      a: "Once a purchase is agreed upon, the payment is held securely in the Remote Jobs Hub Escrow vault, protected by Paystack. Once payment is made, the account information is displayed so the buyer can access the account.",
     },
     {
       q: 'Are the accounts verified?',
