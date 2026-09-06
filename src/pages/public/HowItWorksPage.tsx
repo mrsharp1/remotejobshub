@@ -96,7 +96,9 @@ export const HowItWorksPage: React.FC = () => {
             ))}
           </ul>
           <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
-            <strong>Beginner Friendly:</strong> You do not need programming or coding skills for these types of tasks.
+              <strong>Beginner Friendly:</strong> You do not need programming or coding skills for these types of tasks. After purchasing an acc, u will be automatically sent our class link. The goal is to have a practical class.
+
+Learn, task, earn.
           </div>
         </motion.section>
 
@@ -122,7 +124,7 @@ export const HowItWorksPage: React.FC = () => {
             <div>
               <p className="mb-3 font-semibold text-white">Actual earnings depend on:</p>
               <ul className="ml-6 list-disc space-y-1 text-slate-400">
-                <li>Your qualifications</li>
+                <li>Account listing qualification</li>
                 <li>Available projects</li>
                 <li>The amount of work you complete</li>
                 <li>Task availability</li>
@@ -210,10 +212,11 @@ export const HowItWorksPage: React.FC = () => {
                 Some AI projects have location and eligibility requirements, and availability can vary by country.
               </p>
               <p className="mb-6 text-sm leading-relaxed text-slate-300">
-                For eligible users who need assistance with account access, we can explain the available options, including UK and USA arrangements through our sellers.
+                For users who choose high-value accounts, you may be connected to the seller’s server or provided with a proxy where applicable. This helps ensure you use the appropriate IP and can reduce the risk of account-related access or ban issues.
               </p>
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs leading-relaxed text-rose-200">
-                <strong>Disclaimer:</strong> Account availability does not mean that everyone is automatically eligible for every project. You must still meet the platform's requirements and applicable verification rules.
+                Duration for proxy 2month
+                RDP for ever , as long as u follow the agreed terms.
               </div>
             </div>
             
@@ -254,7 +257,7 @@ export const HowItWorksPage: React.FC = () => {
               </p>
               <div className="rounded-xl bg-white/5 p-4">
                 <p className="text-sm font-medium text-white mb-1">Don't have a PayPal account?</p>
-                <p className="text-sm text-slate-400">No problem. Contact our support team and we can guide you through the process of creating and setting up a PayPal account where available.</p>
+                <p className="text-sm text-slate-400">After payment, you will be sent a link on your email to join Our master class where you will be educated on how to create or verify ur email</p>
               </div>
             </div>
 

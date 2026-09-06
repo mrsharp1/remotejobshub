@@ -96,7 +96,18 @@ export const HeroSection: React.FC = () => {
                   <h4 className="text-sm font-bold text-indigo-300">Beginner?</h4>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Every account purchase comes with 1 week of free training to help you get started.
+                  Every account purchase includes 1 week of free training to help you get started.
+                </p>
+                <p className="text-xs text-slate-300 leading-relaxed mt-2">
+                  During the training, you’ll learn:
+                </p>
+                <ul className="list-disc list-inside text-xs text-slate-300 ml-4">
+                  <li>How to create and set up your PayPal account</li>
+                  <li>How to complete AI tasks</li>
+                  <li>How weekly payouts work for sellers</li>
+                </ul>
+                <p className="text-xs text-slate-300 leading-relaxed mt-2 font-bold">
+                  Learn. Task. Earn.
                 </p>
               </div>
 

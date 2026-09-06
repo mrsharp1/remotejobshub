@@ -92,6 +92,25 @@ export const MarketplaceHighlights: React.FC = () => {
               ))}
             </div>
           </div>
+        {/* Beginner Class Card */}
+        <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
+          <strong>New to AI Tasks? Join Our Practical Class</strong>
+          <p className="mt-2">If you're a beginner, you can join our practical class where we'll guide you through setting up your PayPal account, withdrawing your earnings, and understanding how to complete tasks successfully.</p>
+          <p className="mt-2 font-semibold">Learn. Task. Earn.</p>
+        </div>
+                  {/* Pricing Explanation Card */}
+          <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
+            <strong>Why Are Listing Prices Different?</strong>
+            <p className="mt-2">
+              Prices are different because each account may have a different earning rate per hour.
+            </p>
+            <ul className="mt-2 list-disc list-inside space-y-1">
+              <li>A higher-priced account may offer higher earning potential per hour.</li>
+              <li>Because of the higher earning potential, sellers may include additional benefits.</li>
+              <li>These benefits may include a proxy or an additional free account with the purchase, where applicable.</li>
+              <li>So, a higher-priced account may offer greater earning potential along with additional benefits.</li>
+            </ul>
+          </div>
         </div>
         
       </div>

@@ -62,7 +62,13 @@ export const MarketplacePage: React.FC = () => {
     if (keyword) params.set('keyword', keyword)
     if (platform) params.set('platform', platform)
     if (country) params.set('country', country)
-    if (selectedPlatforms.length > 0) params.set('platforms', selectedPlatforms.join(','))
+    if (selectedPlatforms.length > 0) {
+      // Avoid duplicate param when a single platform is already represented by `platform`
+      const singleMatch = selectedPlatforms.length === 1 && selectedPlatforms[0] === platform;
+      if (!singleMatch) {
+        params.set('platforms', selectedPlatforms.join(','));
+      }
+    }
     if (minPrice) params.set('minPrice', minPrice)
     if (maxPrice) params.set('maxPrice', maxPrice)
     if (sellerVerified) params.set('seller_verified', 'true')
@@ -182,7 +188,7 @@ export const MarketplacePage: React.FC = () => {
 
     // Platform checkbox lists
     if (selectedPlatforms.length > 0) {
-      result = result.filter((l) => selectedPlatforms.includes(l.platform))
+      result = result.filter((l) => selectedPlatforms.map(p => p.toLowerCase()).includes(l.platform.toLowerCase()))
     }
 
     // Search keywords
@@ -301,7 +307,25 @@ export const MarketplacePage: React.FC = () => {
       q: 'Is there buyer protection?',
       a: 'Absolutely. If the account is not successfully transferred or does not match the description, the buyer receives a full refund from escrow.',
     },
-  ]
+    
+  {
+    q: 'Will there be a class after purchase?',
+    a: `Yes. After your purchase, a link will be provided for you to join our practical class. In the class, you’ll be guided through:
+• How to complete AI tasks
+• How to create or set up your PayPal account
+• How to withdraw your earnings
+
+The goal is to help beginners understand the process and get started confidently.`
+  },
+  {
+    q: 'Will a proxy be provided?',
+    a: 'This depends on the account you choose. Please read the individual account listing carefully to see whether a proxy is included with your purchase.',
+  },
+  {
+    q: 'After payment, can I start working immediately?',
+    a: 'Yes. Once your account handoff is completed and you have everything you need, you can start working immediately if you choose to.',
+  },
+];
 
   return (
     <div className="min-h-screen space-y-12 bg-slate-950 pb-16 text-slate-300 selection:bg-indigo-500/30">

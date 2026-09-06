@@ -27,7 +27,7 @@ export const KycStatusAlert: React.FC<KycStatusAlertProps> = ({
       case 'under_review':
         return {
           title: 'Verification Under Audit',
-          description: 'Our compliance desk is currently auditing your documents. This process usually completes in under 2 hours.',
+          description: 'Our compliance desk is currently auditing your documents. This process usually completes in 1 - 5 working days.',
           icon: Clock,
           styles: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400',
         }
