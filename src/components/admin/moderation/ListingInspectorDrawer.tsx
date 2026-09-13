@@ -9,7 +9,7 @@ import { ModerationTimeline } from './ModerationTimeline'
 import { DecisionPanel } from './DecisionPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { RejectModal } from './RejectModal'
-import { formatCurrency } from '@/utils/currency'
+import { formatCurrency, formatUSD } from '@/utils/currency'
 
 interface ListingInspectorDrawerProps {
   listing: Listing | null
@@ -85,7 +85,7 @@ export const ListingInspectorDrawer: React.FC<ListingInspectorDrawerProps> = ({
             <div className="rounded-2xl border border-white/5 bg-slate-950 p-4.5 flex justify-between items-center">
               <div>
                 <span className="text-[8px] font-bold text-slate-450 block uppercase">Monthly Income</span>
-                <span className="font-heading text-lg font-black text-white font-mono mt-0.5 block">{formatCurrency(Number(listing.monthly_income || 0))}</span>
+                <span className="font-heading text-lg font-black text-white font-mono mt-0.5 block">{formatUSD(Number(listing.monthly_income || 0))}</span>
               </div>
               <div className="text-right">
                 <span className="text-[8px] font-bold text-slate-450 block uppercase">Sale Price</span>

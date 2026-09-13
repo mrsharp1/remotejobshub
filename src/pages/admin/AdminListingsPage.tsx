@@ -6,7 +6,7 @@ import { listingService } from '@/services/marketplace/listing.service'
 import { useAuthStore } from '@/stores/authStore'
 import { Listing } from '@/types'
 import { toast } from 'sonner'
-import { formatCurrency } from '@/utils/currency'
+import { formatCurrency, formatUSD } from '@/utils/currency'
 
 // Moderation components
 import { ModerationHero } from '@/components/admin/moderation/ModerationHero'
@@ -255,7 +255,7 @@ export const AdminListingsPage: React.FC = () => {
                     <div className="flex gap-2 text-[10px] text-slate-400 mt-2 font-mono">
                       <span>Price: {formatCurrency(Number(listing.price))}</span>
                       <span>•</span>
-                      <span>Rev: {formatCurrency(Number(listing.monthly_income || 0))}/mo</span>
+                      <span>Rev: {formatUSD(Number(listing.monthly_income || 0))}/mo</span>
                     </div>
                   </div>
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { X, RotateCcw, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { springs } from '@/lib/framer-physics'
+import { CountrySelect } from './CountrySelect'
 
 const MARKETPLACE_PLATFORMS = [
   'Outlier',
@@ -27,6 +28,8 @@ interface FilterSidebarProps {
   onClearFilters: () => void
   isOpen?: boolean
   onClose?: () => void
+  country?: string
+  onCountryChange?: (val: string) => void
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -43,6 +46,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onClearFilters,
   isOpen = false,
   onClose,
+  country,
+  onCountryChange,
 }) => {
   const content = (
     <div className="space-y-8">
@@ -98,6 +103,16 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </div>
       </div>
 
+      {/* Mobile Country Filter */}
+      {onCountryChange && (
+        <div className="space-y-3 md:hidden">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Country / Location
+          </label>
+          <CountrySelect value={country || ''} onChange={onCountryChange} />
+        </div>
+      )}
+
       {/* Price Range */}
       <div className="space-y-3">
         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -144,11 +159,19 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </label>
       </div>
 
-      {/* Reset Filters */}
-      <div className="pt-2">
+      {/* Action Buttons */}
+      <div className="space-y-2.5 pt-2">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:bg-indigo-500 active:scale-95 md:hidden"
+          >
+            Apply Filters
+          </button>
+        )}
         <button
           onClick={onClearFilters}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-slate-800/50 py-3.5 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-slate-800/50 py-3 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
         >
           <RotateCcw className="h-4 w-4" /> Clear All Filters
         </button>

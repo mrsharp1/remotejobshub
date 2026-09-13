@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {
   Globe,
-  DollarSign,
   ShieldCheck,
   CheckCircle,
   XCircle,
@@ -11,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { Listing } from '@/types'
+import { formatCurrency, formatUSD } from '@/utils/currency'
 
 interface ListingPreviewProps {
   listing: Partial<Listing> & { images?: string[]; tags?: string[] }
@@ -164,11 +164,9 @@ export const ListingPreview: React.FC<ListingPreviewProps> = ({
               <span className="text-xs text-muted-foreground">
                 Asking Price
               </span>
-              <h2 className="flex items-center font-heading text-3xl font-extrabold text-primary">
-                <DollarSign className="h-7 w-7" />
-                {Number(listing.price || 0).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+              <h2 className="font-heading text-3xl font-extrabold text-primary">
+                {formatCurrency(Number(listing.price || 0), {
+                  maximumFractionDigits: 0,
                 })}
               </h2>
             </div>
@@ -185,15 +183,8 @@ export const ListingPreview: React.FC<ListingPreviewProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly Earnings</span>
-                <span className="flex items-center font-semibold text-foreground">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  {Number(listing.monthly_income || 0).toLocaleString(
-                    undefined,
-                    {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }
-                  )}
+                <span className="font-semibold text-foreground">
+                  {formatUSD(Number(listing.monthly_income || 0))}
                   /mo
                 </span>
               </div>

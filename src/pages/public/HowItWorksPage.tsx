@@ -276,14 +276,14 @@ Learn, task, earn.
           </div>
         </motion.section>
 
-        {/* 12. IMPORTANT (Trust/Warning Section) */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={springs.gentle}
-          className="rounded-[2rem] border border-rose-500/30 bg-rose-500/10 p-6 shadow-2xl backdrop-blur-xl sm:p-10"
-        >
+        
+        
+          
+          
+          
+          
+          
+        {/*
           <div className="mb-6 flex items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-rose-500" />
             <h2 className="font-heading text-2xl font-bold text-white">Important Things to Know</h2>
@@ -303,7 +303,7 @@ Learn, task, earn.
               Please only proceed if you are prepared to learn, dedicate time to the work, and follow the agreed terms.
             </p>
           </div>
-        </motion.section>
+        
 
         {/* 13. AVAILABILITY & 14. REGISTERED BUSINESS */}
         <motion.div

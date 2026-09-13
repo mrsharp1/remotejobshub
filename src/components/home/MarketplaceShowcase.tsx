@@ -123,7 +123,7 @@ export const MarketplaceShowcase: React.FC = () => {
                     <div>
                       <p className="text-xs font-medium text-slate-500">Monthly Rev</p>
                       <p className="font-heading text-lg font-black text-emerald-400">
-                        ₦{listing.monthlyRevenue.toLocaleString()}
+                        ${listing.monthlyRevenue.toLocaleString()}
                       </p>
                     </div>
                   </div>

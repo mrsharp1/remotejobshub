@@ -46,6 +46,9 @@ export const MarketplaceHighlights: React.FC = () => {
               <Lock className="h-4 w-4" />
               ESCROW PROTECTED
             </div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-sm font-bold text-indigo-400 backdrop-blur-md">
+            Payment Protection — Powered by Paystack
+          </div>
             
             <h2 className="mb-4 font-heading text-3xl font-black text-white leading-tight">
               Pay with confidence. <br />
@@ -53,7 +56,7 @@ export const MarketplaceHighlights: React.FC = () => {
             </h2>
             
             <p className="mb-6 text-sm leading-relaxed text-slate-400">
-              When you purchase an account, your payment is securely held through the platform's payment protection process while the seller completes the account handoff. The seller does not receive the funds immediately.
+               When you purchase an account, your payment is securely held through Paystack’s payment protection process while the seller completes the account handoff. The seller does not receive the funds immediately.
             </p>
             
             <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-5">
@@ -94,8 +97,8 @@ export const MarketplaceHighlights: React.FC = () => {
           </div>
         {/* Beginner Class Card */}
         <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
-          <strong>New to AI Tasks? Join Our Practical Class</strong>
-          <p className="mt-2">If you're a beginner, you can join our practical class where we'll guide you through setting up your PayPal account, withdrawing your earnings, and understanding how to complete tasks successfully.</p>
+          <strong>New to AI Tasks? Join Our Free Master Class</strong>
+          <p className="mt-2">After purchasing an account, Paystack will send the link to our free practical master class directly to your email 📧. Simply click the link to join the class and learn how to get started, complete tasks successfully, and maximize your earnings.</p>
           <p className="mt-2 font-semibold">Learn. Task. Earn.</p>
         </div>
                   {/* Pricing Explanation Card */}
@@ -111,6 +114,53 @@ export const MarketplaceHighlights: React.FC = () => {
               <li>So, a higher-priced account may offer greater earning potential along with additional benefits.</li>
             </ul>
           </div>
+        {/* FAQ Section */}
+        <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
+          <strong>Frequently Asked Questions</strong>
+          <ol className="mt-4 list-decimal list-inside space-y-2">
+            <li className="mt-2">
+              <p className="font-semibold">Once I make payment, can I start immediately?</p>
+              <p>Yes. Once your payment is confirmed, you can start immediately.</p>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">After buying an account, will I receive the account details immediately?</p>
+              <p>Yes. Paystack will automatically send you the account details immediately after your payment. You will also receive the link to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">Will I also get a proxy with the account?</p>
+              <p>It depends on the account you’re buying.</p>
+              <p>Before making payment, check the account description or chat with the seller to confirm whether a proxy is included.</p>
+              <p>If the account comes with a proxy, you’ll receive the proxy details together with the account.</p>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">Can the seller just wake up one day and log me out of the account?</p>
+              <p>No. As a buyer, you should understand that this is not just a casual buyer-and-seller agreement. This is a business contract the seller must follow.</p>
+              <p>As long as you follow the agreed terms, properly manage the account, and pay the seller their agreed percentage, the seller should not simply log you out or take back the account.</p>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">Who receives the payout?</p>
+              <p>This depends on the seller and the account.</p>
+              <p>Some sellers allow the buyer to receive the payout directly through their own PayPal account. (Read the account description to confirm.)</p>
+              <p>If you don’t have PayPal or Airtm, don’t worry. You’ll be taught in the Masterclass how to create and connect your PayPal or Airtm account.</p>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">How long can I use the account?</p>
+              <p>An account can potentially last for years, as long as you take proper care of it and follow the agreement.</p>
+              <p>To keep the account running:</p>
+              <ul className="ml-5 list-disc space-y-1">
+                <li>Use the proxy or RDP correctly.</li>
+                <li>Follow all the agreed terms.</li>
+                <li>Pay the seller their agreed percentage.</li>
+                <li>Avoid doing anything that could cause problems or get the account restricted.</li>
+              </ul>
+            </li>
+            <li className="mt-2">
+              <p className="font-semibold">Is there a project on the account?</p>
+              <p>Yes, there is. That is one thing the brand confirms before an account is approved.</p>
+              <p>Don’t worry if you’re new to all this. The free Masterclass will guide you step-by-step on how to properly use and manage the account.</p>
+            </li>
+          </ol>
+        </div>
         </div>
         
       </div>

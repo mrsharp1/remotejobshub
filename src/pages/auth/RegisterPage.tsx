@@ -218,7 +218,7 @@ export const RegisterPage: React.FC = () => {
                 className={`focus:ring-primary/20 block w-full min-h-[48px] rounded-xl border bg-white py-4 pl-11 pr-4 text-[16px] text-foreground placeholder-muted-foreground shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-4 dark:bg-background ${
                   errors.fullName ? 'border-destructive' : 'border-input'
                 }`}
-                placeholder="John Doe"
+                placeholder="Enter your full name"
                 disabled={isLoading}
                 {...register('fullName')}
               />

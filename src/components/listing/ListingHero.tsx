@@ -60,11 +60,11 @@ export const ListingHero: React.FC<ListingHeroProps> = ({ listing, sellerRating 
         </div>
         <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Monthly Rev</p>
-          <p className="font-mono text-xl sm:text-2xl font-bold text-emerald-400 truncate" title={`₦${monthlyRevenue}`}>₦{monthlyRevenue}</p>
+          <p className="font-mono text-xl sm:text-2xl font-bold text-emerald-400 truncate" title={`$${monthlyRevenue}`}>${monthlyRevenue}</p>
         </div>
         <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Wk Run Rate</p>
-          <p className="font-mono text-xl sm:text-2xl font-bold text-indigo-400 truncate" title={`₦${weeklyRevenue}`}>₦{weeklyRevenue}</p>
+          <p className="font-mono text-xl sm:text-2xl font-bold text-indigo-400 truncate" title={`$${weeklyRevenue}`}>${weeklyRevenue}</p>
         </div>
         <div className="space-y-1 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 backdrop-blur-sm min-w-0 flex flex-col justify-center">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-indigo-300 truncate">Trust Score</p>

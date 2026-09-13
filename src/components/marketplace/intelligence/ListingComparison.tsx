@@ -183,7 +183,7 @@ export const ListingComparison: React.FC = () => {
                     className={`text-sm font-semibold ${(l.monthly_income ?? 0) === highestIncome && highestIncome > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}
                   >
                     {l.monthly_income
-                      ? `₦${Number(l.monthly_income).toLocaleString()}`
+                      ? `$${Number(l.monthly_income).toLocaleString()}`
                       : 'N/A'}
                   </span>
                 ))}

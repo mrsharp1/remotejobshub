@@ -241,7 +241,7 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
             <div className="flex w-fit items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-400 shadow-inner">
               <TrendingUp className="h-4 w-4" />
               <span>
-                ₦{Number(listing.monthly_income).toLocaleString()}/mo Revenue
+                ${Number(listing.monthly_income).toLocaleString()}/mo Revenue
               </span>
             </div>
           )}

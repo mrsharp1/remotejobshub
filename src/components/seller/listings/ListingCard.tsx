@@ -13,7 +13,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { Listing } from '@/types'
-import { formatCurrency } from '@/utils/currency'
+import { formatCurrency, formatUSD } from '@/utils/currency'
 import { StatusBadge } from '../studio/StatusBadge'
 import { ModerationTimeline } from './ModerationTimeline'
 import { EscrowStatusPanel } from './EscrowStatusPanel'
@@ -111,7 +111,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
-            <span className="rounded-lg bg-muted px-2.5 py-1">Monthly Rev: {formatCurrency(Number(listing.monthly_income || 0))}</span>
+            <span className="rounded-lg bg-muted px-2.5 py-1">Monthly Rev: {formatUSD(Number(listing.monthly_income || 0))}</span>
             <span className="rounded-lg bg-muted px-2.5 py-1">Age: {listing.account_age || 'N/A'}</span>
             <span className="rounded-lg bg-muted px-2.5 py-1 font-bold text-foreground">Price: {formatCurrency(Number(listing.price))}</span>
           </div>

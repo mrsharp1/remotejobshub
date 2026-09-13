@@ -43,7 +43,7 @@ function estimateROI(price: number, monthlyIncome: number | null): string {
 
 function estimateWeeklyEarnings(monthly: number | null): string {
   if (!monthly) return 'N/A'
-  return `₦${(monthly / 4.33).toFixed(0)}`
+  return `$${Math.round(monthly / 4).toLocaleString()}`
 }
 
 function getKycStatus(listing: Listing): { label: string; color: string } {
@@ -111,7 +111,7 @@ export const AccountIntelligencePanel: React.FC<
       icon: TrendingUp,
       label: 'Monthly Earnings',
       value: listing.monthly_income
-        ? `₦${Number(listing.monthly_income).toLocaleString()}`
+        ? `$${Number(listing.monthly_income).toLocaleString()}`
         : 'N/A',
       highlight: true,
     },

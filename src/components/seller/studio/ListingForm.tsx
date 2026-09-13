@@ -361,15 +361,20 @@ export const ListingForm: React.FC<ListingFormProps> = ({
 
               <div>
                 <label className="mb-1 block text-[10px] font-bold uppercase text-gray-100">
-                  Monthly Revenue (NGN)
+                  Monthly Revenue (USD)
                 </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={monthlyRevenue || ''}
-                  onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-                  className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 text-xs !text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-bold text-gray-400">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="e.g. 2000"
+                    value={monthlyRevenue || ''}
+                    onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
+                    className="placeholder-gray-400 w-full rounded-xl border border-white/5 !bg-gray-800 p-3 pl-7 text-xs !text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
 
               <div>
