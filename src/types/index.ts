@@ -22,6 +22,7 @@ export interface Profile {
   bio: string | null
   company_name: string | null
   company_website: string | null
+  pinned_whatsapp?: string | null
   seller_verified: boolean
   seller_since: string | null
   subscription_plan: string
@@ -277,6 +278,7 @@ export interface ConversationViewModel {
     avatar_url: string | null
     role: string
     online?: boolean
+    pinned_whatsapp?: string | null
   }
   lastMessage?: Message | null
   unreadCount: number

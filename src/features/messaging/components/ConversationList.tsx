@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import type { ConversationViewModel } from '@/types'
 import { ConversationCard } from './ConversationCard'
 
@@ -7,12 +7,14 @@ interface ConversationListProps {
   conversations: ConversationViewModel[]
   activeConversationId?: string
   onSelect: (id: string) => void
+  onOpenDirectory?: () => void
 }
 
 export const ConversationList: React.FC<ConversationListProps> = React.memo(({
   conversations,
   activeConversationId,
-  onSelect
+  onSelect,
+  onOpenDirectory,
 }) => {
   const [filter, setFilter] = useState<'all' | 'unread' | 'support' | 'disputes' | 'archived'>('all')
   const [inputValue, setInputValue] = useState('')
@@ -76,7 +78,19 @@ export const ConversationList: React.FC<ConversationListProps> = React.memo(({
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="border-b border-border p-4">
-        <h2 className="mb-4 font-heading text-lg font-bold">Conversations</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading text-lg font-bold">Conversations</h2>
+          {onOpenDirectory && (
+            <button
+              onClick={onOpenDirectory}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors"
+              title="User Directory"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Users</span>
+            </button>
+          )}
+        </div>
         
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

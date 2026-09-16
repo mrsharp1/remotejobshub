@@ -66,6 +66,7 @@ export const mapToViewModel = (conv: any, authUid: string, forceIsAdmin: boolean
       email: profile?.email || null,
       avatar_url: profile?.avatar_url || null,
       role: profile?.role || 'user',
+      pinned_whatsapp: profile?.pinned_whatsapp || null,
       online: profile?.online ?? false
     },
     lastMessage: conv.messages?.[0] || null,

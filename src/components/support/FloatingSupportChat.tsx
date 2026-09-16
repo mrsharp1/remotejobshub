@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageSquare, Loader2, X, Phone } from 'lucide-react'
+import { MessageSquare, Loader2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { conversationService } from '@/features/messaging/services/conversation.service'
 import { toast } from 'sonner'
-import { SUPPORT_CONTACTS } from '@/config/support'
+// SUPPORT_CONTACTS import removed (no longer used)
 
 export const FloatingSupportChat: React.FC = () => {
   const { user } = useAuthStore()
@@ -73,43 +73,7 @@ export const FloatingSupportChat: React.FC = () => {
           </div>
 
           <div className="flex flex-col p-2">
-            {/* WhatsApp 1 */}
-            <a 
-              href={SUPPORT_CONTACTS.whatsapp1.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-start gap-1 rounded-xl p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                  <Phone className="h-3.5 w-3.5" />
-                </div>
-                <span className="font-semibold text-foreground">WhatsApp Support 1</span>
-              </div>
-              <span className="text-sm text-slate-500 ml-8">{SUPPORT_CONTACTS.whatsapp1.number}</span>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400 ml-8 group-hover:underline">Chat on WhatsApp →</span>
-            </a>
-
-            <div className="mx-4 h-px bg-slate-100 dark:bg-slate-800" />
-
-            {/* WhatsApp 2 */}
-            <a 
-              href={SUPPORT_CONTACTS.whatsapp2.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-start gap-1 rounded-xl p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                  <Phone className="h-3.5 w-3.5" />
-                </div>
-                <span className="font-semibold text-foreground">WhatsApp Support 2</span>
-              </div>
-              <span className="text-sm text-slate-500 ml-8">{SUPPORT_CONTACTS.whatsapp2.number}</span>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400 ml-8 group-hover:underline">Chat on WhatsApp →</span>
-            </a>
-
-            <div className="mx-4 h-px bg-slate-100 dark:bg-slate-800" />
+            {/* WhatsApp support temporarily hidden */}
 
             {/* In-App Support */}
             <button 

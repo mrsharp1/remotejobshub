@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, MessageSquare } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
 import { recommendationService } from '@/services/marketplace/recommendation.service'
 import { reviewService } from '@/services/marketplace/review.service'
@@ -300,6 +300,14 @@ export const ListingDetailPage: React.FC = () => {
                         </p>
                       </div>
                     )}
+{/* Mobile-only Contact Seller button */}
+<button
+  onClick={handleContactSeller}
+  className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-slate-950 px-6 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-bold text-white transition-colors hover:bg-slate-800 lg:hidden"
+>
+  <MessageSquare className="h-4 w-4 shrink-0" />
+  <span className="truncate">Contact Seller</span>
+</button>
                   </div>
                 )
               })()}

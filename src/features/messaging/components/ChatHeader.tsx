@@ -60,6 +60,19 @@ export const ChatHeader: React.FC<ChatHeaderProps> = React.memo(({
           )}
         </div>
         <div className="min-w-0 flex-1">
+          {otherUser.pinned_whatsapp && (
+            <div className="bg-muted text-sm px-3 py-2 flex items-center gap-2 rounded-md mb-1">
+              <span>WhatsApp:</span>
+              <a
+                href={`https://wa.me/${otherUser.pinned_whatsapp.replace(/[^\d+]/g, '')}`}
+                className="text-primary underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {otherUser.pinned_whatsapp}
+              </a>
+            </div>
+          )}
           <div className="flex items-center gap-1.5 sm:gap-2">
             <h2 className="font-heading font-semibold text-foreground truncate max-w-[150px] xs:max-w-[180px] sm:max-w-none">
               {name}

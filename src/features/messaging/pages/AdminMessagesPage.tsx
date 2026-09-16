@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { messageService } from '@/features/messaging/services'
 import { useConversations, useMessages, useSendMessage, useMarkAsRead } from '@/features/messaging/hooks'
@@ -20,9 +21,13 @@ export const AdminMessagesPage: React.FC = () => {
   const { user } = useAuthStore()
   const adminId = user?.id || ''
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
   
   const [activeId, setActiveId] = useState<string | undefined>()
-  const [mobileView, setMobileView] = useState<MobileView>('directory')
+  const initialView = searchParams.get('tab') === 'directory' || searchParams.get('view') === 'directory'
+    ? 'directory'
+    : 'conversations'
+  const [mobileView, setMobileView] = useState<MobileView>(initialView)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -134,20 +139,13 @@ export const AdminMessagesPage: React.FC = () => {
 
   const directoryPane = (
     <div className={`h-full w-full lg:w-[320px] flex-shrink-0 ${!isDesktop && mobileView !== 'directory' ? 'hidden' : 'block'}`}>
-      <AdminUserDirectory onUserSelected={handleUserSelected} adminId={adminId} />
+      <AdminUserDirectory onUserSelected={handleUserSelected} adminId={adminId} onBack={() => setMobileView('conversations')} />
     </div>
   )
 
   const conversationsPane = (
     <div className={`h-full w-full lg:w-[320px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col ${!isDesktop && mobileView !== 'conversations' ? 'hidden' : 'flex'}`}>
-      {!isDesktop && (
-        <div className="flex items-center p-4 border-b border-slate-200 dark:border-slate-800 gap-3">
-          <button onClick={() => setMobileView('directory')} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="font-semibold">Conversations</h2>
-        </div>
-      )}
+
       <div className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex h-full items-center justify-center">
@@ -158,6 +156,7 @@ export const AdminMessagesPage: React.FC = () => {
             conversations={conversations}
             activeConversationId={activeId}
             onSelect={handleConversationSelected}
+            onOpenDirectory={() => setMobileView('directory')}
           />
         )}
       </div>

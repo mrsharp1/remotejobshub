@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Search, MessageCircle, ShieldCheck, User as UserIcon } from 'lucide-react'
+import { Search, MessageCircle, ShieldCheck, User as UserIcon, ArrowLeft } from 'lucide-react'
 import { useUserDirectory } from '@/features/messaging/hooks'
 import { conversationService } from '@/features/messaging/services'
 import { useQueryClient } from '@tanstack/react-query'
@@ -8,9 +8,10 @@ import { Loader2 } from 'lucide-react'
 interface AdminUserDirectoryProps {
   onUserSelected: (conversationId: string) => void
   adminId: string
+  onBack?: () => void
 }
 
-export const AdminUserDirectory: React.FC<AdminUserDirectoryProps> = ({ onUserSelected, adminId }) => {
+export const AdminUserDirectory: React.FC<AdminUserDirectoryProps> = ({ onUserSelected, adminId, onBack }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
@@ -48,7 +49,18 @@ export const AdminUserDirectory: React.FC<AdminUserDirectoryProps> = ({ onUserSe
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-4">
-        <h2 className="font-semibold text-lg">User Directory</h2>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1 -ml-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <h2 className="font-semibold text-lg">User Directory</h2>
+        </div>
         
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
