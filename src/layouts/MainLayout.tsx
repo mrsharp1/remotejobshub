@@ -242,17 +242,6 @@ export const MainLayout: React.FC = () => {
                     </svg>
                     Join Our WhatsApp Channel
                   </a>
-                  <a
-                    href="https://t.me/+mm7Rk9WkcHc0ZTBk"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-500 hover:shadow-sky-600/30 active:scale-95"
-                  >
-                    <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 24 24">
-                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.196 1.006.128.832.942z"/>
-                    </svg>
-                    Join Our Telegram Community
-                  </a>
                 </div>
               </div>
             </div>
