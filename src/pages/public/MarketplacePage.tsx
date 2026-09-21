@@ -528,6 +528,26 @@ The goal is to help beginners understand the process and get started confidently
           </div>
         )}
 
+        {/* Recommended Accounts & Best Picks */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="flex-1 rounded-xl border border-slate-700/50 bg-slate-800/40 px-4 py-3 backdrop-blur-sm">
+            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-400">
+              Recommended Accounts
+            </h4>
+            <p className="mt-1 font-heading text-sm font-black text-white sm:text-base">
+              ₦100K <span className="text-slate-500">•</span> ₦46K <span className="text-slate-500">•</span> ₦35K
+            </p>
+          </div>
+          <div className="flex-1 rounded-xl border border-slate-700/50 bg-slate-800/40 px-4 py-3 backdrop-blur-sm">
+            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-400">
+              Best Picks
+            </h4>
+            <p className="mt-1 font-heading text-sm font-black text-white sm:text-base">
+              ₦100K <span className="text-slate-500">•</span> ₦35K
+            </p>
+          </div>
+        </div>
+
         {/* Featured Listings Carousel/Grid */}
         {featuredListings.length > 0 && (
           <div className="space-y-4">
