@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, Lock, Loader2 } from 'lucide-react'
 
 import { listingService } from '@/services/marketplace/listing.service'
@@ -27,6 +27,7 @@ export const CheckoutPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
 
   const [escrowAccepted, setEscrowAccepted] = useState(false)
   const [verificationAccepted, setVerificationAccepted] = useState(false)
@@ -125,6 +126,10 @@ export const CheckoutPage: React.FC = () => {
       // 3. Update UI
       setCreatedOrderId(result.order_id)
       setPaymentStatus('success')
+
+      // 4. Invalidate order caches so the new order appears on the dashboard immediately
+      queryClient.invalidateQueries({ queryKey: ['buyer-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-overview-orders'] })
     } catch (err: any) {
       console.error('Escrow Error:', err)
       setPaymentError(err?.message || 'Failed to secure escrow.')
