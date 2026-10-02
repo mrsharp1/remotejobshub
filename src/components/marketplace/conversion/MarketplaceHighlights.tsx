@@ -123,8 +123,8 @@ export const MarketplaceHighlights: React.FC = () => {
               <p>Yes. Once your payment is confirmed, you can start immediately.</p>
             </li>
             <li className="mt-2">
-              <p className="font-semibold">After buying an account, will I receive the account details immediately?</p>
-              <p>Yes. Paystack will automatically send you the account details immediately after your payment. You will also receive the link to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
+              <p className="font-semibold">After buying an account, will I receive the account information immediately?</p>
+              <p>Yes. Paystack will automatically send you the account information immediately after your payment. You will also receive the link to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
             </li>
             <li className="mt-2">
               <p className="font-semibold">Will I also get a proxy with the account?</p>

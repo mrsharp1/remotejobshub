@@ -198,8 +198,8 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
 
         {/* Bottom Image Stats overlay */}
         <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-slate-800 shadow-lg">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-slate-800 shadow-lg">
               {sellerAvatar ? (
                 <img
                   src={sellerAvatar}
@@ -212,8 +212,13 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
                 </span>
               )}
             </div>
+            
+            <span className="truncate text-xs font-bold text-white drop-shadow-md">
+              {listing.seller?.full_name || 'Anonymous'}
+            </span>
+
             {isSellerVerified && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300 shadow-lg backdrop-blur-md">
+              <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300 shadow-lg backdrop-blur-md">
                 <ShieldCheck className="h-3 w-3" /> Verified
               </span>
             )}
