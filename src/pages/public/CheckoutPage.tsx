@@ -16,7 +16,7 @@ import { EscrowTimeline } from '@/components/checkout/EscrowTimeline'
 import { SecurityPanel } from '@/components/checkout/SecurityPanel'
 import { OrderInformation } from '@/components/checkout/OrderInformation'
 import { TermsAcceptance } from '@/components/checkout/TermsAcceptance'
-import { PaymentSuccess } from '@/components/checkout/PaymentSuccess'
+
 import { PaymentFailure } from '@/components/checkout/PaymentFailure'
 import { StickyCheckoutBar } from '@/components/checkout/StickyCheckoutBar'
 import { LoadingSkeleton } from '@/components/checkout/LoadingSkeleton'
@@ -170,9 +170,66 @@ export const CheckoutPage: React.FC = () => {
 
   if (paymentStatus === 'success' && createdOrderId) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 pt-12 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <PaymentSuccess orderId={createdOrderId} />
+      <div className="min-h-screen bg-slate-950 px-4 py-12 sm:px-6 flex items-center justify-center">
+        <div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-white/5 bg-slate-900 p-8 sm:p-12 shadow-2xl">
+          <div className="text-center mb-10">
+            <div className="text-6xl mb-6">🎉</div>
+            <h1 className="text-3xl font-bold text-white sm:text-4xl mb-4">Congratulations!</h1>
+            <p className="text-lg text-emerald-400 font-medium">Your account purchase has been successfully confirmed.</p>
+          </div>
+
+          <div className="space-y-6 text-slate-300 leading-relaxed text-[15px] sm:text-base">
+            <p>
+              The vendor will begin sourcing the exact type of account you purchased. Your account is expected to be delivered within 2 weeks.
+            </p>
+            <p>
+              If the vendor is unable to deliver your account within the specified timeframe, you will be placed in a set, subject to the terms and conditions you agreed to at the time of purchase.
+            </p>
+
+            <div className="mt-10 rounded-2xl bg-slate-950/50 p-6 sm:p-8 border border-white/5">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span className="text-indigo-400">❓</span> What does &ldquo;set&rdquo; mean?
+              </h2>
+              <p className="mb-6">
+                A set is a queue for customers who are still waiting to receive their accounts. Once it is your turn, you will be contacted via Telegram or email with further instructions regarding your account.
+              </p>
+              
+              <div className="bg-indigo-500/10 rounded-xl p-6 border border-indigo-500/20 text-center">
+                <p className="text-indigo-100 mb-6 font-medium leading-relaxed">
+                  Please join our Millionaire Inner Circle Community for updates and further communication when your set is ready.
+                </p>
+                <a 
+                  href="https://t.me/+UpeORMuCGgNhMDE0" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#229ED9] px-8 py-3.5 font-bold text-white transition-transform hover:-translate-y-1 hover:shadow-lg hover:shadow-[#229ED9]/20"
+                >
+                  <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.892-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
+                  Join Telegram Community
+                </a>
+              </div>
+            </div>
+
+            <div className="text-center mt-10 space-y-4">
+              <p className="text-sm text-slate-400">
+                Also, ensure email notifications are enabled. You will receive an email notification as soon as your account is ready.
+              </p>
+              <p className="font-semibold text-white text-lg mt-4">
+                Thank you for your patience and cooperation. 🙏
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-10 flex justify-center border-t border-white/5 pt-8">
+             <button
+               onClick={() => navigate('/dashboard')}
+               className="rounded-xl border border-white/10 bg-white/5 px-10 py-3.5 font-bold text-white transition-colors hover:bg-white/10"
+             >
+               Go to Dashboard
+             </button>
+          </div>
         </div>
       </div>
     )
