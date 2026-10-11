@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageSquare, Loader2, X } from 'lucide-react'
+import { MessageSquare, Loader2, X, Mail } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { conversationService } from '@/features/messaging/services/conversation.service'
@@ -88,8 +88,22 @@ export const FloatingSupportChat: React.FC = () => {
                 </div>
                 <span className="font-semibold text-foreground">WhatsApp Support</span>
               </div>
-              <span className="text-sm text-slate-500 ml-8">Message us on WhatsApp.</span>
+              <span className="text-sm text-slate-500 ml-8">+234 810 893 8663</span>
               <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400 ml-8 group-hover:underline">Open WhatsApp &rarr;</span>
+            </a>
+            {/* Email Support */}
+            <a
+              href="mailto:remotesjobhub@gmail.com"
+              className="group flex w-full flex-col items-start gap-1 rounded-xl p-4 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <Mail className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-semibold text-foreground">Email Support</span>
+              </div>
+              <span className="text-sm text-slate-500 ml-8">remotesjobhub@gmail.com</span>
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 ml-8 group-hover:underline">Send Email &rarr;</span>
             </a>
             {/* In-App Support */}
             <button 

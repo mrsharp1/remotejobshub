@@ -23,11 +23,11 @@ export const MarketplaceAnnouncementBar: React.FC = () => {
       className="sticky top-16 z-30 w-full border-b border-amber-500/30 bg-slate-950/95 shadow-md shadow-black/40 backdrop-blur-md"
     >
       <div className="mx-auto max-w-7xl px-4">
-        {/* Mobile View (collapsed by default, ~44px height) */}
+        {/* Mobile View (collapsed by default, compact, touch-friendly) */}
         <div className="block md:hidden">
           <div
             onClick={handleToggleMobile}
-            className="flex min-h-[44px] cursor-pointer items-center justify-between py-2 text-xs select-none"
+            className="flex min-h-[40px] cursor-pointer items-center justify-between py-1.5 text-xs select-none touch-manipulation"
             role="button"
             tabIndex={0}
             aria-expanded={isExpandedMobile}
@@ -38,7 +38,7 @@ export const MarketplaceAnnouncementBar: React.FC = () => {
               }
             }}
           >
-            <div className="flex items-center gap-2 font-black tracking-wide text-amber-400">
+            <div className="flex items-center gap-2 font-black tracking-wide text-amber-400 truncate">
               <span>🔥 LAST BATCH OF THE YEAR!</span>
             </div>
 
@@ -65,13 +65,13 @@ export const MarketplaceAnnouncementBar: React.FC = () => {
             </div>
           </div>
 
-          {/* Expanded content on mobile */}
+          {/* Expanded content on mobile (bounded height, scrollable if screen is small) */}
           {isExpandedMobile && (
-            <div className="border-t border-white/10 pb-3 pt-2 text-xs leading-relaxed text-slate-300">
+            <div className="max-h-48 overflow-y-auto border-t border-white/10 pb-2.5 pt-2 text-xs leading-relaxed text-slate-300">
               <p>
                 Our final seller batch for this year. Once these accounts are sold out, the next batch is expected around March next year (date not guaranteed).
               </p>
-              <p className="mt-1.5 font-bold text-amber-400">
+              <p className="mt-1 font-bold text-amber-400">
                 Don’t miss out!
               </p>
             </div>

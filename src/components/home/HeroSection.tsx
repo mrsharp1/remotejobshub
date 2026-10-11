@@ -6,6 +6,9 @@ import { useHomepageContent } from '@/services/cms/cms.store'
 
 export const HeroSection: React.FC = () => {
   const data = useHomepageContent()
+  const ctaLabel = data?.hero?.ctaText && data.hero.ctaText !== 'Browse Marketplace'
+    ? data.hero.ctaText
+    : 'Find Available Accounts for Sale'
 
   // Parallax / mouse movement effect for floating elements
   const mouseX = useMotionValue(0)
@@ -84,40 +87,63 @@ export const HeroSection: React.FC = () => {
               Find and purchase remote work accounts for platforms like Outlier, Handshake, Upwork, and more. Read account descriptions and chat with sellers to learn more about the account and its advantages.
             </motion.p>
 
+            {/* Beginner Education & Platform Guidance */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-2xl mx-auto lg:mx-0"
+              className="mt-6 space-y-3.5 text-left max-w-2xl mx-auto lg:mx-0"
             >
-              <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🎓</span>
-                  <h4 className="text-sm font-bold text-indigo-300">Beginner?</h4>
+              {/* Beginner Guide Card */}
+              <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 sm:p-5 backdrop-blur-sm space-y-3">
+                <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎓</span>
+                    <h4 className="text-sm font-bold text-indigo-300">Beginner Guide: Outlier & Handshake AI</h4>
+                  </div>
+                  <span className="hidden sm:inline-block rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 border border-indigo-500/20">
+                    Free Training Included
+                  </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Every account purchase includes 1 week of free training to help you get started.
-                </p>
-                <p className="text-xs text-slate-300 leading-relaxed mt-2">
-                  During the training, you’ll learn:
-                </p>
-                <ul className="list-disc list-inside text-xs text-slate-300 ml-4">
-                  <li>How to create and set up your PayPal account</li>
-                  <li>How to complete AI tasks</li>
-                  <li>How weekly payouts work for sellers</li>
-                </ul>
-                <p className="text-xs text-slate-300 leading-relaxed mt-2 font-bold">
-                  Learn. Task. Earn.
-                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300 leading-relaxed">
+                  <div className="space-y-1 rounded-xl bg-slate-950/40 p-3 border border-white/5">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <span className="text-indigo-400">⚡</span> The Platforms & Pay
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Companies pay people to review and improve AI models, plus other remote tasks. Tasks may pay around <strong>$15/hr</strong> or <strong>$200+ per task</strong> (earnings vary and are not guaranteed).
+                    </p>
+                  </div>
+
+                  <div className="space-y-1 rounded-xl bg-slate-950/40 p-3 border border-white/5">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <span className="text-indigo-400">🚀</span> Free Practical Masterclass
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Every purchase includes free step-by-step guidance on navigating platforms, completing tasks, and setting up PayPal or Airtm withdrawals.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-950/60 p-3 border border-indigo-500/10 space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                  <p>
+                    <strong className="text-indigo-200">Account First:</strong> You need your account before training begins so sessions are hands-on and practical.
+                  </p>
+                  <p className="text-slate-400 border-t border-white/5 pt-1.5 text-[10.5px]">
+                    *Note: The stated 5% fee on withdrawals for your first two weeks is a client-provided mentorship fee arrangement, not an automatic platform deduction.
+                  </p>
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🛡️</span>
-                  <h4 className="text-sm font-bold text-emerald-300">Secure Transactions</h4>
+              {/* Secure Transactions Card */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 sm:p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-base sm:text-lg">🛡️</span>
+                  <h4 className="text-xs sm:text-sm font-bold text-emerald-300">Secure Transactions & Buyer Protection</h4>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Your payment is protected. Sellers only receive their funds after you confirm that the account works for you.
+                <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+                  Your payment is protected. Sellers only receive their funds after you confirm that the account handoff is complete and works for you.
                 </p>
               </div>
             </motion.div>
@@ -146,7 +172,7 @@ export const HeroSection: React.FC = () => {
                 <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
                   <div className="relative h-full w-8 bg-white/20" />
                 </div>
-                {data?.hero.ctaText || 'Browse Marketplace'} <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                {ctaLabel} <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               
               <Link

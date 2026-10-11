@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, Lock, Activity } from 'lucide-react'
+import { ArrowRight, Lock, Activity } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { springs } from '@/lib/framer-physics'
 
@@ -39,10 +39,6 @@ export const MarketplaceHero: React.FC<MarketplaceHeroProps> = ({
           <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold text-indigo-300 backdrop-blur-md">
             <Lock className="h-3.5 w-3.5" />
             Escrow Vault Protected
-          </div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-bold text-purple-300 backdrop-blur-md">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Jumio KYC Verified
           </div>
           <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-300 backdrop-blur-md">
             <Activity className="h-3.5 w-3.5" />

@@ -8,27 +8,27 @@ export const MarketplaceHighlights: React.FC = () => {
     {
       icon: CreditCard,
       title: '1. You Pay',
-      desc: "Your payment enters the platform's protected transaction flow.",
+      desc: 'Your payment is processed securely through Paystack.',
     },
     {
       icon: Shield,
       title: '2. Funds Are Secured',
-      desc: 'The seller does not immediately receive the payment.',
+      desc: "Funds are locked in Remote Jobs Hub's Escrow Vault, not sent to the seller.",
     },
     {
       icon: RefreshCw,
       title: '3. Account Handoff',
-      desc: 'The seller completes the agreed account transfer.',
+      desc: 'The seller delivers the account credentials in your order workspace.',
     },
     {
       icon: CheckCircle,
       title: '4. You Verify',
-      desc: 'You confirm that the account handoff has been successfully completed.',
+      desc: 'You inspect the account details and verify access works as agreed.',
     },
     {
       icon: Wallet,
       title: '5. Seller Gets Paid',
-      desc: "The transaction proceeds according to the platform's existing payment rules.",
+      desc: 'Once you confirm and approve handoff, funds are released to the seller.',
     },
   ]
 
@@ -47,7 +47,7 @@ export const MarketplaceHighlights: React.FC = () => {
               ESCROW PROTECTED
             </div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-sm font-bold text-indigo-400 backdrop-blur-md">
-            Payment Protection — Powered by Paystack
+            Processed via Paystack • Held in Escrow Vault
           </div>
             
             <h2 className="mb-4 font-heading text-3xl font-black text-white leading-tight">
@@ -56,12 +56,12 @@ export const MarketplaceHighlights: React.FC = () => {
             </h2>
             
             <p className="mb-6 text-sm leading-relaxed text-slate-400">
-               When you purchase an account, your payment is securely held through Paystack’s payment protection process while the seller completes the account handoff. The seller does not receive the funds immediately.
+              When you purchase an account, your payment is processed securely via Paystack and held safely in Remote Jobs Hub’s Escrow Vault while the seller completes the account handoff. The seller does not receive the funds immediately—they are only released after you inspect and confirm that the account handoff is completed (or mediation resolves any dispute). This is how much we value our brand reputation and your safety.
             </p>
             
             <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-5">
               <p className="text-sm font-medium leading-relaxed text-indigo-200">
-                You don't have to simply trust the seller. Remote Jobs Hub provides a structured transaction process designed to protect the payment while the account handoff is being completed.
+                You don't have to simply trust the seller. Remote Jobs Hub provides a structured escrow process where payments are processed by Paystack and locked in our platform vault until verified and confirmed by the buyer.
               </p>
             </div>
           </div>
@@ -95,25 +95,6 @@ export const MarketplaceHighlights: React.FC = () => {
               ))}
             </div>
           </div>
-        {/* Beginner Class Card */}
-        <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
-          <strong>New to AI Tasks? Join Our Free Master Class</strong>
-          <p className="mt-2">After purchasing an account, Paystack will send the link to our free practical master class directly to your email 📧. Simply click the link to join the class and learn how to get started, complete tasks successfully, and maximize your earnings.</p>
-          <p className="mt-2 font-semibold">Learn. Task. Earn.</p>
-        </div>
-                  {/* Pricing Explanation Card */}
-          <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
-            <strong>Why Are Listing Prices Different?</strong>
-            <p className="mt-2">
-              Prices are different because each account may have a different earning rate per hour.
-            </p>
-            <ul className="mt-2 list-disc list-inside space-y-1">
-              <li>A higher-priced account may offer higher earning potential per hour.</li>
-              <li>Because of the higher earning potential, sellers may include additional benefits.</li>
-              <li>These benefits may include a proxy or an additional free account with the purchase, where applicable.</li>
-              <li>So, a higher-priced account may offer greater earning potential along with additional benefits.</li>
-            </ul>
-          </div>
         {/* FAQ Section */}
         <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
           <strong>Frequently Asked Questions</strong>
@@ -124,7 +105,7 @@ export const MarketplaceHighlights: React.FC = () => {
             </li>
             <li className="mt-2">
               <p className="font-semibold">After buying an account, will I receive the account information immediately?</p>
-              <p>Yes. Paystack will automatically send you the account information immediately after your payment. You will also receive the link to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
+              <p>Once your payment is processed via Paystack and secured in our Escrow Vault, the seller completes the account handoff in your order chat. You will also receive access to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
             </li>
             <li className="mt-2">
               <p className="font-semibold">Will I also get a proxy with the account?</p>
