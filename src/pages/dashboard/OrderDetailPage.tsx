@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Send, Loader2, AlertCircle, MessageSquare, Star } from 'lucide-react'
+import { Send, Loader2, AlertCircle, MessageSquare, Star, ShieldCheck } from 'lucide-react'
 import { disputeService } from '@/services/marketplace/dispute.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { paymentService } from '@/services/marketplace/payment.service'
@@ -12,6 +12,7 @@ import { EscrowProgress } from '@/components/marketplace/EscrowProgress'
 import { supabase } from '@/lib/supabase'
 import { getOrderStatusDisplayLabel } from '@/utils/OrderStatusMapper'
 import { DisputeRoom } from '@/features/disputes/components/DisputeRoom'
+import { TermsReceiptModal } from '@/components/checkout/TermsReceiptModal'
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -77,6 +78,17 @@ export const OrderDetailPage: React.FC = () => {
       return data
     },
     enabled: !!order?.id && order.status === 'disputed',
+  })
+
+  // State and query for Terms & Conditions acceptance record
+  const [showTermsReceipt, setShowTermsReceipt] = useState(false)
+  const { data: termsAcceptance } = useQuery({
+    queryKey: ['order-terms-acceptance', order?.id],
+    queryFn: async () => {
+      if (!order?.id) return null
+      return orderService.getTermsAcceptance(order.id)
+    },
+    enabled: !!order?.id,
   })
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -796,8 +808,70 @@ export const OrderDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Legal Terms Acceptance Audit Card */}
+          {termsAcceptance ? (
+            <div className="space-y-3.5 rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center justify-between border-b pb-3">
+                <h3 className="font-heading text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                  Legal Terms Accepted
+                </h3>
+                <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                  {termsAcceptance.acceptance_reference}
+                </span>
+              </div>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Version:</span>
+                  <span className="font-semibold text-foreground">
+                    {termsAcceptance.terms_version}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Accepted Date:</span>
+                  <span className="font-semibold text-foreground">
+                    {new Date(termsAcceptance.accepted_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="block mb-1 text-[10px] uppercase font-bold text-muted-foreground">
+                    Document Fingerprint:
+                  </span>
+                  <div className="font-mono text-[10px] truncate bg-muted p-1.5 rounded select-all text-foreground">
+                    {termsAcceptance.document_hash}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTermsReceipt(true)}
+                className="w-full mt-2 rounded-lg border border-primary/30 bg-primary/10 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+              >
+                View Acceptance Receipt
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-5 text-xs text-muted-foreground space-y-1.5">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                <span>Legacy Order — Pre-Clickwrap Policy</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                This transaction was completed prior to the implementation of the cryptographic Terms Acceptance Evidence Ledger.
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      <TermsReceiptModal
+        isOpen={showTermsReceipt}
+        onClose={() => setShowTermsReceipt(false)}
+        record={termsAcceptance || null}
+        orderAmount={order ? Number(order.amount) : undefined}
+        listingTitle={order?.listing?.title}
+      />
         </>
       )}
     </div>
