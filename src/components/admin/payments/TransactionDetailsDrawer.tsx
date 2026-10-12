@@ -1,6 +1,9 @@
-import { X, Clock } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Clock, ShieldCheck } from 'lucide-react'
 import { Payment } from '@/types'
 import { formatCurrency } from '@/utils/currency'
+import { orderService, TermsAcceptanceRecord } from '@/services/marketplace/order.service'
+import { TermsReceiptModal } from '@/components/checkout/TermsReceiptModal'
 
 interface TransactionDetailsDrawerProps {
   payment: Payment | null
@@ -15,6 +18,30 @@ export const TransactionDetailsDrawer: React.FC<TransactionDetailsDrawerProps> =
   onRelease,
   onRefund,
 }) => {
+  const [termsRecord, setTermsRecord] = useState<TermsAcceptanceRecord | null>(null)
+  const [loadingTerms, setLoadingTerms] = useState(false)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+    if (payment?.order_id) {
+      setLoadingTerms(true)
+      orderService.getTermsAcceptance(payment.order_id).then((rec) => {
+        if (isMounted) {
+          setTermsRecord(rec)
+          setLoadingTerms(false)
+        }
+      }).catch((err) => {
+        console.error('Error fetching terms acceptance in admin drawer:', err)
+        if (isMounted) setLoadingTerms(false)
+      })
+    } else {
+      setTermsRecord(null)
+    }
+    return () => {
+      isMounted = false
+    }
+  }, [payment?.order_id])
   if (!payment) return null
 
   const amountVal = Number(payment.amount)
@@ -171,6 +198,57 @@ export const TransactionDetailsDrawer: React.FC<TransactionDetailsDrawerProps> =
               Based on payment patterns, transaction amount, IP checks, and participant histories.
             </p>
           </div>
+
+          {/* Legal Terms Acceptance Audit Card */}
+          <div className="rounded-xl border border-white/5 bg-slate-900/40 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
+                Legal Terms Acceptance Record
+              </h4>
+              {termsRecord && (
+                <span className="font-mono text-[9px] font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                  {termsRecord.acceptance_reference}
+                </span>
+              )}
+            </div>
+
+            {loadingTerms ? (
+              <p className="text-xs text-slate-500 animate-pulse">Loading legal acceptance record...</p>
+            ) : termsRecord ? (
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Accepted Version:</span>
+                  <span className="font-bold text-white font-mono">{termsRecord.terms_version}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Accepted At:</span>
+                  <span className="text-slate-300 font-mono text-[11px]">
+                    {new Date(termsRecord.accepted_at).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">
+                    SHA-256 Fingerprint:
+                  </span>
+                  <div className="font-mono text-[10px] text-slate-400 truncate bg-slate-950 p-1.5 rounded border border-white/5 select-all">
+                    {termsRecord.document_hash}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="w-full mt-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                >
+                  View Acceptance Certificate
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                No formal terms acceptance record attached to this transaction (legacy or direct order).
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Release / Refund Actions workspace */}
@@ -195,6 +273,13 @@ export const TransactionDetailsDrawer: React.FC<TransactionDetailsDrawerProps> =
             </div>
           </div>
         )}
+
+        <TermsReceiptModal
+          isOpen={showReceiptModal}
+          onClose={() => setShowReceiptModal(false)}
+          record={termsRecord}
+          orderAmount={amountVal}
+        />
       </aside>
     </div>
   )

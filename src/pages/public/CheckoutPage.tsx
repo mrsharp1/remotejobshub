@@ -16,6 +16,9 @@ import { EscrowTimeline } from '@/components/checkout/EscrowTimeline'
 import { SecurityPanel } from '@/components/checkout/SecurityPanel'
 import { OrderInformation } from '@/components/checkout/OrderInformation'
 import { TermsAcceptance } from '@/components/checkout/TermsAcceptance'
+import { TermsReceiptModal } from '@/components/checkout/TermsReceiptModal'
+import { TERMS_VERSION, TERMS_DOCUMENT_HASH, EXPECTED_CONSENT_AFFIRMATION } from '@/constants/terms'
+import { TermsAcceptanceRecord } from '@/services/marketplace/order.service'
 
 import { PaymentFailure } from '@/components/checkout/PaymentFailure'
 import { StickyCheckoutBar } from '@/components/checkout/StickyCheckoutBar'
@@ -36,6 +39,8 @@ export const CheckoutPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'failure'>('idle')
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+  const [termsRecord, setTermsRecord] = useState<TermsAcceptanceRecord | null>(null)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 
@@ -102,8 +107,29 @@ export const CheckoutPage: React.FC = () => {
 
   const proceedToEscrow = async () => {
     try {
-      // 1. Single Atomic RPC Checkout
-      const result = await orderService.checkoutWithWallet(listing!.id)
+      // 1. Single Atomic RPC Checkout with Explicit Terms Acceptance
+      const result = await orderService.checkoutWithWallet(listing!.id, {
+        termsVersion: TERMS_VERSION,
+        documentHash: TERMS_DOCUMENT_HASH,
+        consentAffirmation: EXPECTED_CONSENT_AFFIRMATION,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      })
+
+      // Capture terms record for receipt viewing
+      if (result.terms_acceptance_id || result.acceptance_reference) {
+        setTermsRecord({
+          id: result.terms_acceptance_id,
+          acceptance_reference: result.acceptance_reference,
+          buyer_id: user!.id,
+          order_id: result.order_id,
+          listing_id: listing!.id,
+          terms_version: result.terms_version || TERMS_VERSION,
+          document_hash: result.document_hash || TERMS_DOCUMENT_HASH,
+          accepted_at: result.accepted_at || new Date().toISOString(),
+          checkout_reference: result.escrow_id,
+          created_at: result.accepted_at || new Date().toISOString(),
+        })
+      }
 
       // 2. Publish Events
       EventEngine.publish('ORDER_CREATED', {
@@ -220,6 +246,32 @@ export const CheckoutPage: React.FC = () => {
                 Thank you for your patience and cooperation. 🙏
               </p>
             </div>
+
+            {/* Legal Terms Acceptance Confirmation */}
+            <div className="rounded-2xl border border-white/5 bg-slate-950/60 p-6 space-y-4 text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+                <span className="text-emerald-400 font-bold text-sm flex items-center gap-1.5">
+                  ✓ Legal Acceptance Recorded
+                </span>
+                {termsRecord?.acceptance_reference && (
+                  <span className="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                    Ref: {termsRecord.acceptance_reference}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Your acceptance of the <strong className="text-white">Remote Jobs Hub Terms and Conditions (v{TERMS_VERSION})</strong> has been cryptographically recorded on the platform legal ledger.
+              </p>
+              {termsRecord && (
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                >
+                  View / Print Legal Acceptance Receipt
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="mt-10 flex justify-center border-t border-white/5 pt-8">
@@ -230,6 +282,14 @@ export const CheckoutPage: React.FC = () => {
                Go to Dashboard
              </button>
           </div>
+
+          <TermsReceiptModal
+            isOpen={showReceiptModal}
+            onClose={() => setShowReceiptModal(false)}
+            record={termsRecord}
+            orderAmount={Number(listing?.price)}
+            listingTitle={listing?.title}
+          />
         </div>
       </div>
     )

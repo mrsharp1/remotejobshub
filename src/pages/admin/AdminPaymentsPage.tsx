@@ -15,6 +15,7 @@ import { TransactionDetailsDrawer } from '@/components/admin/payments/Transactio
 import { WithdrawalsCenter } from '@/components/admin/payments/WithdrawalsCenter'
 import { RefundRequests } from '@/components/admin/payments/RefundRequests'
 import { FraudDetection } from '@/components/admin/payments/FraudDetection'
+import { TermsExportButton } from '@/components/admin/payments/TermsExportButton'
 
 export const AdminPaymentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -119,14 +120,19 @@ export const AdminPaymentsPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-12">
       {/* Title */}
-      <div className="border-b border-border/50 pb-4">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
-          Security Administrator Control Console
-        </span>
-        <h1 className="font-heading text-2xl font-bold text-foreground mt-1">
-          Platform Payments & Escrow Logs
-        </h1>
-        <p className="text-xs text-muted-foreground">Manage transaction volumes, releases, and audits</p>
+      <div className="border-b border-border/50 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
+            Security Administrator Control Console
+          </span>
+          <h1 className="font-heading text-2xl font-bold text-foreground mt-1">
+            Platform Payments & Escrow Logs
+          </h1>
+          <p className="text-xs text-muted-foreground">Manage transaction volumes, releases, and audits</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <TermsExportButton />
+        </div>
       </div>
 
       {/* Executive Hero metrics */}

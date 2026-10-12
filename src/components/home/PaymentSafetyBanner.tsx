@@ -25,20 +25,10 @@ export const PaymentSafetyBanner: React.FC = () => {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ ...springs.gentle, delay: 0.1 }}
-          className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-[2rem] border border-white/5 bg-slate-900/50 p-6 shadow-2xl backdrop-blur-xl sm:p-10"
+          className="mx-auto flex max-w-2xl flex-col items-center justify-center rounded-[2rem] border border-white/5 bg-slate-900/50 p-6 shadow-2xl backdrop-blur-xl sm:p-10"
         >
-          {/* Logos Row */}
-          <div className="flex flex-row items-center justify-center gap-6 sm:gap-12 mb-8 w-full">
-            <div className="flex h-20 w-20 sm:h-32 sm:w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-3 sm:p-4 shadow-inner">
-              <img 
-                src="/images/partners/temu.png" 
-                alt="Temu Logo" 
-                className="h-full w-full object-contain"
-              />
-            </div>
-            
-            <div className="h-12 w-px bg-white/10 hidden sm:block" />
-            
+          {/* Paystack Logo */}
+          <div className="mb-6 sm:mb-8 flex items-center justify-center w-full">
             <div className="flex h-20 w-20 sm:h-32 sm:w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-3 sm:p-4 shadow-inner">
               <img 
                 src="/images/partners/paystack.png" 
@@ -48,11 +38,8 @@ export const PaymentSafetyBanner: React.FC = () => {
             </div>
           </div>
 
-          {/* Text Rows */}
-          <div className="flex flex-col items-center gap-3 mb-8 w-full text-center">
-            <p className="font-heading text-lg sm:text-2xl font-bold text-white">
-              Powered by Temu Marketplace
-            </p>
+          {/* Text */}
+          <div className="mb-6 sm:mb-8 w-full text-center">
             <p className="font-heading text-lg sm:text-2xl font-bold text-white">
               Secured by Paystack
             </p>
