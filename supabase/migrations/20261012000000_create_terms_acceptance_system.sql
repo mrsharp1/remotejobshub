@@ -383,7 +383,9 @@ ON CONFLICT (version) DO UPDATE
 SET title = EXCLUDED.title,
     document_hash = EXCLUDED.document_hash,
     content = EXCLUDED.content,
-    status = 'draft';
+    status = 'draft'
+WHERE public.terms_documents.status = 'draft';
+-- Baseline seed status remains: status = 'draft';
 
 -- 2. Table: terms_acceptance_intents
 -- Short-lived server-issued consent challenge tokens bound to authenticated buyer, listing, and terms version
@@ -473,6 +475,21 @@ DROP TRIGGER IF EXISTS trg_protect_accepted_terms_documents ON public.terms_docu
 CREATE TRIGGER trg_protect_accepted_terms_documents
 BEFORE UPDATE OR DELETE ON public.terms_documents
 FOR EACH ROW EXECUTE FUNCTION public.prevent_accepted_terms_document_mutation();
+
+-- Ensure admin helper function is present and search_path-hardened
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+    );
+END;
+$$;
 
 -- 5. Row Level Security Policies
 ALTER TABLE public.terms_documents ENABLE ROW LEVEL SECURITY;
@@ -767,9 +784,9 @@ BEGIN
         RAISE EXCEPTION 'Buyer wallet not found';
     END IF;
 
-    -- 5. Calculate payable amounts (listing price + 5% platform fee)
+    -- 5. Calculate payable amounts (listing price + 5% platform fee rounded to 2 decimal places)
     v_amount := v_listing.price;
-    v_fee := ROUND(v_amount * 0.05);
+    v_fee := ROUND(v_amount * 0.05, 2);
     v_total := v_amount + v_fee;
 
     -- 6. Verify balance
@@ -794,7 +811,7 @@ BEGIN
     INSERT INTO public.wallet_transactions (wallet_id, user_id, type, amount, status, payment_reference, description)
     VALUES (v_buyer_wallet.id, v_buyer_id, 'purchase', -v_fee, 'success', v_reference || '-FEE', 'Buyer platform fee for order processing');
 
-    -- 10. Create marketplace order
+    -- 10. Create marketplace order (NOTE: tg_new_order_notifications trigger automatically creates buyer & seller notifications)
     INSERT INTO public.orders (buyer_id, seller_id, listing_id, amount, currency, status)
     VALUES (v_buyer_id, v_listing.seller_id, p_listing_id, v_amount, 'NGN', 'payment_received')
     RETURNING id INTO v_order_id;
@@ -839,31 +856,7 @@ BEGIN
     INSERT INTO public.order_timeline (order_id, status, notes)
     VALUES (v_order_id, 'payment_received', 'Wallet checkout completed successfully. Escrow funds secured. Terms accepted (' || v_acceptance_ref || ').');
 
-    -- 14. Buyer notification
-    INSERT INTO public.notifications (user_id, title, message, type, reference_type, reference_id, is_read)
-    VALUES (
-        v_buyer_id,
-        'Escrow Payment Confirmed 💳',
-        'Your payment of ₦' || v_amount || ' for order #' || substr(v_order_id::text, 1, 8) || ' was successfully verified and secured in escrow.',
-        'payment',
-        'order',
-        v_order_id,
-        false
-    );
-
-    -- 15. Seller notification
-    INSERT INTO public.notifications (user_id, title, message, type, reference_type, reference_id, is_read)
-    VALUES (
-        v_listing.seller_id,
-        'Payment Secured in Escrow 💳',
-        'Buyer has paid ₦' || v_amount || ' for your listing. Funds are secured in escrow. Please deliver credentials.',
-        'payment',
-        'order',
-        v_order_id,
-        false
-    );
-
-    -- 16. Return complete atomic payload
+    -- 14. Return complete atomic payload
     RETURN jsonb_build_object(
         'success', true,
         'order_id', v_order_id,
@@ -945,8 +938,9 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_caller_id uuid;
-    v_acceptance record;
-    v_terms_doc record;
+    v_acceptance public.terms_acceptances%ROWTYPE;
+    v_terms_doc public.terms_documents%ROWTYPE;
+    v_doc_found boolean := false;
 BEGIN
     v_caller_id := auth.uid();
     IF v_caller_id IS NULL THEN
@@ -969,6 +963,7 @@ BEGIN
     SELECT * INTO v_terms_doc
     FROM public.terms_documents
     WHERE version = v_acceptance.terms_version;
+    v_doc_found := FOUND;
 
     RETURN jsonb_build_object(
         'acceptance', jsonb_build_object(
@@ -987,7 +982,7 @@ BEGIN
             'created_at', v_acceptance.created_at
         ),
         'document', CASE
-            WHEN v_terms_doc.id IS NOT NULL THEN jsonb_build_object(
+            WHEN v_doc_found THEN jsonb_build_object(
                 'id', v_terms_doc.id,
                 'version', v_terms_doc.version,
                 'title', v_terms_doc.title,
@@ -999,7 +994,7 @@ BEGIN
             )
             ELSE NULL
         END,
-        'hash_verified', (v_terms_doc.id IS NOT NULL AND v_terms_doc.document_hash = v_acceptance.document_hash)
+        'hash_verified', (v_doc_found AND v_terms_doc.document_hash = v_acceptance.document_hash)
     );
 END;
 $$;

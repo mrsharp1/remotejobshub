@@ -170,7 +170,11 @@ test('Database Contract: Migration creates tables, RESTRICT constraints, immutab
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_prepare_checkout_terms_acceptance('), 'Preparation RPC exists')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_checkout_with_wallet('), 'Hardened checkout RPC exists')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_export_terms_acceptances('), 'Admin export RPC exists')
+  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.is_admin()'), 'Admin helper function ensured')
   assert.ok(sql.includes('SET search_path = public, pg_temp'), 'Safe search_path with pg_temp set')
+  assert.ok(sql.includes("WHERE public.terms_documents.status = 'draft';"), 'ON CONFLICT DO UPDATE never demotes published documents')
+  assert.ok(sql.includes('v_fee := ROUND(v_amount * 0.05, 2);'), '2-decimal fee precision preserved')
+  assert.equal(sql.includes('INSERT INTO public.notifications'), false, 'Relies on tg_new_order_notifications to prevent duplicate notifications')
 })
 
 // Simulated In-Memory PostgreSQL Engine for Auditing Backend Business Rules
