@@ -21,6 +21,17 @@ import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import {
+  TERMS_VERSION,
+  TERMS_TITLE,
+  TERMS_LAST_UPDATED,
+  TERMS_STATUS,
+  EXPECTED_CONSENT_AFFIRMATION,
+  CANONICAL_TERMS_TEXT,
+  TERMS_DOCUMENT_HASH,
+  buildCanonicalTermsText,
+  computeClientTermsHash,
+} from '../src/constants/terms.ts'
 
 // 1. Canonical Constants & Deterministic Cryptographic Fingerprint Verification
 test('Security Boundary 1: Canonical terms constants and cryptographic fingerprint integrity', async () => {
@@ -36,6 +47,29 @@ test('Security Boundary 1: Canonical terms constants and cryptographic fingerpri
   assert.match(termsContent, /TERMS_STATUS\s*:\s*.*=\s*'draft'/)
   assert.match(termsContent, /EXPECTED_CONSENT_AFFIRMATION\s*=/)
   assert.match(termsContent, /TERMS_DOCUMENT_HASH\s*=\s*'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'/)
+
+  // Verify runtime exports and reproducible SHA-256 hash
+  assert.equal(TERMS_VERSION, '2026-04-v1.0')
+  assert.equal(TERMS_TITLE, 'Remote Jobs Hub Terms and Conditions')
+  assert.equal(TERMS_LAST_UPDATED, 'April 2026')
+  assert.equal(TERMS_STATUS, 'draft')
+  assert.equal(
+    EXPECTED_CONSENT_AFFIRMATION,
+    'I explicitly accept the Remote Jobs Hub Terms and Conditions version 2026-04-v1.0 and agree to be legally bound thereby.'
+  )
+
+  const nodeSha256 = crypto.createHash('sha256').update(buildCanonicalTermsText(), 'utf8').digest('hex')
+  const webCryptoSha256 = await computeClientTermsHash(CANONICAL_TERMS_TEXT)
+  assert.equal(nodeSha256, TERMS_DOCUMENT_HASH, 'Node SHA-256 must match TERMS_DOCUMENT_HASH')
+  assert.equal(webCryptoSha256, TERMS_DOCUMENT_HASH, 'Web Crypto SHA-256 must match TERMS_DOCUMENT_HASH')
+
+  // Verify SQL migration seed contains the exact canonical text and hash
+  const migrationSql = fs.readFileSync(
+    path.resolve('supabase/migrations/20261012000000_create_terms_acceptance_system.sql'),
+    'utf-8'
+  )
+  assert.ok(migrationSql.includes(TERMS_DOCUMENT_HASH), 'Migration must seed exact TERMS_DOCUMENT_HASH')
+  assert.ok(migrationSql.includes(CANONICAL_TERMS_TEXT), 'Migration must seed exact CANONICAL_TERMS_TEXT')
 
   // Verify preamble
   const preamble = 'PREAMBLE: By accessing this page, communicating with the service provider, or making any form of payment, you ("Client") confirm that you have read, understood, and agreed to be legally bound by the following Terms and Conditions.'
@@ -195,6 +229,17 @@ class SimulatedDatabaseEngine {
     if (!doc) throw new Error(`Invalid terms version specified: ${termsVersion}`)
     if (doc.status !== 'published') throw new Error(`The specified terms version is not currently active: ${termsVersion}`)
     if (doc.document_hash !== documentHash) throw new Error('Terms document hash mismatch. Please refresh and review the updated terms.')
+
+    // Expire previous pending intents for the same buyer and listing (retry hygiene)
+    for (const existing of this.intents.values()) {
+      if (
+        existing.buyer_id === buyerId &&
+        existing.listing_id === listingId &&
+        existing.status === 'pending'
+      ) {
+        existing.status = 'expired'
+      }
+    }
 
     const intentId = 'intent-' + crypto.randomUUID()
     const now = Date.now()
@@ -393,6 +438,49 @@ class SimulatedDatabaseEngine {
   // Immutability test: attempting to update or delete acceptance record
   mutateAcceptance(acceptanceId: string) {
     throw new Error('terms_acceptances records are immutable evidence and cannot be updated or deleted.')
+  }
+
+  // Immutability test: attempting to delete or modify content/hash of an accepted terms_documents record
+  mutateTermsDocument(version: string, action: 'delete' | 'update_content' | 'update_hash' | 'archive') {
+    const doc = this.termsDocuments.get(version)
+    if (!doc) throw new Error('Terms document not found')
+    const hasAcceptances = this.acceptances.some((a) => a.terms_version === version)
+
+    if (action === 'delete') {
+      if (hasAcceptances) {
+        throw new Error('Cannot delete a terms_documents version that has recorded acceptances.')
+      }
+      this.termsDocuments.delete(version)
+      return
+    }
+
+    if ((action === 'update_content' || action === 'update_hash') && hasAcceptances) {
+      throw new Error('Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances.')
+    }
+
+    if (action === 'archive') {
+      doc.status = 'archived'
+    }
+  }
+
+  // Individual receipt & historical document retrieval RPC
+  rpc_get_terms_acceptance_receipt(requestingUserId: string | null, orderId: string, isAdmin: boolean = false) {
+    if (!requestingUserId) {
+      throw new Error('Not authenticated')
+    }
+    const acc = this.acceptances.find((a) => a.order_id === orderId)
+    if (!acc) return null
+
+    if (acc.buyer_id !== requestingUserId && !isAdmin) {
+      throw new Error('Access denied. You are not authorized to view this acceptance receipt.')
+    }
+
+    const doc = this.termsDocuments.get(acc.terms_version) || null
+    return {
+      acceptance: acc,
+      document: doc,
+      hash_verified: Boolean(doc && doc.document_hash === acc.document_hash),
+    }
   }
 }
 
@@ -795,3 +883,236 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
   // 6. Immutability verification: Export operation leaves database records unmutated
   assert.equal(db.acceptances.length, 2, 'Ledger count unchanged after export')
 })
+
+// 17. Scenario 15: Acceptance checkboxes start unchecked and block checkout until explicitly checked
+test('Scenario 15: Acceptance checkboxes start unchecked and block checkout until explicitly accepted', () => {
+  const checkoutPageSource = fs.readFileSync(path.resolve('src/pages/public/CheckoutPage.tsx'), 'utf-8')
+  const termsAcceptanceSource = fs.readFileSync(path.resolve('src/components/checkout/TermsAcceptance.tsx'), 'utf-8')
+
+  // Verify initial state in CheckoutPage is false (unchecked) for all three acknowledgments
+  assert.match(checkoutPageSource, /const\s+\[escrowAccepted,\s*setEscrowAccepted\]\s*=\s*useState\(false\)/)
+  assert.match(checkoutPageSource, /const\s+\[verificationAccepted,\s*setVerificationAccepted\]\s*=\s*useState\(false\)/)
+  assert.match(checkoutPageSource, /const\s+\[termsAccepted,\s*setTermsAccepted\]\s*=\s*useState\(false\)/)
+
+  // Verify canPay requires all three checkboxes + wallet balance
+  assert.match(
+    checkoutPageSource,
+    /const\s+canPay\s*=\s*escrowAccepted\s*&&\s*verificationAccepted\s*&&\s*termsAccepted\s*&&\s*hasEnoughBalance/
+  )
+
+  // Verify handlePaySecurely blocks execution if !canPay
+  assert.match(checkoutPageSource, /if\s*\(!user\?\.id\s*\|\|\s*!user\?\.email\s*\|\|\s*!listing\s*\|\|\s*!canPay\)\s*return/)
+
+  // Verify TermsAcceptance component binds checked={termsAccepted}
+  assert.match(termsAcceptanceSource, /checked=\{termsAccepted\}/)
+  assert.match(termsAcceptanceSource, /onChange=\{\(e\)\s*=>\s*setTermsAccepted\(e\.target\.checked\)\}/)
+})
+
+// 18. Scenario 16: Checkout failure rollback and retry flow supersedes old intent and succeeds cleanly
+test('Scenario 16: Checkout failure rollback and retry flow supersedes old intent and succeeds cleanly', () => {
+  const db = new SimulatedDatabaseEngine()
+  db.publishTerms('2026-04-v1.0')
+
+  // 1. Buyer-2 prepares an intent but has insufficient wallet balance (5000 < 52500)
+  const firstPrep = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-2',
+    'listing-1',
+    '2026-04-v1.0',
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION('2026-04-v1.0')
+  )
+
+  assert.throws(
+    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', firstPrep.acceptance_token),
+    /Insufficient wallet balance/
+  )
+  assert.equal(db.acceptances.length, 0, 'No acceptance record created on failed checkout')
+  assert.equal(db.orders.length, 0, 'No order created on failed checkout')
+
+  // 2. Buyer-2 funds wallet and clicks Retry, which prepares a fresh consent challenge token
+  db.wallets.get('buyer-2')!.available_balance = 100000
+  const retryPrep = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-2',
+    'listing-1',
+    '2026-04-v1.0',
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION('2026-04-v1.0')
+  )
+
+  // First pending token was automatically superseded/expired when retry token was issued
+  assert.equal(db.intents.get(firstPrep.acceptance_token)?.status, 'expired')
+  assert.throws(
+    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', firstPrep.acceptance_token),
+    /Terms acceptance token has already been consumed or is invalid/
+  )
+
+  // Retry token succeeds and creates exactly 1 order and 1 immutable acceptance record
+  const retryResult = db.rpc_checkout_with_wallet('buyer-2', 'listing-1', retryPrep.acceptance_token)
+  assert.equal(retryResult.success, true)
+  assert.equal(db.acceptances.length, 1)
+  assert.equal(db.orders.length, 1)
+  assert.equal(db.acceptances[0].order_id, retryResult.order_id)
+})
+
+// 19. Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authorization and verifies historical document hash
+test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authorization and verifies historical document hash', () => {
+  const db = new SimulatedDatabaseEngine()
+  db.publishTerms('2026-04-v1.0')
+
+  const prep = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-1',
+    'listing-1',
+    '2026-04-v1.0',
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION('2026-04-v1.0')
+  )
+  const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+
+  // Unauthenticated caller rejected
+  assert.throws(
+    () => db.rpc_get_terms_acceptance_receipt(null, orderRes.order_id, false),
+    /Not authenticated/
+  )
+
+  // Unauthorized Buyer-2 rejected
+  assert.throws(
+    () => db.rpc_get_terms_acceptance_receipt('buyer-2', orderRes.order_id, false),
+    /Access denied\. You are not authorized to view this acceptance receipt\./
+  )
+
+  // Archive the terms version to prove historical document remains intact in receipt
+  db.mutateTermsDocument('2026-04-v1.0', 'archive')
+
+  // Buyer-1 retrieves receipt + historical document with verified SHA-256 match
+  const buyerReceipt = db.rpc_get_terms_acceptance_receipt('buyer-1', orderRes.order_id, false)
+  assert.ok(buyerReceipt)
+  assert.equal(buyerReceipt.acceptance.acceptance_reference, orderRes.acceptance_reference)
+  assert.equal(buyerReceipt.document?.version, '2026-04-v1.0')
+  assert.equal(buyerReceipt.document?.status, 'archived')
+  assert.equal(buyerReceipt.hash_verified, true)
+
+  // Admin retrieves receipt + historical document
+  const adminReceipt = db.rpc_get_terms_acceptance_receipt('admin-1', orderRes.order_id, true)
+  assert.ok(adminReceipt)
+  assert.equal(adminReceipt.acceptance.order_id, orderRes.order_id)
+  assert.equal(adminReceipt.hash_verified, true)
+})
+
+// 20. Scenario 18: Accepted terms_documents records cannot be deleted or have their content/hash altered
+test('Scenario 18: Accepted terms_documents records cannot be deleted or have their content/hash altered', () => {
+  const db = new SimulatedDatabaseEngine()
+  db.publishTerms('2026-04-v1.0')
+
+  const prep = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-1',
+    'listing-1',
+    '2026-04-v1.0',
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION('2026-04-v1.0')
+  )
+  db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+
+  assert.throws(
+    () => db.mutateTermsDocument('2026-04-v1.0', 'delete'),
+    /Cannot delete a terms_documents version that has recorded acceptances/
+  )
+  assert.throws(
+    () => db.mutateTermsDocument('2026-04-v1.0', 'update_content'),
+    /Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances/
+  )
+  assert.throws(
+    () => db.mutateTermsDocument('2026-04-v1.0', 'update_hash'),
+    /Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances/
+  )
+})
+
+// 21. Scenario 19: Bulk CSV and JSON export serialization with special characters and full field verification
+test('Scenario 19: Bulk CSV and JSON export serialization with special characters and full field verification', () => {
+  const db = new SimulatedDatabaseEngine()
+  db.publishTerms('2026-04-v1.0')
+
+  const prep = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-1',
+    'listing-1',
+    '2026-04-v1.0',
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION('2026-04-v1.0')
+  )
+  const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+
+  const exportedRecords = db.rpc_export_terms_acceptances('admin-1', true).map((r) => ({
+    ...r,
+    id: orderRes.terms_acceptance_id,
+    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) "Custom, Agent"\r\nLine2',
+  }))
+
+  // Test CSV escaping (quotes doubled, CRLF normalized to space, commas safely enclosed in quotes)
+  const escapeCsv = (val: any) => {
+    if (val === null || val === undefined) return '""'
+    const str = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""')
+    return `"${str}"`
+  }
+  const headers = [
+    'Acceptance Reference',
+    'Checkout Reference',
+    'Order ID',
+    'Listing ID',
+    'Buyer ID',
+    'Terms Version',
+    'SHA-256 Hash',
+    'Accepted At (ISO)',
+    'Client IP',
+    'User Agent',
+    'Created At (ISO)',
+  ]
+  const csv = [
+    headers.join(','),
+    ...exportedRecords.map((r) =>
+      [
+        escapeCsv(r.acceptance_reference),
+        escapeCsv(r.checkout_reference),
+        escapeCsv(r.order_id),
+        escapeCsv(r.listing_id),
+        escapeCsv(r.buyer_id),
+        escapeCsv(r.terms_version),
+        escapeCsv(r.document_hash),
+        escapeCsv(r.accepted_at),
+        escapeCsv(r.ip_address || ''),
+        escapeCsv(r.user_agent || ''),
+        escapeCsv(r.created_at),
+      ].join(',')
+    ),
+  ].join('\r\n')
+
+  const csvLines = csv.split('\r\n')
+  assert.equal(csvLines.length, 2, 'Embedded newlines in user_agent must not break CSV row count')
+  assert.ok(csvLines[1].includes('""Custom, Agent"" Line2'), 'Quotes and newlines in user_agent properly escaped')
+
+  // Test JSON export structure and round-trip parsing
+  const jsonOutput = JSON.stringify(
+    exportedRecords.map((r) => ({
+      acceptance_reference: r.acceptance_reference,
+      checkout_reference: r.checkout_reference,
+      order_id: r.order_id,
+      listing_id: r.listing_id,
+      buyer_id: r.buyer_id,
+      terms_version: r.terms_version,
+      document_hash: r.document_hash,
+      accepted_at: r.accepted_at,
+      ip_address: r.ip_address ?? null,
+      user_agent: r.user_agent ?? null,
+      created_at: r.created_at,
+    })),
+    null,
+    2
+  )
+  const parsedJson = JSON.parse(jsonOutput)
+  assert.equal(Array.isArray(parsedJson), true)
+  assert.equal(parsedJson.length, 1)
+  assert.equal(parsedJson[0].acceptance_reference, orderRes.acceptance_reference)
+  assert.equal(parsedJson[0].checkout_reference, orderRes.escrow_id)
+  assert.equal(parsedJson[0].order_id, orderRes.order_id)
+  assert.equal(parsedJson[0].terms_version, '2026-04-v1.0')
+  assert.equal(parsedJson[0].document_hash, TERMS_DOCUMENT_HASH)
+})
+

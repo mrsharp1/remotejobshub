@@ -49,9 +49,10 @@ export const orderService = {
     }
   ): Promise<{ acceptance_token: string; terms_version: string; document_hash: string; expires_at: string }> {
     const affirmation =
-      payload.consentAffirmation ||
-      EXPECTED_CONSENT_AFFIRMATION ||
-      `I explicitly accept the Remote Jobs Hub Terms and Conditions version ${payload.termsVersion} and agree to be legally bound thereby.`
+      payload.consentAffirmation !== undefined
+        ? payload.consentAffirmation
+        : EXPECTED_CONSENT_AFFIRMATION ||
+          `I explicitly accept the Remote Jobs Hub Terms and Conditions version ${payload.termsVersion} and agree to be legally bound thereby.`
 
     const { data, error } = await supabase.rpc('rpc_prepare_checkout_terms_acceptance', {
       p_listing_id: listingId,
@@ -372,6 +373,39 @@ export const orderService = {
     }
   },
 
+  async getTermsAcceptanceReceipt(orderId: string): Promise<{
+    acceptance: TermsAcceptanceRecord
+    document: TermsDocumentRecord | null
+    hash_verified: boolean
+  } | null> {
+    try {
+      const { data, error } = await supabase.rpc('rpc_get_terms_acceptance_receipt', {
+        p_order_id: orderId,
+      })
+
+      if (!error && data && data.acceptance) {
+        return data as {
+          acceptance: TermsAcceptanceRecord
+          document: TermsDocumentRecord | null
+          hash_verified: boolean
+        }
+      }
+
+      const acceptance = await this.getTermsAcceptance(orderId)
+      if (!acceptance) return null
+
+      const document = await this.getTermsDocument(acceptance.terms_version)
+      return {
+        acceptance,
+        document,
+        hash_verified: Boolean(document && document.document_hash === acceptance.document_hash),
+      }
+    } catch (err) {
+      console.error('Error in getTermsAcceptanceReceipt:', err)
+      return null
+    }
+  },
+
   async getAdminTermsAcceptanceLedger(options?: {
     termsVersion?: string
     limit?: number
@@ -430,7 +464,7 @@ export const orderService = {
 
     const escapeCsv = (val: any) => {
       if (val === null || val === undefined) return '""'
-      const str = String(val).replace(/"/g, '""')
+      const str = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""')
       return `"${str}"`
     }
 
@@ -453,6 +487,23 @@ export const orderService = {
     return [headers.join(','), ...rows].join('\r\n')
   },
 
+  exportAcceptanceLedgerAsJson(records: TermsAcceptanceRecord[]): string {
+    const normalized = records.map((r) => ({
+      acceptance_reference: r.acceptance_reference,
+      checkout_reference: r.checkout_reference,
+      order_id: r.order_id,
+      listing_id: r.listing_id,
+      buyer_id: r.buyer_id,
+      terms_version: r.terms_version,
+      document_hash: r.document_hash,
+      accepted_at: r.accepted_at,
+      ip_address: r.ip_address ?? null,
+      user_agent: r.user_agent ?? null,
+      created_at: r.created_at,
+    }))
+    return JSON.stringify(normalized, null, 2)
+  },
+
   downloadAcceptanceLedger(records: TermsAcceptanceRecord[], format: 'csv' | 'json' = 'csv') {
     const dateStr = new Date().toISOString().split('T')[0]
     let content: string
@@ -460,7 +511,7 @@ export const orderService = {
     let filename: string
 
     if (format === 'json') {
-      content = JSON.stringify(records, null, 2)
+      content = this.exportAcceptanceLedgerAsJson(records)
       mimeType = 'application/json'
       filename = `remotejobshub-terms-acceptance-ledger-${dateStr}.json`
     } else {

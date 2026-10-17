@@ -235,7 +235,14 @@ export const TermsReceiptModal: React.FC<TermsReceiptModalProps> = ({
                   setLoadingDoc(true)
                   setDocError(null)
                   try {
-                    const doc = await orderService.getTermsDocument(record.terms_version)
+                    let doc: TermsDocumentRecord | null = null
+                    if (record.order_id) {
+                      const receiptBundle = await orderService.getTermsAcceptanceReceipt(record.order_id)
+                      doc = receiptBundle?.document || null
+                    }
+                    if (!doc) {
+                      doc = await orderService.getTermsDocument(record.terms_version)
+                    }
                     if (doc) {
                       setTermsDoc(doc)
                     } else {

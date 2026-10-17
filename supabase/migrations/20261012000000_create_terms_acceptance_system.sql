@@ -199,6 +199,8 @@ CREATE TABLE IF NOT EXISTS public.terms_acceptances (
 -- Indexes for terms_acceptances
 CREATE INDEX IF NOT EXISTS idx_terms_acceptances_buyer_id ON public.terms_acceptances(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_terms_acceptances_order_id ON public.terms_acceptances(order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_terms_acceptances_order_id_unique ON public.terms_acceptances(order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_terms_acceptances_intent_id_unique ON public.terms_acceptances(consent_intent_id);
 CREATE INDEX IF NOT EXISTS idx_terms_acceptances_listing_id ON public.terms_acceptances(listing_id);
 CREATE INDEX IF NOT EXISTS idx_terms_acceptances_checkout_ref ON public.terms_acceptances(checkout_reference);
 
@@ -216,6 +218,34 @@ DROP TRIGGER IF EXISTS trg_immutable_terms_acceptances ON public.terms_acceptanc
 CREATE TRIGGER trg_immutable_terms_acceptances
 BEFORE UPDATE OR DELETE ON public.terms_acceptances
 FOR EACH ROW EXECUTE FUNCTION public.prevent_terms_acceptance_mutation();
+
+CREATE OR REPLACE FUNCTION public.prevent_accepted_terms_document_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        IF EXISTS (SELECT 1 FROM public.terms_acceptances WHERE terms_version = OLD.version) THEN
+            RAISE EXCEPTION 'Cannot delete a terms_documents version that has recorded acceptances.';
+        END IF;
+        RETURN OLD;
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        IF (NEW.version != OLD.version OR NEW.content != OLD.content OR NEW.document_hash != OLD.document_hash)
+           AND EXISTS (SELECT 1 FROM public.terms_acceptances WHERE terms_version = OLD.version) THEN
+            RAISE EXCEPTION 'Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances.';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_protect_accepted_terms_documents ON public.terms_documents;
+CREATE TRIGGER trg_protect_accepted_terms_documents
+BEFORE UPDATE OR DELETE ON public.terms_documents
+FOR EACH ROW EXECUTE FUNCTION public.prevent_accepted_terms_document_mutation();
 
 -- 5. Row Level Security Policies
 ALTER TABLE public.terms_documents ENABLE ROW LEVEL SECURITY;
@@ -337,7 +367,14 @@ BEGIN
         v_client_ua := 'unknown';
     END;
 
-    -- 6. Insert pending acceptance intent
+    -- 6. Expire any previous pending intents for the same buyer and listing (retry hygiene)
+    UPDATE public.terms_acceptance_intents
+    SET status = 'expired'
+    WHERE buyer_id = v_buyer_id
+      AND listing_id = p_listing_id
+      AND status = 'pending';
+
+    -- 7. Insert pending acceptance intent
     INSERT INTO public.terms_acceptance_intents (
         buyer_id,
         listing_id,
@@ -669,3 +706,77 @@ $$;
 
 REVOKE ALL ON FUNCTION public.rpc_export_terms_acceptances(text, int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated;
+
+-- 9. RPC: rpc_get_terms_acceptance_receipt (Individual Evidence & Historical Document Retrieval)
+CREATE OR REPLACE FUNCTION public.rpc_get_terms_acceptance_receipt(
+    p_order_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_caller_id uuid;
+    v_acceptance record;
+    v_terms_doc record;
+BEGIN
+    v_caller_id := auth.uid();
+    IF v_caller_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    SELECT * INTO v_acceptance
+    FROM public.terms_acceptances
+    WHERE order_id = p_order_id;
+
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+
+    -- Authorization: Only the buyer who accepted or an administrator may access the receipt
+    IF v_acceptance.buyer_id != v_caller_id AND NOT public.is_admin() THEN
+        RAISE EXCEPTION 'Access denied. You are not authorized to view this acceptance receipt.';
+    END IF;
+
+    SELECT * INTO v_terms_doc
+    FROM public.terms_documents
+    WHERE version = v_acceptance.terms_version;
+
+    RETURN jsonb_build_object(
+        'acceptance', jsonb_build_object(
+            'id', v_acceptance.id,
+            'acceptance_reference', v_acceptance.acceptance_reference,
+            'buyer_id', v_acceptance.buyer_id,
+            'order_id', v_acceptance.order_id,
+            'listing_id', v_acceptance.listing_id,
+            'consent_intent_id', v_acceptance.consent_intent_id,
+            'terms_version', v_acceptance.terms_version,
+            'document_hash', v_acceptance.document_hash,
+            'accepted_at', v_acceptance.accepted_at,
+            'ip_address', v_acceptance.ip_address,
+            'user_agent', v_acceptance.user_agent,
+            'checkout_reference', v_acceptance.checkout_reference,
+            'created_at', v_acceptance.created_at
+        ),
+        'document', CASE
+            WHEN v_terms_doc.id IS NOT NULL THEN jsonb_build_object(
+                'id', v_terms_doc.id,
+                'version', v_terms_doc.version,
+                'title', v_terms_doc.title,
+                'document_hash', v_terms_doc.document_hash,
+                'content', v_terms_doc.content,
+                'status', v_terms_doc.status,
+                'effective_at', v_terms_doc.effective_at,
+                'created_at', v_terms_doc.created_at
+            )
+            ELSE NULL
+        END,
+        'hash_verified', (v_terms_doc.id IS NOT NULL AND v_terms_doc.document_hash = v_acceptance.document_hash)
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated;
+
