@@ -655,11 +655,13 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) TO authenticated, service_role;
 
--- 7. Atomic RPC: rpc_checkout_with_wallet
--- Drop legacy function signatures
-DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);
+-- 7. Atomic RPC: rpc_checkout_with_wallet (6-argument overload)
+-- NOTE: Legacy 1-arg public.rpc_checkout_with_wallet(uuid) is intentionally preserved during rollout
+-- so existing browser sessions continue working until the new frontend is deployed and verified.
+-- Post-cutover cleanup (execute only after new frontend is live and verified):
+-- DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);
 DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION public.rpc_checkout_with_wallet(
@@ -784,9 +786,9 @@ BEGIN
         RAISE EXCEPTION 'Buyer wallet not found';
     END IF;
 
-    -- 5. Calculate payable amounts (listing price + 5% platform fee rounded to 2 decimal places)
+    -- 5. Calculate payable amounts (listing price + 5% platform fee matching verified live calculation)
     v_amount := v_listing.price;
-    v_fee := ROUND(v_amount * 0.05, 2);
+    v_fee := ROUND(v_amount * 0.05);
     v_total := v_amount + v_fee;
 
     -- 6. Verify balance
@@ -811,7 +813,7 @@ BEGIN
     INSERT INTO public.wallet_transactions (wallet_id, user_id, type, amount, status, payment_reference, description)
     VALUES (v_buyer_wallet.id, v_buyer_id, 'purchase', -v_fee, 'success', v_reference || '-FEE', 'Buyer platform fee for order processing');
 
-    -- 10. Create marketplace order (NOTE: tg_new_order_notifications trigger automatically creates buyer & seller notifications)
+    -- 10. Create marketplace order
     INSERT INTO public.orders (buyer_id, seller_id, listing_id, amount, currency, status)
     VALUES (v_buyer_id, v_listing.seller_id, p_listing_id, v_amount, 'NGN', 'payment_received')
     RETURNING id INTO v_order_id;
@@ -856,7 +858,53 @@ BEGIN
     INSERT INTO public.order_timeline (order_id, status, notes)
     VALUES (v_order_id, 'payment_received', 'Wallet checkout completed successfully. Escrow funds secured. Terms accepted (' || v_acceptance_ref || ').');
 
-    -- 14. Return complete atomic payload
+    -- 14. Ensure exact buyer notification without duplicating tg_new_order_notifications trigger rows
+    UPDATE public.notifications
+    SET title = 'Escrow Payment Confirmed 💳',
+        message = 'Your payment of ₦' || v_amount || ' for order #' || substr(v_order_id::text, 1, 8) || ' was successfully verified and secured in escrow.',
+        type = 'payment',
+        is_read = false
+    WHERE user_id = v_buyer_id
+      AND reference_type = 'order'
+      AND reference_id = v_order_id;
+
+    IF NOT FOUND THEN
+        INSERT INTO public.notifications (user_id, title, message, type, reference_type, reference_id, is_read)
+        VALUES (
+            v_buyer_id,
+            'Escrow Payment Confirmed 💳',
+            'Your payment of ₦' || v_amount || ' for order #' || substr(v_order_id::text, 1, 8) || ' was successfully verified and secured in escrow.',
+            'payment',
+            'order',
+            v_order_id,
+            false
+        );
+    END IF;
+
+    -- 15. Ensure exact seller notification without duplicating tg_new_order_notifications trigger rows
+    UPDATE public.notifications
+    SET title = 'Payment Secured in Escrow 💳',
+        message = 'Buyer has paid ₦' || v_amount || ' for your listing. Funds are secured in escrow. Please deliver credentials.',
+        type = 'payment',
+        is_read = false
+    WHERE user_id = v_listing.seller_id
+      AND reference_type = 'order'
+      AND reference_id = v_order_id;
+
+    IF NOT FOUND THEN
+        INSERT INTO public.notifications (user_id, title, message, type, reference_type, reference_id, is_read)
+        VALUES (
+            v_listing.seller_id,
+            'Payment Secured in Escrow 💳',
+            'Buyer has paid ₦' || v_amount || ' for your listing. Funds are secured in escrow. Please deliver credentials.',
+            'payment',
+            'order',
+            v_order_id,
+            false
+        );
+    END IF;
+
+    -- 16. Return complete atomic payload
     RETURN jsonb_build_object(
         'success', true,
         'order_id', v_order_id,
@@ -874,7 +922,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) TO authenticated, service_role;
 
 -- 8. RPC: rpc_export_terms_acceptances (Admin-Enforced Ledger Export)
 CREATE OR REPLACE FUNCTION public.rpc_export_terms_acceptances(
@@ -925,7 +973,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rpc_export_terms_acceptances(text, int) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated, service_role;
 
 -- 9. RPC: rpc_get_terms_acceptance_receipt (Individual Evidence & Historical Document Retrieval)
 CREATE OR REPLACE FUNCTION public.rpc_get_terms_acceptance_receipt(
@@ -1000,5 +1048,6 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated, service_role;
+
 

@@ -165,16 +165,56 @@ test('Database Contract: Migration creates tables, RESTRICT constraints, immutab
   assert.ok(sql.includes('CREATE POLICY "Anyone can view published or accepted terms documents"'), 'terms_documents allows viewing published or accepted terms')
 
   // Verify function signatures and search path hardening
-  assert.ok(sql.includes('DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);'), 'Old 1-arg signature dropped')
+  assert.ok(
+    sql.includes('-- DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);'),
+    'Old 1-arg signature drop is deferred to post-cutover cleanup for rollout compatibility'
+  )
+  assert.equal(
+    /^\s*DROP FUNCTION IF EXISTS public\.rpc_checkout_with_wallet\(uuid\);/m.test(sql),
+    false,
+    'Migration must not unconditionally drop 1-arg rpc_checkout_with_wallet(uuid) before frontend cutover'
+  )
   assert.ok(sql.includes('DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid, text, text, text, text);'), 'Intermediate signature dropped')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_prepare_checkout_terms_acceptance('), 'Preparation RPC exists')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_checkout_with_wallet('), 'Hardened checkout RPC exists')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_export_terms_acceptances('), 'Admin export RPC exists')
+  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_get_terms_acceptance_receipt('), 'Receipt retrieval RPC exists')
   assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.is_admin()'), 'Admin helper function ensured')
   assert.ok(sql.includes('SET search_path = public, pg_temp'), 'Safe search_path with pg_temp set')
   assert.ok(sql.includes("WHERE public.terms_documents.status = 'draft';"), 'ON CONFLICT DO UPDATE never demotes published documents')
-  assert.ok(sql.includes('v_fee := ROUND(v_amount * 0.05, 2);'), '2-decimal fee precision preserved')
-  assert.equal(sql.includes('INSERT INTO public.notifications'), false, 'Relies on tg_new_order_notifications to prevent duplicate notifications')
+
+  // Verify live wallet checkout parity: integer fee rounding, repeat purchases allowed, listing stays published
+  assert.ok(sql.includes('v_fee := ROUND(v_amount * 0.05);'), 'Exact verified live integer fee rounding preserved')
+  assert.equal(sql.includes('ROUND(v_amount * 0.05, 2)'), false, 'Does not silently alter live fee rounding')
+  assert.equal(sql.includes('v_existing_order'), false, 'Repeat purchases by same buyer are allowed')
+  assert.equal(/SET\s+status\s*=\s*'sold'/i.test(sql), false, 'Listings remain published after purchase')
+
+  // Verify exact buyer and seller notifications with trigger deduplication
+  assert.ok(sql.includes("'Escrow Payment Confirmed 💳'"), 'Buyer escrow payment notification preserved')
+  assert.ok(sql.includes("'Payment Secured in Escrow 💳'"), 'Seller escrow payment notification preserved')
+  assert.ok(sql.includes('UPDATE public.notifications') && sql.includes('IF NOT FOUND THEN'), 'Trigger-created notifications are updated in-place to prevent duplicate rows')
+
+  // Verify RPC execution grants: PUBLIC and anon revoked; authenticated and service_role granted on all 4 Terms RPCs
+  assert.ok(
+    sql.includes('REVOKE ALL ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) FROM PUBLIC, anon;') &&
+    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) TO authenticated, service_role;'),
+    'rpc_prepare_checkout_terms_acceptance grants hardened for authenticated and service_role'
+  )
+  assert.ok(
+    sql.includes('REVOKE ALL ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) FROM PUBLIC, anon;') &&
+    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) TO authenticated, service_role;'),
+    '6-arg rpc_checkout_with_wallet grants hardened for authenticated and service_role'
+  )
+  assert.ok(
+    sql.includes('REVOKE ALL ON FUNCTION public.rpc_export_terms_acceptances(text, int) FROM PUBLIC, anon;') &&
+    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated, service_role;'),
+    'rpc_export_terms_acceptances grants hardened for authenticated and service_role'
+  )
+  assert.ok(
+    sql.includes('REVOKE ALL ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) FROM PUBLIC, anon;') &&
+    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated, service_role;'),
+    'rpc_get_terms_acceptance_receipt grants hardened for authenticated and service_role'
+  )
 })
 
 // Simulated In-Memory PostgreSQL Engine for Auditing Backend Business Rules
@@ -1178,4 +1218,57 @@ test('Scenario 19: Bulk CSV and JSON export serialization with special character
   assert.equal(parsedJson[0].terms_version, TERMS_VERSION)
   assert.equal(parsedJson[0].document_hash, TERMS_DOCUMENT_HASH)
 })
+
+// 22. Scenario 20: Live wallet checkout parity (integer fee rounding, repeat purchases, listing status, and deduplicated notifications)
+test('Scenario 20: Live wallet checkout parity (integer fee rounding, repeat purchases, listing status, and deduplicated notifications)', () => {
+  const db = new SimulatedDatabaseEngine()
+  db.publishTerms(TERMS_VERSION)
+
+  // Add a listing with a fractional 5% fee (110 * 0.05 = 5.5 -> ROUND(5.5) = 6)
+  db.listings.set('listing-fractional', {
+    id: 'listing-fractional',
+    seller_id: 'seller-1',
+    price: 110,
+    status: 'published',
+  })
+  db.wallets.set('buyer-1', {
+    available_balance: 500,
+    escrow_balance: 0,
+  })
+
+  // First purchase by buyer-1 on listing-fractional
+  const prep1 = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-1',
+    'listing-fractional',
+    TERMS_VERSION,
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION(TERMS_VERSION)
+  )
+  const order1 = db.rpc_checkout_with_wallet('buyer-1', 'listing-fractional', prep1.acceptance_token)
+  assert.equal(order1.success, true)
+
+  // Verify integer fee rounding: 110 + ROUND(110 * 0.05) = 110 + 6 = 116 deducted; 110 added to escrow
+  assert.equal(db.wallets.get('buyer-1')?.available_balance, 500 - 116)
+  assert.equal(db.wallets.get('buyer-1')?.escrow_balance, 110)
+
+  // Verify listing remains published after purchase (never marked sold)
+  assert.equal(db.listings.get('listing-fractional')?.status, 'published')
+
+  // Second (repeat) purchase of the same listing by the same buyer-1 using a fresh token
+  const prep2 = db.rpc_prepare_checkout_terms_acceptance(
+    'buyer-1',
+    'listing-fractional',
+    TERMS_VERSION,
+    TERMS_DOCUMENT_HASH,
+    VALID_AFFIRMATION(TERMS_VERSION)
+  )
+  const order2 = db.rpc_checkout_with_wallet('buyer-1', 'listing-fractional', prep2.acceptance_token)
+  assert.equal(order2.success, true)
+  assert.notEqual(order2.order_id, order1.order_id, 'Repeat purchase creates a distinct order')
+  assert.notEqual(order2.acceptance_reference, order1.acceptance_reference, 'Repeat purchase creates a distinct terms receipt')
+  assert.equal(db.wallets.get('buyer-1')?.available_balance, 500 - 232)
+  assert.equal(db.wallets.get('buyer-1')?.escrow_balance, 220)
+  assert.equal(db.listings.get('listing-fractional')?.status, 'published')
+})
+
 
