@@ -152,6 +152,233 @@ You further acknowledge that:
     'draft',
     now()
 )
+ON CONFLICT (version) DO NOTHING;
+
+-- Seed client-supplied canonical terms document v2.0 (Status 'draft' pending client publication approval)
+INSERT INTO public.terms_documents (
+    version,
+    title,
+    document_hash,
+    content,
+    status,
+    effective_at
+) VALUES (
+    '2026-04-v2.0',
+    'Remote Jobs Hub Terms and Conditions',
+    'c0a159f51cba332bab9f1ac335f674707973a125467fb50702eaf57ac31b2da8',
+    'TITLE: Remote Jobs Hub Terms and Conditions
+
+VERSION: 2026-04-v2.0
+
+LAST_UPDATED: April 2026
+
+PREAMBLE: By accessing this page, clicking the “Chat Me” button, communicating with the Service Provider or a Vendor, making any payment, or joining the community, you (“Client”) confirm that you have read, understood, and agreed to these Terms and Conditions.
+
+SECTION: 1. 📌 DEFINITIONS
+
+CONTENT: For the purpose of these Terms:
+
+BULLETS: “Service Provider” refers to the individual or entity providing guidance, mentorship, support, community access, or related services. | “Client” refers to any person who engages with, pays for, or uses the services. | “Vendor” refers to an individual or third party who lists or offers an account or opportunity through the website/community. | “Services” refers to guidance, mentorship, setup assistance, community access, account-related information, and information regarding remote job opportunities. | “Listed Account” refers to an account or account opportunity advertised or listed on the website by a Vendor.
+
+SECTION: 2. 📌 NATURE OF SERVICE
+
+CONTENT: The Service Provider offers educational guidance, mentorship, community access, and setup assistance relating to remote AI-based job opportunities.
+
+This service may include support across up to three (3) different remote job platforms, depending on availability, eligibility, and regional accessibility.
+
+These platforms may include, but are not limited to, Outlier AI or similar platforms in the remote AI and digital work industry.
+
+The Service Provider is not an employee, agent, or official representative of any third-party platform mentioned.
+
+SECTION: 3. ⚠️ NO EMPLOYMENT OR PARTNERSHIP GUARANTEE
+
+CONTENT: By using this service, the Client acknowledges that:
+
+BULLETS: The service does not guarantee employment with any company or platform. | No formal employment contract is created between the Client and any platform. | The Service Provider does not control hiring decisions, account approvals, or platform acceptance systems.
+
+FOOTER: All platform decisions remain solely with the respective companies.
+
+SECTION: 4. ⚠️ NO GUARANTEE OF SPECIFIC PLATFORM ACCESS
+
+CONTENT: The Client understands and agrees that:
+
+BULLETS: Access to any specific platform or account is not guaranteed. | Platform availability may vary based on: | Country or regional restrictions | Account verification policies | Platform internal decisions | Technical or system limitations | Availability of suitable accounts or opportunities
+
+FOOTER: The Client is paying for guidance, support, community access, and available opportunities, and not for guaranteed access to any particular platform or account unless expressly stated otherwise.
+
+SECTION: 5. 💼 MULTIPLE OPPORTUNITY STRUCTURE
+
+CONTENT: The service may provide access to up to three (3) remote job opportunities or platforms, depending on eligibility and availability.
+
+BULLETS: If one platform is not accessible, alternative opportunities may be provided where available. | Final platform access depends on eligibility and applicable platform requirements. | Available opportunities may change at any time. | The Service Provider reserves the right to modify available options without prior notice.
+
+SECTION: 6. 🏷️ ACCOUNT LISTINGS, VENDORS & AVAILABILITY
+
+CONTENT: Some accounts or opportunities displayed on the website may be listed by Vendors.
+
+A Client understands and agrees that:
+
+BULLETS: A Vendor may list an account or account opportunity that is not currently available for immediate delivery. | In such cases, the Vendor may need to source, obtain, or arrange the relevant account or opportunity for the Client after payment. | The fact that an account is listed on the website does not necessarily mean that the account is immediately available at the exact time of purchase. | Estimated availability may depend on the Vendor’s ability to source or arrange the account. | The Client understands that sourcing or arranging an account may take additional time. | The Service Provider and/or Vendor does not guarantee a specific delivery timeframe unless a timeframe has been expressly communicated and agreed upon.
+
+SUBSECTION: 6.1 Account Information
+
+SUBCONTENT: Where the Client pays for a listed account or account opportunity, the Client may receive information regarding the current status of the account.
+
+For clarity, the term “account information” or “info” does not automatically mean account login details, passwords, email addresses, authentication codes, or other credentials.
+
+“Account information” may refer to information such as:
+
+SUBBULLETS: Current account status | Whether the account is active or inactive | Current availability/status of the opportunity | Relevant account-related conditions | Other non-credential information communicated by the Vendor
+
+SUBFOOTER: Login credentials or other sensitive account information will only be provided where expressly included in the specific listing or arrangement.
+
+SUBSECTION: 6.2 Vendor-Managed Access
+
+SUBCONTENT: Where a Vendor offers access to an account or opportunity, the Vendor may add or grant the Client access to the relevant set, group, workspace, or other designated arrangement after payment for the listed account has been completed.
+
+The exact method of access may vary depending on the Vendor and the nature of the opportunity.
+
+SECTION: 7. 💰 FEES AND PAYMENT TERMS
+
+SUBSECTION: 7.1 Initial Payment
+
+SUBCONTENT: A non-refundable fee may be required to begin the service.
+
+Depending on the service selected, the fee may cover:
+
+SUBBULLETS: Setup guidance | Mentorship and consultation | Community access | Assistance with account preparation | Account-related information | General support throughout onboarding | Access to available opportunities
+
+SUBSECTION: 7.2 Performance-Based Fee
+
+SUBCONTENT: Where applicable, a performance-based fee may be payable after the Client receives their first successful payout from a platform.
+
+Such a fee is considered a service fee for continued support and mentorship and will only apply where expressly communicated to and accepted by the Client.
+
+SECTION: 8. 🚫 NO INCOME GUARANTEE
+
+CONTENT: The Client acknowledges that:
+
+BULLETS: Earnings are not guaranteed. | Income varies based on individual effort, platform availability, task completion, platform policies, demand, and other external factors.
+
+SUBCONTENT: The Service Provider does not guarantee:
+
+SUBBULLETS: Any specific income level | Continuous availability of tasks | Long-term access to any platform | A specific number of tasks | A specific payout amount
+
+SECTION: 9. 🌍 PLATFORM RULES AND COMPLIANCE
+
+CONTENT: The Client acknowledges that each platform has its own independent rules, policies, eligibility requirements, and terms of service.
+
+The Client is responsible for complying with all applicable platform rules.
+
+The Service Provider and Vendors are not responsible for:
+
+BULLETS: Delays | Account suspension or termination | Platform restrictions | Changes in platform policies | Changes in eligibility requirements | Changes in access conditions | Decisions made independently by third-party platforms
+
+SECTION: 10. 📉 REFUND POLICY
+
+CONTENT: By engaging with the service, the Client agrees that payments are non-refundable once:
+
+BULLETS: The Client has joined the community; | Guidance or mentorship has commenced; | Account-related services have commenced; | An opportunity has been sourced or arranged on the Client’s behalf; or | Any other form of service delivery has started.
+
+SUBCONTENT: Refunds will generally not be issued because of:
+
+SUBBULLETS: Platform rejection or ineligibility | Change of mind after payment | Failure to follow instructions | Lack of participation or engagement | Platform restrictions or policy changes | Delays caused by third parties | Unavailability of tasks or work | Failure to generate expected income
+
+FOOTER: Where a Vendor has separate terms for a specific account listing, those terms may also apply.
+
+SECTION: 11. 🤝 CLIENT RESPONSIBILITIES
+
+CONTENT: The Client agrees to:
+
+BULLETS: Provide accurate and truthful information. | Follow instructions provided during onboarding. | Maintain professionalism when communicating with platforms, Vendors, and the Service Provider. | Take responsibility for their own performance and results. | Review and understand the terms and requirements of any third-party platform they use.
+
+FOOTER: Failure to comply may affect the Client’s results without liability on the Service Provider.
+
+SECTION: 12. 🔒 LIMITATION OF LIABILITY
+
+CONTENT: To the fullest extent permitted by applicable law, the Service Provider shall not be held responsible for:
+
+BULLETS: Loss of income or expected earnings | Platform errors or delays | Platform restrictions or account actions | Technical issues beyond reasonable control | Decisions made by third-party platforms | Vendor-related delays or availability issues | Changes in platform policies | Indirect or consequential losses
+
+SECTION: 13. 🔐 NO LEGAL OR EMPLOYMENT RELATIONSHIP
+
+CONTENT: Nothing in these Terms shall be interpreted as creating:
+
+BULLETS: An employment relationship | A partnership | An agency relationship | A franchise or franchise-like arrangement
+
+FOOTER: The relationship is strictly service-based and independent.
+
+SECTION: 14. 📢 ACCEPTANCE OF TERMS
+
+CONTENT: By any of the following actions:
+
+BULLETS: Clicking “Chat Me” | Sending a direct message | Making any payment | Joining the community | Purchasing or requesting a listed account | Engaging in onboarding or communication
+
+SUBCONTENT: the Client confirms that they:
+
+SUBBULLETS: Have read and understood these Terms. | Agree to be bound by these Terms. | Understand that availability of platforms, accounts, tasks, and opportunities may change. | Accept the risks associated with participating in remote earning opportunities.
+
+SECTION: 15. ⚠️ FINAL DISCLAIMER
+
+CONTENT: This service is designed to provide educational guidance, support, community access, and information relating to remote earning opportunities.
+
+It does not guarantee:
+
+BULLETS: Access to any specific platform | Access to any specific account | Employment | Income | A specific payout | Continuous work | Long-term account availability | Any particular result
+
+FOOTER: Platform access and account availability may depend on third-party decisions, eligibility requirements, regional restrictions, Vendor availability, and other factors outside the Service Provider’s control.
+
+SECTION: 16. ✅ CLIENT ACKNOWLEDGEMENT
+
+CONTENT: By making a payment or joining the community, I acknowledge that I understand that I am paying for access to a remote job community, guidance, support, and/or an available opportunity.
+
+I understand that payment does not automatically guarantee access to a specific platform, a specific account, employment, income, or results.
+
+I also understand that some accounts listed by Vendors may not be immediately available and that a Vendor may need to source or arrange the account after payment.
+
+I understand that “account info” refers to the current status or other non-credential information about an account unless the specific listing expressly states otherwise.
+
+SECTION: ⚠️ IMPORTANT — TERMS ACCEPTANCE & CONTRACT NOTICE
+
+CONTENT: PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY BEFORE MAKING ANY PAYMENT OR USING OUR SERVICES.
+
+These Terms and Conditions constitute a binding agreement between you (“Client”) and the Service Provider/Brand. By making a payment, joining the community, communicating with the Service Provider or a Vendor regarding a service, or otherwise proceeding with an order, you acknowledge that you have had the opportunity to read these Terms and Conditions and that you accept and agree to be bound by them.
+
+SECTION: 🚨 DO NOT MAKE PAYMENT IF YOU DO NOT AGREE
+
+CONTENT: Do not make any payment if you do not understand, accept, or agree to these Terms and Conditions.
+
+If you have any questions or concerns about the terms, you should raise them before making payment.
+
+By proceeding with payment or using the service, you confirm that you have accepted the terms governing your purchase.
+
+SECTION: ❌ NO REFUNDS
+
+CONTENT: Unless otherwise expressly stated in these Terms or required by applicable law, all payments are final and non-refundable once the applicable service has commenced, access has been provided, an opportunity has been sourced or arranged, or the Client has joined the relevant community/service.
+
+A Client cannot request a refund simply because they did not read, review, understand, or familiarize themselves with these Terms before making payment.
+Failure to read these Terms does not invalidate your agreement to them. By proceeding with payment or use of the service, you remain responsible for complying with the Terms you accepted.
+
+SECTION: 📢 PROFESSIONAL COMMUNICATION & CONDUCT
+
+CONTENT: The Client agrees to communicate with the Service Provider, Brand, Vendors, and other members respectfully and professionally.
+
+Harassment, threats, cyberbullying, intimidation, defamation, malicious public accusations, or other abusive conduct relating to a refund request, account issue, service disagreement, or enforcement of these Terms will not be tolerated.
+
+A disagreement regarding a refund or the application of these Terms does not give either party the right to harass, threaten, intimidate, or target another person online.
+
+Where a refund is declined in accordance with these Terms, the Client agrees to use the appropriate communication or dispute-resolution process rather than engaging in harassment, cyberbullying, threats, or malicious conduct.
+
+The Service Provider reserves the right to restrict or terminate a Client’s access to the community or services where the Client engages in abusive, threatening, or harassing conduct, subject to applicable law.
+
+SECTION: ✅ ACKNOWLEDGEMENT
+
+CONTENT: By proceeding with payment, the Client confirms:
+
+“I confirm that I have had the opportunity to read these Terms and Conditions. I understand that they form a binding agreement between me and the Service Provider/Brand. I understand the refund policy and agree to comply with these Terms before making payment.”',
+    'draft',
+    now()
+)
 ON CONFLICT (version) DO UPDATE
 SET title = EXCLUDED.title,
     document_hash = EXCLUDED.document_hash,

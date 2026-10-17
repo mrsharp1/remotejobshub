@@ -23,10 +23,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {
   TERMS_VERSION,
+  PREVIOUS_TERMS_VERSION,
+  PREVIOUS_TERMS_DOCUMENT_HASH,
   TERMS_TITLE,
   TERMS_LAST_UPDATED,
   TERMS_STATUS,
+  TERMS_PREAMBLE,
+  CLIENT_ACKNOWLEDGEMENT_STATEMENT,
   EXPECTED_CONSENT_AFFIRMATION,
+  TERMS_SECTIONS,
   CANONICAL_TERMS_TEXT,
   TERMS_DOCUMENT_HASH,
   buildCanonicalTermsText,
@@ -34,46 +39,93 @@ import {
 } from '../src/constants/terms.ts'
 
 // 1. Canonical Constants & Deterministic Cryptographic Fingerprint Verification
-test('Security Boundary 1: Canonical terms constants and cryptographic fingerprint integrity', async () => {
+test('Security Boundary 1: Canonical terms constants, section ordering, and cryptographic fingerprint integrity', async () => {
   const termsFilePath = path.resolve('src/constants/terms.ts')
   assert.ok(fs.existsSync(termsFilePath), 'terms.ts must exist')
 
   const termsContent = fs.readFileSync(termsFilePath, 'utf-8')
 
   // Verify canonical constants
-  assert.match(termsContent, /TERMS_VERSION\s*=\s*'2026-04-v1.0'/)
+  assert.match(termsContent, /TERMS_VERSION\s*=\s*'2026-04-v2.0'/)
+  assert.match(termsContent, /PREVIOUS_TERMS_VERSION\s*=\s*'2026-04-v1.0'/)
   assert.match(termsContent, /TERMS_TITLE\s*=\s*'Remote Jobs Hub Terms and Conditions'/)
   assert.match(termsContent, /TERMS_LAST_UPDATED\s*=\s*'April 2026'/)
   assert.match(termsContent, /TERMS_STATUS\s*:\s*.*=\s*'draft'/)
   assert.match(termsContent, /EXPECTED_CONSENT_AFFIRMATION\s*=/)
-  assert.match(termsContent, /TERMS_DOCUMENT_HASH\s*=\s*'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'/)
+  assert.match(
+    termsContent,
+    /TERMS_DOCUMENT_HASH\s*=\s*'c0a159f51cba332bab9f1ac335f674707973a125467fb50702eaf57ac31b2da8'/
+  )
 
   // Verify runtime exports and reproducible SHA-256 hash
-  assert.equal(TERMS_VERSION, '2026-04-v1.0')
+  assert.equal(TERMS_VERSION, '2026-04-v2.0')
+  assert.equal(PREVIOUS_TERMS_VERSION, '2026-04-v1.0')
+  assert.equal(
+    PREVIOUS_TERMS_DOCUMENT_HASH,
+    'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'
+  )
   assert.equal(TERMS_TITLE, 'Remote Jobs Hub Terms and Conditions')
   assert.equal(TERMS_LAST_UPDATED, 'April 2026')
   assert.equal(TERMS_STATUS, 'draft')
   assert.equal(
     EXPECTED_CONSENT_AFFIRMATION,
-    'I explicitly accept the Remote Jobs Hub Terms and Conditions version 2026-04-v1.0 and agree to be legally bound thereby.'
+    'I explicitly accept the Remote Jobs Hub Terms and Conditions version 2026-04-v2.0 and agree to be legally bound thereby.'
   )
+
+  // Verify exact 16 numbered sections + 5 final notices order (21 sections total)
+  const expectedTitles = [
+    '1. 📌 DEFINITIONS',
+    '2. 📌 NATURE OF SERVICE',
+    '3. ⚠️ NO EMPLOYMENT OR PARTNERSHIP GUARANTEE',
+    '4. ⚠️ NO GUARANTEE OF SPECIFIC PLATFORM ACCESS',
+    '5. 💼 MULTIPLE OPPORTUNITY STRUCTURE',
+    '6. 🏷️ ACCOUNT LISTINGS, VENDORS & AVAILABILITY',
+    '7. 💰 FEES AND PAYMENT TERMS',
+    '8. 🚫 NO INCOME GUARANTEE',
+    '9. 🌍 PLATFORM RULES AND COMPLIANCE',
+    '10. 📉 REFUND POLICY',
+    '11. 🤝 CLIENT RESPONSIBILITIES',
+    '12. 🔒 LIMITATION OF LIABILITY',
+    '13. 🔐 NO LEGAL OR EMPLOYMENT RELATIONSHIP',
+    '14. 📢 ACCEPTANCE OF TERMS',
+    '15. ⚠️ FINAL DISCLAIMER',
+    '16. ✅ CLIENT ACKNOWLEDGEMENT',
+    '⚠️ IMPORTANT — TERMS ACCEPTANCE & CONTRACT NOTICE',
+    '🚨 DO NOT MAKE PAYMENT IF YOU DO NOT AGREE',
+    '❌ NO REFUNDS',
+    '📢 PROFESSIONAL COMMUNICATION & CONDUCT',
+    '✅ ACKNOWLEDGEMENT',
+  ]
+  assert.equal(TERMS_SECTIONS.length, expectedTitles.length, 'Must have all 16 numbered sections + 5 notices')
+  assert.deepEqual(
+    TERMS_SECTIONS.map((s) => s.title),
+    expectedTitles,
+    'Section order and titles must match client source exactly'
+  )
+
+  // Verify subsections 6.1, 6.2, 7.1, 7.2 and final acknowledgement quote
+  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.1 Account Information'))
+  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.2 Vendor-Managed Access'))
+  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 7.1 Initial Payment'))
+  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 7.2 Performance-Based Fee'))
+  assert.ok(CANONICAL_TERMS_TEXT.includes(CLIENT_ACKNOWLEDGEMENT_STATEMENT))
+  assert.ok(CANONICAL_TERMS_TEXT.includes(`PREAMBLE: ${TERMS_PREAMBLE}`))
 
   const nodeSha256 = crypto.createHash('sha256').update(buildCanonicalTermsText(), 'utf8').digest('hex')
   const webCryptoSha256 = await computeClientTermsHash(CANONICAL_TERMS_TEXT)
   assert.equal(nodeSha256, TERMS_DOCUMENT_HASH, 'Node SHA-256 must match TERMS_DOCUMENT_HASH')
   assert.equal(webCryptoSha256, TERMS_DOCUMENT_HASH, 'Web Crypto SHA-256 must match TERMS_DOCUMENT_HASH')
 
-  // Verify SQL migration seed contains the exact canonical text and hash
+  // Verify SQL migration seed contains BOTH preserved 2026-04-v1.0 and new 2026-04-v2.0 canonical text and hash
   const migrationSql = fs.readFileSync(
     path.resolve('supabase/migrations/20261012000000_create_terms_acceptance_system.sql'),
     'utf-8'
   )
+  assert.ok(migrationSql.includes(PREVIOUS_TERMS_VERSION), 'Migration must preserve 2026-04-v1.0')
+  assert.ok(migrationSql.includes(PREVIOUS_TERMS_DOCUMENT_HASH), 'Migration must preserve 2026-04-v1.0 hash')
+  assert.ok(migrationSql.includes(TERMS_VERSION), 'Migration must seed 2026-04-v2.0')
   assert.ok(migrationSql.includes(TERMS_DOCUMENT_HASH), 'Migration must seed exact TERMS_DOCUMENT_HASH')
   assert.ok(migrationSql.includes(CANONICAL_TERMS_TEXT), 'Migration must seed exact CANONICAL_TERMS_TEXT')
-
-  // Verify preamble
-  const preamble = 'PREAMBLE: By accessing this page, communicating with the service provider, or making any form of payment, you ("Client") confirm that you have read, understood, and agreed to be legally bound by the following Terms and Conditions.'
-  assert.ok(termsContent.includes(preamble), 'Preamble must match client legal source')
 })
 
 // 2. Migration Schema Integrity & Immutability Contract
@@ -171,7 +223,14 @@ class SimulatedDatabaseEngine {
       title: 'Remote Jobs Hub Terms and Conditions',
       document_hash: 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
       content: 'CANONICAL CONTENT',
-      status: 'draft', // Baseline seeded as draft pending client approval
+      status: 'draft', // Historical v1.0 preserved
+    })
+    this.termsDocuments.set('2026-04-v2.0', {
+      version: '2026-04-v2.0',
+      title: 'Remote Jobs Hub Terms and Conditions',
+      document_hash: TERMS_DOCUMENT_HASH,
+      content: CANONICAL_TERMS_TEXT,
+      status: 'draft', // Client-supplied v2.0 seeded as draft pending publication approval
     })
     this.termsDocuments.set('2026-05-draft', {
       version: '2026-05-draft',
@@ -911,15 +970,15 @@ test('Scenario 15: Acceptance checkboxes start unchecked and block checkout unti
 // 18. Scenario 16: Checkout failure rollback and retry flow supersedes old intent and succeeds cleanly
 test('Scenario 16: Checkout failure rollback and retry flow supersedes old intent and succeeds cleanly', () => {
   const db = new SimulatedDatabaseEngine()
-  db.publishTerms('2026-04-v1.0')
+  db.publishTerms(TERMS_VERSION)
 
   // 1. Buyer-2 prepares an intent but has insufficient wallet balance (5000 < 52500)
   const firstPrep = db.rpc_prepare_checkout_terms_acceptance(
     'buyer-2',
     'listing-1',
-    '2026-04-v1.0',
+    TERMS_VERSION,
     TERMS_DOCUMENT_HASH,
-    VALID_AFFIRMATION('2026-04-v1.0')
+    VALID_AFFIRMATION(TERMS_VERSION)
   )
 
   assert.throws(
@@ -934,9 +993,9 @@ test('Scenario 16: Checkout failure rollback and retry flow supersedes old inten
   const retryPrep = db.rpc_prepare_checkout_terms_acceptance(
     'buyer-2',
     'listing-1',
-    '2026-04-v1.0',
+    TERMS_VERSION,
     TERMS_DOCUMENT_HASH,
-    VALID_AFFIRMATION('2026-04-v1.0')
+    VALID_AFFIRMATION(TERMS_VERSION)
   )
 
   // First pending token was automatically superseded/expired when retry token was issued
@@ -957,14 +1016,14 @@ test('Scenario 16: Checkout failure rollback and retry flow supersedes old inten
 // 19. Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authorization and verifies historical document hash
 test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authorization and verifies historical document hash', () => {
   const db = new SimulatedDatabaseEngine()
-  db.publishTerms('2026-04-v1.0')
+  db.publishTerms(TERMS_VERSION)
 
   const prep = db.rpc_prepare_checkout_terms_acceptance(
     'buyer-1',
     'listing-1',
-    '2026-04-v1.0',
+    TERMS_VERSION,
     TERMS_DOCUMENT_HASH,
-    VALID_AFFIRMATION('2026-04-v1.0')
+    VALID_AFFIRMATION(TERMS_VERSION)
   )
   const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
 
@@ -981,13 +1040,13 @@ test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authori
   )
 
   // Archive the terms version to prove historical document remains intact in receipt
-  db.mutateTermsDocument('2026-04-v1.0', 'archive')
+  db.mutateTermsDocument(TERMS_VERSION, 'archive')
 
   // Buyer-1 retrieves receipt + historical document with verified SHA-256 match
   const buyerReceipt = db.rpc_get_terms_acceptance_receipt('buyer-1', orderRes.order_id, false)
   assert.ok(buyerReceipt)
   assert.equal(buyerReceipt.acceptance.acceptance_reference, orderRes.acceptance_reference)
-  assert.equal(buyerReceipt.document?.version, '2026-04-v1.0')
+  assert.equal(buyerReceipt.document?.version, TERMS_VERSION)
   assert.equal(buyerReceipt.document?.status, 'archived')
   assert.equal(buyerReceipt.hash_verified, true)
 
@@ -1001,27 +1060,27 @@ test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authori
 // 20. Scenario 18: Accepted terms_documents records cannot be deleted or have their content/hash altered
 test('Scenario 18: Accepted terms_documents records cannot be deleted or have their content/hash altered', () => {
   const db = new SimulatedDatabaseEngine()
-  db.publishTerms('2026-04-v1.0')
+  db.publishTerms(TERMS_VERSION)
 
   const prep = db.rpc_prepare_checkout_terms_acceptance(
     'buyer-1',
     'listing-1',
-    '2026-04-v1.0',
+    TERMS_VERSION,
     TERMS_DOCUMENT_HASH,
-    VALID_AFFIRMATION('2026-04-v1.0')
+    VALID_AFFIRMATION(TERMS_VERSION)
   )
   db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
 
   assert.throws(
-    () => db.mutateTermsDocument('2026-04-v1.0', 'delete'),
+    () => db.mutateTermsDocument(TERMS_VERSION, 'delete'),
     /Cannot delete a terms_documents version that has recorded acceptances/
   )
   assert.throws(
-    () => db.mutateTermsDocument('2026-04-v1.0', 'update_content'),
+    () => db.mutateTermsDocument(TERMS_VERSION, 'update_content'),
     /Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances/
   )
   assert.throws(
-    () => db.mutateTermsDocument('2026-04-v1.0', 'update_hash'),
+    () => db.mutateTermsDocument(TERMS_VERSION, 'update_hash'),
     /Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances/
   )
 })
@@ -1029,14 +1088,14 @@ test('Scenario 18: Accepted terms_documents records cannot be deleted or have th
 // 21. Scenario 19: Bulk CSV and JSON export serialization with special characters and full field verification
 test('Scenario 19: Bulk CSV and JSON export serialization with special characters and full field verification', () => {
   const db = new SimulatedDatabaseEngine()
-  db.publishTerms('2026-04-v1.0')
+  db.publishTerms(TERMS_VERSION)
 
   const prep = db.rpc_prepare_checkout_terms_acceptance(
     'buyer-1',
     'listing-1',
-    '2026-04-v1.0',
+    TERMS_VERSION,
     TERMS_DOCUMENT_HASH,
-    VALID_AFFIRMATION('2026-04-v1.0')
+    VALID_AFFIRMATION(TERMS_VERSION)
   )
   const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
 
@@ -1112,7 +1171,7 @@ test('Scenario 19: Bulk CSV and JSON export serialization with special character
   assert.equal(parsedJson[0].acceptance_reference, orderRes.acceptance_reference)
   assert.equal(parsedJson[0].checkout_reference, orderRes.escrow_id)
   assert.equal(parsedJson[0].order_id, orderRes.order_id)
-  assert.equal(parsedJson[0].terms_version, '2026-04-v1.0')
+  assert.equal(parsedJson[0].terms_version, TERMS_VERSION)
   assert.equal(parsedJson[0].document_hash, TERMS_DOCUMENT_HASH)
 })
 

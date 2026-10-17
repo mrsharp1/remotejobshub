@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import {
   TERMS_VERSION,
   TERMS_LAST_UPDATED,
+  TERMS_STATUS,
+  TERMS_PREAMBLE,
   TERMS_DOCUMENT_HASH,
   TERMS_SECTIONS,
 } from '@/constants/terms'
@@ -39,6 +41,11 @@ export const TermsAcceptance: React.FC<TermsAcceptanceProps> = ({
           <span className="font-mono text-[11px] font-semibold text-indigo-300 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
             Version {TERMS_VERSION} ({TERMS_LAST_UPDATED})
           </span>
+          {TERMS_STATUS === 'draft' && (
+            <span className="font-mono text-[10px] font-bold uppercase text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              Draft
+            </span>
+          )}
         </div>
       </div>
       
@@ -85,7 +92,7 @@ export const TermsAcceptance: React.FC<TermsAcceptanceProps> = ({
             />
           </div>
           <span className="text-sm leading-relaxed text-slate-300 group-hover:text-slate-200 transition-colors">
-            I have read, understood, and agree to be bound by the{' '}
+            I confirm that I have had the opportunity to read, understand, and agree to be bound by the{' '}
             <Link
               to="/terms"
               target="_blank"
@@ -96,7 +103,7 @@ export const TermsAcceptance: React.FC<TermsAcceptanceProps> = ({
               Remote Jobs Hub Terms and Conditions (v{TERMS_VERSION})
               <ExternalLink className="h-3 w-3 inline" />
             </Link>{' '}
-            and{' '}
+            (including the Refund Policy and Vendor Availability terms) and{' '}
             <Link
               to="/privacy"
               target="_blank"
@@ -143,23 +150,56 @@ export const TermsAcceptance: React.FC<TermsAcceptanceProps> = ({
             </div>
 
             {/* Scrollable Terms Content */}
-            <div className="max-h-64 overflow-y-auto space-y-4 pr-2 text-xs leading-relaxed text-slate-300 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-              <p className="italic text-slate-400 text-[11px]">
-                By completing checkout and accepting these terms, you confirm that you have read, understood, and agreed to be legally bound by the following Terms and Conditions:
+            <div className="max-h-72 overflow-y-auto space-y-4 pr-2 text-xs leading-relaxed text-slate-300 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+              <p className="italic text-slate-300 text-[11px]">
+                {TERMS_PREAMBLE}
               </p>
 
-              {TERMS_SECTIONS.map((sec, index) => (
-                <div key={index} className="space-y-1.5 border-t border-white/5 pt-2">
+              {TERMS_SECTIONS.map((sec) => (
+                <div
+                  key={sec.id}
+                  className={`space-y-1.5 border-t border-white/5 pt-2.5 ${
+                    sec.isNotice ? 'rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3' : ''
+                  }`}
+                >
                   <h4 className="font-bold text-white text-[11px] uppercase tracking-wider text-indigo-300">
                     {sec.title}
                   </h4>
-                  <p className="whitespace-pre-line text-slate-300">{sec.content}</p>
+                  {sec.content && (
+                    <p className="whitespace-pre-line text-slate-300">{sec.content}</p>
+                  )}
                   {sec.bullets && sec.bullets.length > 0 && (
                     <ul className="list-disc pl-4 space-y-1 text-slate-400">
                       {sec.bullets.map((b, bIdx) => (
                         <li key={bIdx}>{b}</li>
                       ))}
                     </ul>
+                  )}
+                  {sec.subsections && sec.subsections.length > 0 && (
+                    <div className="space-y-2.5 pt-1">
+                      {sec.subsections.map((sub, sIdx) => (
+                        <div key={sIdx} className="space-y-1">
+                          {sub.heading && (
+                            <h5 className="font-semibold text-slate-200 text-[11px]">
+                              {sub.heading}
+                            </h5>
+                          )}
+                          {sub.content && (
+                            <p className="whitespace-pre-line text-slate-300">{sub.content}</p>
+                          )}
+                          {sub.bullets && sub.bullets.length > 0 && (
+                            <ul className="list-disc pl-4 space-y-1 text-slate-400">
+                              {sub.bullets.map((sb, sbIdx) => (
+                                <li key={sbIdx}>{sb}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {sub.footer && (
+                            <p className="italic text-[11px] text-slate-400">{sub.footer}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                   {sec.footer && (
                     <p className="italic text-[11px] text-slate-400">{sec.footer}</p>
@@ -170,7 +210,7 @@ export const TermsAcceptance: React.FC<TermsAcceptanceProps> = ({
 
             <div className="flex justify-between items-center pt-2 border-t border-white/5 text-[11px]">
               <span className="text-slate-400">
-                Official document version {TERMS_VERSION}
+                Document version {TERMS_VERSION} (Status: {TERMS_STATUS.toUpperCase()})
               </span>
               <Link
                 to="/terms"
