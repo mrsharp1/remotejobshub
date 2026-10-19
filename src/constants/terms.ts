@@ -30,7 +30,7 @@ export const PREVIOUS_TERMS_VERSION = '2026-04-v1.0'
 export const PREVIOUS_TERMS_DOCUMENT_HASH = 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'
 export const TERMS_TITLE = 'Remote Jobs Hub Terms and Conditions'
 export const TERMS_LAST_UPDATED = 'April 2026'
-export const TERMS_STATUS: 'published' | 'draft' | 'archived' = 'draft'
+export const TERMS_STATUS: 'published' | 'draft' | 'archived' = 'published'
 
 export const TERMS_PREAMBLE =
   'By accessing this page, clicking the “Chat Me” button, communicating with the Service Provider or a Vendor, making any payment, or joining the community, you (“Client”) confirm that you have read, understood, and agreed to these Terms and Conditions.'

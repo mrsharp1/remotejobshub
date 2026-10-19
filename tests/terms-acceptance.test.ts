@@ -50,7 +50,7 @@ test('Security Boundary 1: Canonical terms constants, section ordering, and cryp
   assert.match(termsContent, /PREVIOUS_TERMS_VERSION\s*=\s*'2026-04-v1.0'/)
   assert.match(termsContent, /TERMS_TITLE\s*=\s*'Remote Jobs Hub Terms and Conditions'/)
   assert.match(termsContent, /TERMS_LAST_UPDATED\s*=\s*'April 2026'/)
-  assert.match(termsContent, /TERMS_STATUS\s*:\s*.*=\s*'draft'/)
+  assert.match(termsContent, /TERMS_STATUS\s*:\s*.*=\s*'published'/)
   assert.match(termsContent, /EXPECTED_CONSENT_AFFIRMATION\s*=/)
   assert.match(
     termsContent,
@@ -66,7 +66,7 @@ test('Security Boundary 1: Canonical terms constants, section ordering, and cryp
   )
   assert.equal(TERMS_TITLE, 'Remote Jobs Hub Terms and Conditions')
   assert.equal(TERMS_LAST_UPDATED, 'April 2026')
-  assert.equal(TERMS_STATUS, 'draft')
+  assert.equal(TERMS_STATUS, 'published')
   assert.equal(
     EXPECTED_CONSENT_AFFIRMATION,
     'I explicitly accept the Remote Jobs Hub Terms and Conditions version 2026-04-v2.0 and agree to be legally bound thereby.'
