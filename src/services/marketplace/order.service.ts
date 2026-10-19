@@ -39,6 +39,18 @@ export interface TermsDocumentRecord {
   created_at: string
 }
 
+export interface CheckoutWithWalletResult {
+  success: boolean
+  order_id: string
+  escrow_id: string
+  terms_acceptance_id: string
+  acceptance_reference: string
+  terms_version: string
+  document_hash: string
+  accepted_at: string
+  message?: string
+}
+
 export const orderService = {
   async prepareTermsAcceptance(
     listingId: string,
@@ -47,23 +59,33 @@ export const orderService = {
       documentHash: string
       consentAffirmation?: string
     }
-  ): Promise<{ acceptance_token: string; terms_version: string; document_hash: string; expires_at: string }> {
+  ): Promise<{
+    acceptance_token: string
+    terms_version: string
+    document_hash: string
+    expires_at: string
+  }> {
     const affirmation =
       payload.consentAffirmation !== undefined
         ? payload.consentAffirmation
         : EXPECTED_CONSENT_AFFIRMATION ||
           `I explicitly accept the Remote Jobs Hub Terms and Conditions version ${payload.termsVersion} and agree to be legally bound thereby.`
 
-    const { data, error } = await supabase.rpc('rpc_prepare_checkout_terms_acceptance', {
-      p_listing_id: listingId,
-      p_terms_version: payload.termsVersion,
-      p_document_hash: payload.documentHash,
-      p_consent_affirmation: affirmation,
-    })
+    const { data, error } = await supabase.rpc(
+      'rpc_prepare_checkout_terms_acceptance',
+      {
+        p_listing_id: listingId,
+        p_terms_version: payload.termsVersion,
+        p_document_hash: payload.documentHash,
+        p_consent_affirmation: affirmation,
+      }
+    )
 
     if (error) {
       console.error('Error in prepareTermsAcceptance:', error)
-      throw new Error(error.message || 'Failed to prepare terms acceptance token')
+      throw new Error(
+        error.message || 'Failed to prepare terms acceptance token'
+      )
     }
 
     return data
@@ -72,7 +94,7 @@ export const orderService = {
   async checkoutWithWallet(
     listingId: string,
     termsPayload?: TermsAcceptancePayload
-  ): Promise<any> {
+  ): Promise<CheckoutWithWalletResult> {
     try {
       const userAgent =
         termsPayload?.userAgent ||
@@ -111,10 +133,10 @@ export const orderService = {
       // Notifications are now handled purely by the rpc_checkout_with_wallet trigger/rpc natively
       // to guarantee atomicity and prevent duplicate notifications.
 
-      return data
-    } catch (err: any) {
+      return data as CheckoutWithWalletResult
+    } catch (err: unknown) {
       console.error('Error in checkoutWithWallet:', err)
-      throw new Error(err.message || 'Checkout failed')
+      throw new Error(err instanceof Error ? err.message : 'Checkout failed')
     }
   },
 
@@ -122,7 +144,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('buyer_id', buyerId)
         .order('created_at', { ascending: false })
 
@@ -138,7 +162,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('seller_id', sellerId)
         .order('created_at', { ascending: false })
 
@@ -154,7 +180,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('id', id)
         .single()
 
@@ -171,16 +199,33 @@ export const orderService = {
 
   async markSellerProcessing(orderId: string, sellerId: string): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
-      if (order.status !== 'payment_received') throw new Error('Invalid state transition: order must be payment_received')
+      if (order.seller_id !== sellerId)
+        throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'payment_received')
+        throw new Error(
+          'Invalid state transition: order must be payment_received'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'seller_processing' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'seller_processing' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'seller_processing', notes: 'Seller has accepted and is processing your account transfer.' }])
+      await supabase.from('order_timeline').insert([
+        {
+          order_id: orderId,
+          status: 'seller_processing',
+          notes: 'Seller has accepted and is processing your account transfer.',
+        },
+      ])
     } catch (err) {
       console.error('Error in markSellerProcessing:', err)
       throw err
@@ -189,54 +234,104 @@ export const orderService = {
 
   async markBuyerReview(orderId: string, sellerId: string): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
-      if (order.status !== 'seller_processing') throw new Error('Invalid state transition: order must be seller_processing')
+      if (order.seller_id !== sellerId)
+        throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'seller_processing')
+        throw new Error(
+          'Invalid state transition: order must be seller_processing'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'buyer_review' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'buyer_review' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'buyer_review', notes: 'Listing details submitted for final review.' }])
+      await supabase.from('order_timeline').insert([
+        {
+          order_id: orderId,
+          status: 'buyer_review',
+          notes: 'Listing details submitted for final review.',
+        },
+      ])
     } catch (err) {
       console.error('Error in markBuyerReview:', err)
       throw err
     }
   },
 
-  async markDisputed(orderId: string, userId: string, notes: string): Promise<void> {
+  async markDisputed(
+    orderId: string,
+    userId: string,
+    notes: string
+  ): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.buyer_id !== userId && order.seller_id !== userId) throw new Error('Unauthorized: only participants can dispute')
-      if (['completed', 'cancelled', 'disputed'].includes(order.status)) throw new Error('Invalid state transition: order is already in a terminal state')
+      if (order.buyer_id !== userId && order.seller_id !== userId)
+        throw new Error('Unauthorized: only participants can dispute')
+      if (['completed', 'cancelled', 'disputed'].includes(order.status))
+        throw new Error(
+          'Invalid state transition: order is already in a terminal state'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'disputed' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'disputed' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'disputed', notes }])
+      await supabase
+        .from('order_timeline')
+        .insert([{ order_id: orderId, status: 'disputed', notes }])
     } catch (err) {
       console.error('Error in markDisputed:', err)
       throw err
     }
   },
 
-  async cancelOrder(orderId: string, userId: string, notes: string): Promise<void> {
+  async cancelOrder(
+    orderId: string,
+    userId: string,
+    notes: string
+  ): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== userId && order.buyer_id !== userId) throw new Error('Unauthorized: only participants can cancel')
+      if (order.seller_id !== userId && order.buyer_id !== userId)
+        throw new Error('Unauthorized: only participants can cancel')
       if (order.status !== 'pending' && order.status !== 'payment_pending') {
-        throw new Error('Order has already been funded or processed. Please contact support to cancel.')
+        throw new Error(
+          'Order has already been funded or processed. Please contact support to cancel.'
+        )
       }
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'cancelled', notes }])
+      await supabase
+        .from('order_timeline')
+        .insert([{ order_id: orderId, status: 'cancelled', notes }])
     } catch (err) {
       console.error('Error in cancelOrder:', err)
       throw err
@@ -274,7 +369,9 @@ export const orderService = {
             message_text: messageText,
           },
         ])
-        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`
+        )
         .single()
 
       if (error) throw error
@@ -289,7 +386,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('order_messages')
-        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('order_id', orderId)
         .order('created_at', { ascending: true })
 
@@ -305,7 +404,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -316,7 +417,9 @@ export const orderService = {
     }
   },
 
-  async getTermsAcceptance(orderId: string): Promise<TermsAcceptanceRecord | null> {
+  async getTermsAcceptance(
+    orderId: string
+  ): Promise<TermsAcceptanceRecord | null> {
     try {
       const { data, error } = await supabase
         .from('terms_acceptances')
@@ -335,7 +438,9 @@ export const orderService = {
     }
   },
 
-  async getTermsAcceptanceByReference(reference: string): Promise<TermsAcceptanceRecord | null> {
+  async getTermsAcceptanceByReference(
+    reference: string
+  ): Promise<TermsAcceptanceRecord | null> {
     try {
       const { data, error } = await supabase
         .from('terms_acceptances')
@@ -379,9 +484,12 @@ export const orderService = {
     hash_verified: boolean
   } | null> {
     try {
-      const { data, error } = await supabase.rpc('rpc_get_terms_acceptance_receipt', {
-        p_order_id: orderId,
-      })
+      const { data, error } = await supabase.rpc(
+        'rpc_get_terms_acceptance_receipt',
+        {
+          p_order_id: orderId,
+        }
+      )
 
       if (!error && data && data.acceptance) {
         return data as {
@@ -398,7 +506,9 @@ export const orderService = {
       return {
         acceptance,
         document,
-        hash_verified: Boolean(document && document.document_hash === acceptance.document_hash),
+        hash_verified: Boolean(
+          document && document.document_hash === acceptance.document_hash
+        ),
       }
     } catch (err) {
       console.error('Error in getTermsAcceptanceReceipt:', err)
@@ -412,10 +522,13 @@ export const orderService = {
   }): Promise<TermsAcceptanceRecord[]> {
     try {
       // 1. Try server-enforced security definer RPC first
-      const { data: rpcData, error: rpcError } = await supabase.rpc('rpc_export_terms_acceptances', {
-        p_terms_version: options?.termsVersion || null,
-        p_limit: options?.limit || 1000,
-      })
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        'rpc_export_terms_acceptances',
+        {
+          p_terms_version: options?.termsVersion || null,
+          p_limit: options?.limit || 1000,
+        }
+      )
 
       if (!rpcError && rpcData) {
         return rpcData as TermsAcceptanceRecord[]
@@ -441,9 +554,13 @@ export const orderService = {
       }
 
       return (data || []) as TermsAcceptanceRecord[]
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error in getAdminTermsAcceptanceLedger:', err)
-      throw new Error(err?.message || 'Access denied. Administrator privileges required.')
+      throw new Error(
+        err instanceof Error
+          ? err.message
+          : 'Access denied. Administrator privileges required.'
+      )
     }
   },
 
@@ -462,7 +579,7 @@ export const orderService = {
       'Created At (ISO)',
     ]
 
-    const escapeCsv = (val: any) => {
+    const escapeCsv = (val: string | number | boolean | null | undefined) => {
       if (val === null || val === undefined) return '""'
       const str = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""')
       return `"${str}"`
@@ -504,7 +621,10 @@ export const orderService = {
     return JSON.stringify(normalized, null, 2)
   },
 
-  downloadAcceptanceLedger(records: TermsAcceptanceRecord[], format: 'csv' | 'json' = 'csv') {
+  downloadAcceptanceLedger(
+    records: TermsAcceptanceRecord[],
+    format: 'csv' | 'json' = 'csv'
+  ) {
     const dateStr = new Date().toISOString().split('T')[0]
     let content: string
     let mimeType: string

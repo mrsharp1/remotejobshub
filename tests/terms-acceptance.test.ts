@@ -48,7 +48,10 @@ test('Security Boundary 1: Canonical terms constants, section ordering, and cryp
   // Verify canonical constants
   assert.match(termsContent, /TERMS_VERSION\s*=\s*'2026-04-v2.0'/)
   assert.match(termsContent, /PREVIOUS_TERMS_VERSION\s*=\s*'2026-04-v1.0'/)
-  assert.match(termsContent, /TERMS_TITLE\s*=\s*'Remote Jobs Hub Terms and Conditions'/)
+  assert.match(
+    termsContent,
+    /TERMS_TITLE\s*=\s*'Remote Jobs Hub Terms and Conditions'/
+  )
   assert.match(termsContent, /TERMS_LAST_UPDATED\s*=\s*'April 2026'/)
   assert.match(termsContent, /TERMS_STATUS\s*:\s*.*=\s*'published'/)
   assert.match(termsContent, /EXPECTED_CONSENT_AFFIRMATION\s*=/)
@@ -96,7 +99,11 @@ test('Security Boundary 1: Canonical terms constants, section ordering, and cryp
     '📢 PROFESSIONAL COMMUNICATION & CONDUCT',
     '✅ ACKNOWLEDGEMENT',
   ]
-  assert.equal(TERMS_SECTIONS.length, expectedTitles.length, 'Must have all 16 numbered sections + 5 notices')
+  assert.equal(
+    TERMS_SECTIONS.length,
+    expectedTitles.length,
+    'Must have all 16 numbered sections + 5 notices'
+  )
   assert.deepEqual(
     TERMS_SECTIONS.map((s) => s.title),
     expectedTitles,
@@ -104,115 +111,298 @@ test('Security Boundary 1: Canonical terms constants, section ordering, and cryp
   )
 
   // Verify subsections 6.1, 6.2, 7.1, 7.2 and final acknowledgement quote
-  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.1 Account Information'))
-  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.2 Vendor-Managed Access'))
+  assert.ok(
+    CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.1 Account Information')
+  )
+  assert.ok(
+    CANONICAL_TERMS_TEXT.includes('SUBSECTION: 6.2 Vendor-Managed Access')
+  )
   assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 7.1 Initial Payment'))
-  assert.ok(CANONICAL_TERMS_TEXT.includes('SUBSECTION: 7.2 Performance-Based Fee'))
+  assert.ok(
+    CANONICAL_TERMS_TEXT.includes('SUBSECTION: 7.2 Performance-Based Fee')
+  )
   assert.ok(CANONICAL_TERMS_TEXT.includes(CLIENT_ACKNOWLEDGEMENT_STATEMENT))
   assert.ok(CANONICAL_TERMS_TEXT.includes(`PREAMBLE: ${TERMS_PREAMBLE}`))
 
-  const nodeSha256 = crypto.createHash('sha256').update(buildCanonicalTermsText(), 'utf8').digest('hex')
+  const nodeSha256 = crypto
+    .createHash('sha256')
+    .update(buildCanonicalTermsText(), 'utf8')
+    .digest('hex')
   const webCryptoSha256 = await computeClientTermsHash(CANONICAL_TERMS_TEXT)
-  assert.equal(nodeSha256, TERMS_DOCUMENT_HASH, 'Node SHA-256 must match TERMS_DOCUMENT_HASH')
-  assert.equal(webCryptoSha256, TERMS_DOCUMENT_HASH, 'Web Crypto SHA-256 must match TERMS_DOCUMENT_HASH')
+  assert.equal(
+    nodeSha256,
+    TERMS_DOCUMENT_HASH,
+    'Node SHA-256 must match TERMS_DOCUMENT_HASH'
+  )
+  assert.equal(
+    webCryptoSha256,
+    TERMS_DOCUMENT_HASH,
+    'Web Crypto SHA-256 must match TERMS_DOCUMENT_HASH'
+  )
 
   // Verify SQL migration seed contains BOTH preserved 2026-04-v1.0 and new 2026-04-v2.0 canonical text and hash
   const migrationSql = fs.readFileSync(
-    path.resolve('supabase/migrations/20261012000000_create_terms_acceptance_system.sql'),
+    path.resolve(
+      'supabase/migrations/20261012000000_create_terms_acceptance_system.sql'
+    ),
     'utf-8'
   )
-  assert.ok(migrationSql.includes(PREVIOUS_TERMS_VERSION), 'Migration must preserve 2026-04-v1.0')
-  assert.ok(migrationSql.includes(PREVIOUS_TERMS_DOCUMENT_HASH), 'Migration must preserve 2026-04-v1.0 hash')
-  assert.ok(migrationSql.includes(TERMS_VERSION), 'Migration must seed 2026-04-v2.0')
-  assert.ok(migrationSql.includes(TERMS_DOCUMENT_HASH), 'Migration must seed exact TERMS_DOCUMENT_HASH')
-  assert.ok(migrationSql.includes(CANONICAL_TERMS_TEXT), 'Migration must seed exact CANONICAL_TERMS_TEXT')
+  assert.ok(
+    migrationSql.includes(PREVIOUS_TERMS_VERSION),
+    'Migration must preserve 2026-04-v1.0'
+  )
+  assert.ok(
+    migrationSql.includes(PREVIOUS_TERMS_DOCUMENT_HASH),
+    'Migration must preserve 2026-04-v1.0 hash'
+  )
+  assert.ok(
+    migrationSql.includes(TERMS_VERSION),
+    'Migration must seed 2026-04-v2.0'
+  )
+  assert.ok(
+    migrationSql.includes(TERMS_DOCUMENT_HASH),
+    'Migration must seed exact TERMS_DOCUMENT_HASH'
+  )
+  assert.ok(
+    migrationSql.includes(CANONICAL_TERMS_TEXT),
+    'Migration must seed exact CANONICAL_TERMS_TEXT'
+  )
 })
 
 // 2. Migration Schema Integrity & Immutability Contract
 test('Database Contract: Migration creates tables, RESTRICT constraints, immutability trigger, and RPCs', () => {
-  const migrationPath = path.resolve('supabase/migrations/20261012000000_create_terms_acceptance_system.sql')
+  const migrationPath = path.resolve(
+    'supabase/migrations/20261012000000_create_terms_acceptance_system.sql'
+  )
   assert.ok(fs.existsSync(migrationPath), 'Migration file must exist')
 
   const sql = fs.readFileSync(migrationPath, 'utf-8')
 
   // Verify terms_documents
-  assert.ok(sql.includes('CREATE TABLE IF NOT EXISTS public.terms_documents'), 'terms_documents table created')
-  assert.ok(sql.includes("status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived'))"))
+  assert.ok(
+    sql.includes('CREATE TABLE IF NOT EXISTS public.terms_documents'),
+    'terms_documents table created'
+  )
+  assert.ok(
+    sql.includes(
+      "status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived'))"
+    )
+  )
   assert.ok(sql.includes("'draft',"), 'Baseline seed status is draft')
-  assert.ok(sql.includes("status = 'draft';"), 'ON CONFLICT forces draft status')
-  assert.ok(sql.includes('Invalid or missing consent affirmation statement.'), 'RPC validates exact affirmative statement')
+  assert.ok(
+    sql.includes("status = 'draft';"),
+    'ON CONFLICT forces draft status'
+  )
+  assert.ok(
+    sql.includes('Invalid or missing consent affirmation statement.'),
+    'RPC validates exact affirmative statement'
+  )
 
   // Verify terms_acceptance_intents (server consent challenge tokens)
-  assert.ok(sql.includes('CREATE TABLE IF NOT EXISTS public.terms_acceptance_intents'), 'terms_acceptance_intents table created')
-  assert.ok(sql.includes("status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'consumed', 'expired'))"))
+  assert.ok(
+    sql.includes('CREATE TABLE IF NOT EXISTS public.terms_acceptance_intents'),
+    'terms_acceptance_intents table created'
+  )
+  assert.ok(
+    sql.includes(
+      "status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'consumed', 'expired'))"
+    )
+  )
 
   // Verify terms_acceptances with ON DELETE RESTRICT (never cascade!)
-  assert.ok(sql.includes('CREATE TABLE IF NOT EXISTS public.terms_acceptances'), 'terms_acceptances table created')
-  assert.ok(sql.includes('buyer_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT'), 'buyer_id uses RESTRICT')
-  assert.ok(sql.includes('order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE RESTRICT'), 'order_id uses RESTRICT')
-  assert.ok(sql.includes('listing_id uuid NOT NULL REFERENCES public.listings(id) ON DELETE RESTRICT'), 'listing_id uses RESTRICT')
-  assert.ok(sql.includes('acceptance_reference text NOT NULL UNIQUE'), 'acceptance_reference unique')
+  assert.ok(
+    sql.includes('CREATE TABLE IF NOT EXISTS public.terms_acceptances'),
+    'terms_acceptances table created'
+  )
+  assert.ok(
+    sql.includes(
+      'buyer_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT'
+    ),
+    'buyer_id uses RESTRICT'
+  )
+  assert.ok(
+    sql.includes(
+      'order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE RESTRICT'
+    ),
+    'order_id uses RESTRICT'
+  )
+  assert.ok(
+    sql.includes(
+      'listing_id uuid NOT NULL REFERENCES public.listings(id) ON DELETE RESTRICT'
+    ),
+    'listing_id uses RESTRICT'
+  )
+  assert.ok(
+    sql.includes('acceptance_reference text NOT NULL UNIQUE'),
+    'acceptance_reference unique'
+  )
 
   // Verify immutability trigger
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.prevent_terms_acceptance_mutation()'), 'Immutability function exists')
-  assert.ok(sql.includes('CREATE TRIGGER trg_immutable_terms_acceptances'), 'Immutability trigger exists')
+  assert.ok(
+    sql.includes(
+      'CREATE OR REPLACE FUNCTION public.prevent_terms_acceptance_mutation()'
+    ),
+    'Immutability function exists'
+  )
+  assert.ok(
+    sql.includes('CREATE TRIGGER trg_immutable_terms_acceptances'),
+    'Immutability trigger exists'
+  )
 
   // Verify RLS policies and privilege revocations
-  assert.ok(sql.includes('ALTER TABLE public.terms_documents ENABLE ROW LEVEL SECURITY;'))
-  assert.ok(sql.includes('ALTER TABLE public.terms_acceptance_intents ENABLE ROW LEVEL SECURITY;'))
-  assert.ok(sql.includes('ALTER TABLE public.terms_acceptances ENABLE ROW LEVEL SECURITY;'))
-  assert.ok(sql.includes('REVOKE INSERT, UPDATE, DELETE ON public.terms_acceptances FROM PUBLIC, anon, authenticated;'))
-  assert.ok(sql.includes('CREATE POLICY "Anyone can view published or accepted terms documents"'), 'terms_documents allows viewing published or accepted terms')
+  assert.ok(
+    sql.includes(
+      'ALTER TABLE public.terms_documents ENABLE ROW LEVEL SECURITY;'
+    )
+  )
+  assert.ok(
+    sql.includes(
+      'ALTER TABLE public.terms_acceptance_intents ENABLE ROW LEVEL SECURITY;'
+    )
+  )
+  assert.ok(
+    sql.includes(
+      'ALTER TABLE public.terms_acceptances ENABLE ROW LEVEL SECURITY;'
+    )
+  )
+  assert.ok(
+    sql.includes(
+      'REVOKE INSERT, UPDATE, DELETE ON public.terms_acceptances FROM PUBLIC, anon, authenticated;'
+    )
+  )
+  assert.ok(
+    sql.includes(
+      'CREATE POLICY "Anyone can view published or accepted terms documents"'
+    ),
+    'terms_documents allows viewing published or accepted terms'
+  )
 
   // Verify function signatures and search path hardening
   assert.ok(
-    sql.includes('-- DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);'),
+    sql.includes(
+      '-- DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid);'
+    ),
     'Old 1-arg signature drop is deferred to post-cutover cleanup for rollout compatibility'
   )
   assert.equal(
-    /^\s*DROP FUNCTION IF EXISTS public\.rpc_checkout_with_wallet\(uuid\);/m.test(sql),
+    /^\s*DROP FUNCTION IF EXISTS public\.rpc_checkout_with_wallet\(uuid\);/m.test(
+      sql
+    ),
     false,
     'Migration must not unconditionally drop 1-arg rpc_checkout_with_wallet(uuid) before frontend cutover'
   )
-  assert.ok(sql.includes('DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid, text, text, text, text);'), 'Intermediate signature dropped')
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_prepare_checkout_terms_acceptance('), 'Preparation RPC exists')
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_checkout_with_wallet('), 'Hardened checkout RPC exists')
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_export_terms_acceptances('), 'Admin export RPC exists')
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.rpc_get_terms_acceptance_receipt('), 'Receipt retrieval RPC exists')
-  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.is_admin()'), 'Admin helper function ensured')
-  assert.ok(sql.includes('SET search_path = public, pg_temp'), 'Safe search_path with pg_temp set')
-  assert.ok(sql.includes("WHERE public.terms_documents.status = 'draft';"), 'ON CONFLICT DO UPDATE never demotes published documents')
+  assert.ok(
+    sql.includes(
+      'DROP FUNCTION IF EXISTS public.rpc_checkout_with_wallet(uuid, text, text, text, text);'
+    ),
+    'Intermediate signature dropped'
+  )
+  assert.ok(
+    sql.includes(
+      'CREATE OR REPLACE FUNCTION public.rpc_prepare_checkout_terms_acceptance('
+    ),
+    'Preparation RPC exists'
+  )
+  assert.ok(
+    sql.includes('CREATE OR REPLACE FUNCTION public.rpc_checkout_with_wallet('),
+    'Hardened checkout RPC exists'
+  )
+  assert.ok(
+    sql.includes(
+      'CREATE OR REPLACE FUNCTION public.rpc_export_terms_acceptances('
+    ),
+    'Admin export RPC exists'
+  )
+  assert.ok(
+    sql.includes(
+      'CREATE OR REPLACE FUNCTION public.rpc_get_terms_acceptance_receipt('
+    ),
+    'Receipt retrieval RPC exists'
+  )
+  assert.ok(
+    sql.includes('CREATE OR REPLACE FUNCTION public.is_admin()'),
+    'Admin helper function ensured'
+  )
+  assert.ok(
+    sql.includes('SET search_path = public, pg_temp'),
+    'Safe search_path with pg_temp set'
+  )
+  assert.ok(
+    sql.includes("WHERE public.terms_documents.status = 'draft';"),
+    'ON CONFLICT DO UPDATE never demotes published documents'
+  )
 
   // Verify live wallet checkout parity: integer fee rounding, repeat purchases allowed, listing stays published
-  assert.ok(sql.includes('v_fee := ROUND(v_amount * 0.05);'), 'Exact verified live integer fee rounding preserved')
-  assert.equal(sql.includes('ROUND(v_amount * 0.05, 2)'), false, 'Does not silently alter live fee rounding')
-  assert.equal(sql.includes('v_existing_order'), false, 'Repeat purchases by same buyer are allowed')
-  assert.equal(/SET\s+status\s*=\s*'sold'/i.test(sql), false, 'Listings remain published after purchase')
+  assert.ok(
+    sql.includes('v_fee := ROUND(v_amount * 0.05);'),
+    'Exact verified live integer fee rounding preserved'
+  )
+  assert.equal(
+    sql.includes('ROUND(v_amount * 0.05, 2)'),
+    false,
+    'Does not silently alter live fee rounding'
+  )
+  assert.equal(
+    sql.includes('v_existing_order'),
+    false,
+    'Repeat purchases by same buyer are allowed'
+  )
+  assert.equal(
+    /SET\s+status\s*=\s*'sold'/i.test(sql),
+    false,
+    'Listings remain published after purchase'
+  )
 
   // Verify exact buyer and seller notifications with trigger deduplication
-  assert.ok(sql.includes("'Escrow Payment Confirmed 💳'"), 'Buyer escrow payment notification preserved')
-  assert.ok(sql.includes("'Payment Secured in Escrow 💳'"), 'Seller escrow payment notification preserved')
-  assert.ok(sql.includes('UPDATE public.notifications') && sql.includes('IF NOT FOUND THEN'), 'Trigger-created notifications are updated in-place to prevent duplicate rows')
+  assert.ok(
+    sql.includes("'Escrow Payment Confirmed 💳'"),
+    'Buyer escrow payment notification preserved'
+  )
+  assert.ok(
+    sql.includes("'Payment Secured in Escrow 💳'"),
+    'Seller escrow payment notification preserved'
+  )
+  assert.ok(
+    sql.includes('UPDATE public.notifications') &&
+      sql.includes('IF NOT FOUND THEN'),
+    'Trigger-created notifications are updated in-place to prevent duplicate rows'
+  )
 
   // Verify RPC execution grants: PUBLIC and anon revoked; authenticated and service_role granted on all 4 Terms RPCs
   assert.ok(
-    sql.includes('REVOKE ALL ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) FROM PUBLIC, anon;') &&
-    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) TO authenticated, service_role;'),
+    sql.includes(
+      'REVOKE ALL ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) FROM PUBLIC, anon;'
+    ) &&
+      sql.includes(
+        'GRANT EXECUTE ON FUNCTION public.rpc_prepare_checkout_terms_acceptance(uuid, text, text, text) TO authenticated, service_role;'
+      ),
     'rpc_prepare_checkout_terms_acceptance grants hardened for authenticated and service_role'
   )
   assert.ok(
-    sql.includes('REVOKE ALL ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) FROM PUBLIC, anon;') &&
-    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) TO authenticated, service_role;'),
+    sql.includes(
+      'REVOKE ALL ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) FROM PUBLIC, anon;'
+    ) &&
+      sql.includes(
+        'GRANT EXECUTE ON FUNCTION public.rpc_checkout_with_wallet(uuid, uuid, text, text, text, text) TO authenticated, service_role;'
+      ),
     '6-arg rpc_checkout_with_wallet grants hardened for authenticated and service_role'
   )
   assert.ok(
-    sql.includes('REVOKE ALL ON FUNCTION public.rpc_export_terms_acceptances(text, int) FROM PUBLIC, anon;') &&
-    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated, service_role;'),
+    sql.includes(
+      'REVOKE ALL ON FUNCTION public.rpc_export_terms_acceptances(text, int) FROM PUBLIC, anon;'
+    ) &&
+      sql.includes(
+        'GRANT EXECUTE ON FUNCTION public.rpc_export_terms_acceptances(text, int) TO authenticated, service_role;'
+      ),
     'rpc_export_terms_acceptances grants hardened for authenticated and service_role'
   )
   assert.ok(
-    sql.includes('REVOKE ALL ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) FROM PUBLIC, anon;') &&
-    sql.includes('GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated, service_role;'),
+    sql.includes(
+      'REVOKE ALL ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) FROM PUBLIC, anon;'
+    ) &&
+      sql.includes(
+        'GRANT EXECUTE ON FUNCTION public.rpc_get_terms_acceptance_receipt(uuid) TO authenticated, service_role;'
+      ),
     'rpc_get_terms_acceptance_receipt grants hardened for authenticated and service_role'
   )
 })
@@ -257,15 +447,25 @@ class SimulatedDatabaseEngine {
   termsDocuments: Map<string, TermsDocument> = new Map()
   intents: Map<string, TermsAcceptanceIntent> = new Map()
   acceptances: TermsAcceptance[] = []
-  orders: any[] = []
-  wallets: Map<string, { available_balance: number; escrow_balance: number }> = new Map()
-  listings: Map<string, { id: string; seller_id: string; price: number; status: string }> = new Map()
+  orders: Array<{
+    id: string
+    buyer_id: string
+    listing_id: string
+    amount: number
+  }> = []
+  wallets: Map<string, { available_balance: number; escrow_balance: number }> =
+    new Map()
+  listings: Map<
+    string,
+    { id: string; seller_id: string; price: number; status: string }
+  > = new Map()
 
   constructor() {
     this.termsDocuments.set('2026-04-v1.0', {
       version: '2026-04-v1.0',
       title: 'Remote Jobs Hub Terms and Conditions',
-      document_hash: 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
+      document_hash:
+        'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
       content: 'CANONICAL CONTENT',
       status: 'draft', // Historical v1.0 preserved
     })
@@ -279,7 +479,8 @@ class SimulatedDatabaseEngine {
     this.termsDocuments.set('2026-05-draft', {
       version: '2026-05-draft',
       title: 'Draft Terms',
-      document_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      document_hash:
+        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       content: 'DRAFT CONTENT',
       status: 'draft',
     })
@@ -320,18 +521,30 @@ class SimulatedDatabaseEngine {
   ) {
     if (!buyerId) throw new Error('Not authenticated')
     const expectedAffirmation = `I explicitly accept the Remote Jobs Hub Terms and Conditions version ${termsVersion} and agree to be legally bound thereby.`
-    if (!consentAffirmation || consentAffirmation.trim() !== expectedAffirmation) {
+    if (
+      !consentAffirmation ||
+      consentAffirmation.trim() !== expectedAffirmation
+    ) {
       throw new Error('Invalid or missing consent affirmation statement.')
     }
     const listing = this.listings.get(listingId)
     if (!listing) throw new Error('Listing not found')
-    if (listing.seller_id === buyerId) throw new Error('Cannot purchase your own listing')
-    if (listing.status !== 'published') throw new Error('Listing is no longer available for purchase')
+    if (listing.seller_id === buyerId)
+      throw new Error('Cannot purchase your own listing')
+    if (listing.status !== 'published')
+      throw new Error('Listing is no longer available for purchase')
 
     const doc = this.termsDocuments.get(termsVersion)
-    if (!doc) throw new Error(`Invalid terms version specified: ${termsVersion}`)
-    if (doc.status !== 'published') throw new Error(`The specified terms version is not currently active: ${termsVersion}`)
-    if (doc.document_hash !== documentHash) throw new Error('Terms document hash mismatch. Please refresh and review the updated terms.')
+    if (!doc)
+      throw new Error(`Invalid terms version specified: ${termsVersion}`)
+    if (doc.status !== 'published')
+      throw new Error(
+        `The specified terms version is not currently active: ${termsVersion}`
+      )
+    if (doc.document_hash !== documentHash)
+      throw new Error(
+        'Terms document hash mismatch. Please refresh and review the updated terms.'
+      )
 
     // Expire previous pending intents for the same buyer and listing (retry hygiene)
     for (const existing of this.intents.values()) {
@@ -378,16 +591,22 @@ class SimulatedDatabaseEngine {
   ) {
     if (!buyerId) throw new Error('Not authenticated')
     if (!acceptanceToken || acceptanceToken.trim() === '') {
-      throw new Error('Explicit terms acceptance token is required to proceed with checkout.')
+      throw new Error(
+        'Explicit terms acceptance token is required to proceed with checkout.'
+      )
     }
 
     const intent = this.intents.get(acceptanceToken)
     if (!intent) {
-      throw new Error('Invalid terms acceptance token. Please re-confirm acceptance.')
+      throw new Error(
+        'Invalid terms acceptance token. Please re-confirm acceptance.'
+      )
     }
 
     if (intent.buyer_id !== buyerId) {
-      throw new Error('Terms acceptance token does not belong to the authenticated buyer.')
+      throw new Error(
+        'Terms acceptance token does not belong to the authenticated buyer.'
+      )
     }
 
     if (intent.listing_id !== listingId) {
@@ -395,20 +614,28 @@ class SimulatedDatabaseEngine {
     }
 
     if (intent.status !== 'pending') {
-      throw new Error('Terms acceptance token has already been consumed or is invalid.')
+      throw new Error(
+        'Terms acceptance token has already been consumed or is invalid.'
+      )
     }
 
     if (Date.now() > intent.expires_at) {
       intent.status = 'expired'
-      throw new Error('Terms acceptance token has expired. Please re-confirm acceptance.')
+      throw new Error(
+        'Terms acceptance token has expired. Please re-confirm acceptance.'
+      )
     }
 
     if (termsVersion && termsVersion !== intent.terms_version) {
-      throw new Error('Submitted terms version does not match acceptance token.')
+      throw new Error(
+        'Submitted terms version does not match acceptance token.'
+      )
     }
 
     if (documentHash && documentHash !== intent.document_hash) {
-      throw new Error('Submitted terms document hash does not match acceptance token.')
+      throw new Error(
+        'Submitted terms document hash does not match acceptance token.'
+      )
     }
 
     const doc = this.termsDocuments.get(intent.terms_version)
@@ -439,8 +666,10 @@ class SimulatedDatabaseEngine {
 
     // Create order & acceptance record atomically
     const orderId = 'ord-' + crypto.randomUUID()
-    const paymentRef = 'CHK-' + crypto.randomBytes(4).toString('hex').toUpperCase()
-    const acceptanceRef = 'TOS-' + crypto.randomBytes(5).toString('hex').toUpperCase()
+    const paymentRef =
+      'CHK-' + crypto.randomBytes(4).toString('hex').toUpperCase()
+    const acceptanceRef =
+      'TOS-' + crypto.randomBytes(5).toString('hex').toUpperCase()
     const acceptedAt = new Date().toISOString()
     const acceptanceId = 'acc-' + crypto.randomUUID()
 
@@ -458,7 +687,12 @@ class SimulatedDatabaseEngine {
     }
 
     this.acceptances.push(acceptance)
-    this.orders.push({ id: orderId, buyer_id: buyerId, listing_id: listingId, amount: listing.price })
+    this.orders.push({
+      id: orderId,
+      buyer_id: buyerId,
+      listing_id: listingId,
+      amount: listing.price,
+    })
 
     return {
       success: true,
@@ -473,7 +707,11 @@ class SimulatedDatabaseEngine {
   }
 
   // RLS Access check
-  getTermsAcceptance(requestingUserId: string, orderId: string, isAdmin: boolean = false) {
+  getTermsAcceptance(
+    requestingUserId: string,
+    orderId: string,
+    isAdmin: boolean = false
+  ) {
     const acc = this.acceptances.find((a) => a.order_id === orderId)
     if (!acc) return null
     if (isAdmin || acc.buyer_id === requestingUserId) {
@@ -483,7 +721,11 @@ class SimulatedDatabaseEngine {
   }
 
   // Terms Documents RLS check: published documents or versions accepted by requesting user
-  getTermsDocument(requestingUserId: string, version: string, isAdmin: boolean = false) {
+  getTermsDocument(
+    requestingUserId: string,
+    version: string,
+    isAdmin: boolean = false
+  ) {
     const doc = this.termsDocuments.get(version)
     if (!doc) return null
     if (isAdmin || doc.status === 'published') {
@@ -499,7 +741,12 @@ class SimulatedDatabaseEngine {
   }
 
   // Server-enforced administrative export RPC
-  rpc_export_terms_acceptances(requestingUserId: string, isAdmin: boolean = false, termsVersion?: string, limit: number = 1000) {
+  rpc_export_terms_acceptances(
+    requestingUserId: string,
+    isAdmin: boolean = false,
+    termsVersion?: string,
+    limit: number = 1000
+  ) {
     if (!isAdmin) {
       throw new Error('Access denied. Administrator privileges required.')
     }
@@ -522,7 +769,10 @@ class SimulatedDatabaseEngine {
   }
 
   // Direct table query under Row-Level Security
-  queryTermsAcceptancesUnderRls(requestingUserId: string, isAdmin: boolean = false) {
+  queryTermsAcceptancesUnderRls(
+    requestingUserId: string,
+    isAdmin: boolean = false
+  ) {
     if (isAdmin) {
       return this.acceptances
     }
@@ -533,32 +783,48 @@ class SimulatedDatabaseEngine {
   deleteOrder(orderId: string) {
     const hasAcceptance = this.acceptances.some((a) => a.order_id === orderId)
     if (hasAcceptance) {
-      throw new Error('Foreign key violation: update or delete on table orders violates foreign key constraint (ON DELETE RESTRICT)')
+      throw new Error(
+        'Foreign key violation: update or delete on table orders violates foreign key constraint (ON DELETE RESTRICT)'
+      )
     }
     this.orders = this.orders.filter((o) => o.id !== orderId)
   }
 
   // Immutability test: attempting to update or delete acceptance record
-  mutateAcceptance(acceptanceId: string) {
-    throw new Error('terms_acceptances records are immutable evidence and cannot be updated or deleted.')
+  mutateAcceptance(_acceptanceId: string) {
+    throw new Error(
+      'terms_acceptances records are immutable evidence and cannot be updated or deleted.'
+    )
   }
 
   // Immutability test: attempting to delete or modify content/hash of an accepted terms_documents record
-  mutateTermsDocument(version: string, action: 'delete' | 'update_content' | 'update_hash' | 'archive') {
+  mutateTermsDocument(
+    version: string,
+    action: 'delete' | 'update_content' | 'update_hash' | 'archive'
+  ) {
     const doc = this.termsDocuments.get(version)
     if (!doc) throw new Error('Terms document not found')
-    const hasAcceptances = this.acceptances.some((a) => a.terms_version === version)
+    const hasAcceptances = this.acceptances.some(
+      (a) => a.terms_version === version
+    )
 
     if (action === 'delete') {
       if (hasAcceptances) {
-        throw new Error('Cannot delete a terms_documents version that has recorded acceptances.')
+        throw new Error(
+          'Cannot delete a terms_documents version that has recorded acceptances.'
+        )
       }
       this.termsDocuments.delete(version)
       return
     }
 
-    if ((action === 'update_content' || action === 'update_hash') && hasAcceptances) {
-      throw new Error('Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances.')
+    if (
+      (action === 'update_content' || action === 'update_hash') &&
+      hasAcceptances
+    ) {
+      throw new Error(
+        'Cannot modify version, content, or document_hash of a terms_documents record that has recorded acceptances.'
+      )
     }
 
     if (action === 'archive') {
@@ -567,7 +833,11 @@ class SimulatedDatabaseEngine {
   }
 
   // Individual receipt & historical document retrieval RPC
-  rpc_get_terms_acceptance_receipt(requestingUserId: string | null, orderId: string, isAdmin: boolean = false) {
+  rpc_get_terms_acceptance_receipt(
+    requestingUserId: string | null,
+    orderId: string,
+    isAdmin: boolean = false
+  ) {
     if (!requestingUserId) {
       throw new Error('Not authenticated')
     }
@@ -575,7 +845,9 @@ class SimulatedDatabaseEngine {
     if (!acc) return null
 
     if (acc.buyer_id !== requestingUserId && !isAdmin) {
-      throw new Error('Access denied. You are not authorized to view this acceptance receipt.')
+      throw new Error(
+        'Access denied. You are not authorized to view this acceptance receipt.'
+      )
     }
 
     const doc = this.termsDocuments.get(acc.terms_version) || null
@@ -607,7 +879,12 @@ test('Scenario 1: Direct checkout RPC without explicit acceptance token is rejec
 test('Scenario 2: Legacy caller attempting checkout without acceptance token cannot proceed', () => {
   const db = new SimulatedDatabaseEngine()
   assert.throws(
-    () => (db as any).rpc_checkout_with_wallet('buyer-1', 'listing-1', undefined),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-1',
+        'listing-1',
+        undefined as unknown as string | null
+      ),
     /Explicit terms acceptance token is required/
   )
 })
@@ -617,11 +894,25 @@ test('Scenario 3a: Affirmation statement validation rejects arbitrary or empty s
   const db = new SimulatedDatabaseEngine()
   db.publishTerms('2026-04-v1.0')
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', '2026-04-v1.0', 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35', 'I agree'),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        '2026-04-v1.0',
+        'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
+        'I agree'
+      ),
     /Invalid or missing consent affirmation statement/
   )
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', '2026-04-v1.0', 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35', ''),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        '2026-04-v1.0',
+        'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
+        ''
+      ),
     /Invalid or missing consent affirmation statement/
   )
   // Exact affirmative statement succeeds
@@ -640,7 +931,14 @@ test('Scenario 3b: Seeded draft terms version fails checkout safely until approv
   const db = new SimulatedDatabaseEngine()
   // 2026-04-v1.0 starts in 'draft' as seeded by migration
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', '2026-04-v1.0', 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35', VALID_AFFIRMATION('2026-04-v1.0')),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        '2026-04-v1.0',
+        'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
+        VALID_AFFIRMATION('2026-04-v1.0')
+      ),
     /The specified terms version is not currently active: 2026-04-v1.0/
   )
   // Once an authorized administrator marks it 'published', checkout preparation succeeds
@@ -659,11 +957,25 @@ test('Scenario 3b: Seeded draft terms version fails checkout safely until approv
 test('Scenario 3c: Unpublished draft or non-existent terms version is rejected during preparation', () => {
   const db = new SimulatedDatabaseEngine()
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', '2026-05-draft', 'hash', VALID_AFFIRMATION('2026-05-draft')),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        '2026-05-draft',
+        'hash',
+        VALID_AFFIRMATION('2026-05-draft')
+      ),
     /The specified terms version is not currently active/
   )
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', 'non-existent-v0', 'hash', VALID_AFFIRMATION('non-existent-v0')),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        'non-existent-v0',
+        'hash',
+        VALID_AFFIRMATION('non-existent-v0')
+      ),
     /Invalid terms version specified/
   )
 })
@@ -672,9 +984,17 @@ test('Scenario 3c: Unpublished draft or non-existent terms version is rejected d
 test('Scenario 4: Changed or tampered terms document hash is rejected', () => {
   const db = new SimulatedDatabaseEngine()
   db.publishTerms('2026-04-v1.0')
-  const forgedHash = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+  const forgedHash =
+    'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
   assert.throws(
-    () => db.rpc_prepare_checkout_terms_acceptance('buyer-1', 'listing-1', '2026-04-v1.0', forgedHash, VALID_AFFIRMATION('2026-04-v1.0')),
+    () =>
+      db.rpc_prepare_checkout_terms_acceptance(
+        'buyer-1',
+        'listing-1',
+        '2026-04-v1.0',
+        forgedHash,
+        VALID_AFFIRMATION('2026-04-v1.0')
+      ),
     /Terms document hash mismatch/
   )
 })
@@ -694,7 +1014,12 @@ test('Scenario 5: Buyer cannot accept on behalf of another user (token cross-ten
 
   // Buyer-2 attempts to use Buyer-1 token
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', prep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-2',
+        'listing-1',
+        prep.acceptance_token
+      ),
     /Terms acceptance token does not belong to the authenticated buyer/
   )
 })
@@ -712,7 +1037,12 @@ test('Scenario 6: Token prepared for listing A cannot be reused on listing B', (
   )
 
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-1', 'listing-2', prep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-1',
+        'listing-2',
+        prep.acceptance_token
+      ),
     /Terms acceptance token is not valid for this listing/
   )
 })
@@ -734,7 +1064,12 @@ test('Scenario 7: Expired consent challenge token is rejected', () => {
   intent.expires_at = Date.now() - 1000
 
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-1',
+        'listing-1',
+        prep.acceptance_token
+      ),
     /Terms acceptance token has expired/
   )
 })
@@ -752,12 +1087,21 @@ test('Scenario 8: Replay attack with consumed token is rejected', () => {
   )
 
   // 1st checkout succeeds
-  const res1 = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const res1 = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
   assert.equal(res1.success, true)
 
   // 2nd checkout with same token fails immediately
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-1',
+        'listing-1',
+        prep.acceptance_token
+      ),
     /Terms acceptance token has already been consumed or is invalid/
   )
 })
@@ -774,7 +1118,11 @@ test('Scenario 9: Server timestamp is chronological and generated by server', ()
     'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
     VALID_AFFIRMATION('2026-04-v1.0')
   )
-  const res = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const res = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
   const after = Date.now()
 
   const acceptedTime = new Date(res.accepted_at).getTime()
@@ -797,12 +1145,21 @@ test('Scenario 10: Failed checkout (insufficient balance) rolls back without orp
 
   const initialAcceptanceCount = db.acceptances.length
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', prep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-2',
+        'listing-1',
+        prep.acceptance_token
+      ),
     /Insufficient wallet balance/
   )
 
   // Verify no orphaned final acceptance record exists
-  assert.equal(db.acceptances.length, initialAcceptanceCount, 'No orphaned acceptance records created')
+  assert.equal(
+    db.acceptances.length,
+    initialAcceptanceCount,
+    'No orphaned acceptance records created'
+  )
 })
 
 // 13. Security Boundary 11: RLS isolation blocks cross-buyer receipt queries; Admin can audit all
@@ -816,11 +1173,23 @@ test('Scenario 11: RLS isolation blocks cross-buyer receipt queries; Admin can a
     'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
     VALID_AFFIRMATION('2026-04-v1.0')
   )
-  const res = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const res = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
 
   // Buyer-2 tries to query Buyer-1's acceptance receipt -> RLS returns null
-  const unauthorizedAccess = db.getTermsAcceptance('buyer-2', res.order_id, false)
-  assert.equal(unauthorizedAccess, null, 'Cross-tenant receipt access denied under RLS')
+  const unauthorizedAccess = db.getTermsAcceptance(
+    'buyer-2',
+    res.order_id,
+    false
+  )
+  assert.equal(
+    unauthorizedAccess,
+    null,
+    'Cross-tenant receipt access denied under RLS'
+  )
 
   // Buyer-1 queries own receipt -> Allowed
   const ownerAccess = db.getTermsAcceptance('buyer-1', res.order_id, false)
@@ -844,7 +1213,11 @@ test('Scenario 12: Order deletion and mutation blocked by RESTRICT and immutabil
     'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
     VALID_AFFIRMATION('2026-04-v1.0')
   )
-  const res = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const res = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
 
   // 1. Attempting to delete the order must fail with RESTRICT violation
   assert.throws(
@@ -866,7 +1239,11 @@ test('Scenario 13: Historical terms document retrieval allows buyer with accepte
   // 1. Version 2026-04-v1.0 is initially draft
   // Buyer-1 has NOT accepted it yet -> access denied under RLS
   const unacceptedDraft = db.getTermsDocument('buyer-1', '2026-04-v1.0', false)
-  assert.equal(unacceptedDraft, null, 'Unaccepted draft version denied to buyer')
+  assert.equal(
+    unacceptedDraft,
+    null,
+    'Unaccepted draft version denied to buyer'
+  )
 
   // 2. Admin can always view draft/archived versions
   const adminView = db.getTermsDocument('admin-user', '2026-04-v1.0', true)
@@ -889,13 +1266,28 @@ test('Scenario 13: Historical terms document retrieval allows buyer with accepte
   doc.status = 'archived'
 
   // Buyer-1 (who accepted it) CAN retrieve the archived full terms content
-  const buyerArchivedView = db.getTermsDocument('buyer-1', '2026-04-v1.0', false)
-  assert.ok(buyerArchivedView, 'Buyer with accepted record can retrieve historical archived terms')
+  const buyerArchivedView = db.getTermsDocument(
+    'buyer-1',
+    '2026-04-v1.0',
+    false
+  )
+  assert.ok(
+    buyerArchivedView,
+    'Buyer with accepted record can retrieve historical archived terms'
+  )
   assert.equal(buyerArchivedView.content, 'CANONICAL CONTENT')
 
   // Buyer-2 (who never accepted this version) CANNOT retrieve the archived terms
-  const buyer2ArchivedView = db.getTermsDocument('buyer-2', '2026-04-v1.0', false)
-  assert.equal(buyer2ArchivedView, null, 'Unaccepted buyer cannot retrieve archived terms')
+  const buyer2ArchivedView = db.getTermsDocument(
+    'buyer-2',
+    '2026-04-v1.0',
+    false
+  )
+  assert.equal(
+    buyer2ArchivedView,
+    null,
+    'Unaccepted buyer cannot retrieve archived terms'
+  )
 })
 
 // 16. Security Boundary 14: Admin bulk export authorization, RLS enforcement, and exported fields verification
@@ -911,7 +1303,11 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
     'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
     VALID_AFFIRMATION('2026-04-v1.0')
   )
-  const order1 = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep1.acceptance_token)
+  const order1 = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep1.acceptance_token
+  )
 
   // Fund Buyer-2 and create order
   db.wallets.get('buyer-2')!.available_balance = 100000
@@ -922,7 +1318,11 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
     'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
     VALID_AFFIRMATION('2026-04-v1.0')
   )
-  const order2 = db.rpc_checkout_with_wallet('buyer-2', 'listing-2', prep2.acceptance_token)
+  const order2 = db.rpc_checkout_with_wallet(
+    'buyer-2',
+    'listing-2',
+    prep2.acceptance_token
+  )
 
   // 1. Server-enforced RPC authorization: Non-admin caller is rejected
   assert.throws(
@@ -934,12 +1334,20 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
   // 2. Direct table SELECT under RLS: Ordinary buyer ONLY sees their own acceptance
   const buyer1Records = db.queryTermsAcceptancesUnderRls('buyer-1', false)
   assert.equal(buyer1Records.length, 1, 'Buyer 1 only sees their own record')
-  assert.equal(buyer1Records[0].buyer_id, 'buyer-1', 'Buyer 1 record belongs to buyer 1')
+  assert.equal(
+    buyer1Records[0].buyer_id,
+    'buyer-1',
+    'Buyer 1 record belongs to buyer 1'
+  )
   assert.equal(buyer1Records[0].order_id, order1.order_id)
 
   const buyer2Records = db.queryTermsAcceptancesUnderRls('buyer-2', false)
   assert.equal(buyer2Records.length, 1, 'Buyer 2 only sees their own record')
-  assert.equal(buyer2Records[0].buyer_id, 'buyer-2', 'Buyer 2 record belongs to buyer 2')
+  assert.equal(
+    buyer2Records[0].buyer_id,
+    'buyer-2',
+    'Buyer 2 record belongs to buyer 2'
+  )
   assert.equal(buyer2Records[0].order_id, order2.order_id)
 
   // 3. Admin caller exports complete audit ledger across all buyers
@@ -948,40 +1356,75 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
 
   // 4. Exported fields verification
   for (const entry of adminExport) {
-    assert.ok(entry.acceptance_reference.startsWith('TOS-'), 'acceptance_reference present')
-    assert.ok(entry.checkout_reference.startsWith('CHK-'), 'checkout_reference present')
+    assert.ok(
+      entry.acceptance_reference.startsWith('TOS-'),
+      'acceptance_reference present'
+    )
+    assert.ok(
+      entry.checkout_reference.startsWith('CHK-'),
+      'checkout_reference present'
+    )
     assert.ok(entry.order_id.startsWith('ord-'), 'order_id present')
     assert.ok(entry.listing_id.startsWith('listing-'), 'listing_id present')
     assert.ok(entry.buyer_id.startsWith('buyer-'), 'buyer_id present')
     assert.equal(entry.terms_version, '2026-04-v1.0', 'terms_version present')
-    assert.equal(entry.document_hash, 'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35', 'document_hash present')
+    assert.equal(
+      entry.document_hash,
+      'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35',
+      'document_hash present'
+    )
     assert.ok(entry.accepted_at, 'accepted_at timestamp present')
     assert.ok(entry.user_agent, 'user_agent present')
     assert.ok(entry.ip_address, 'ip_address present')
   }
 
   // 5. CSV formatting verification (RFC-compliant)
-  const escapeCsv = (val: any) => `"${String(val).replace(/"/g, '""')}"`
-  const csvHeaders = ['Acceptance Reference', 'Checkout Reference', 'Order ID', 'Listing ID', 'Buyer ID', 'Terms Version', 'SHA-256 Hash', 'Accepted At (ISO)', 'Client IP', 'User Agent', 'Created At (ISO)']
-  const csvRows = adminExport.map((r) => [
-    escapeCsv(r.acceptance_reference),
-    escapeCsv(r.checkout_reference),
-    escapeCsv(r.order_id),
-    escapeCsv(r.listing_id),
-    escapeCsv(r.buyer_id),
-    escapeCsv(r.terms_version),
-    escapeCsv(r.document_hash),
-    escapeCsv(r.accepted_at),
-    escapeCsv(r.ip_address),
-    escapeCsv(r.user_agent),
-    escapeCsv(r.created_at),
-  ].join(','))
+  const escapeCsv = (val: unknown) => `"${String(val).replace(/"/g, '""')}"`
+  const csvHeaders = [
+    'Acceptance Reference',
+    'Checkout Reference',
+    'Order ID',
+    'Listing ID',
+    'Buyer ID',
+    'Terms Version',
+    'SHA-256 Hash',
+    'Accepted At (ISO)',
+    'Client IP',
+    'User Agent',
+    'Created At (ISO)',
+  ]
+  const csvRows = adminExport.map((r) =>
+    [
+      escapeCsv(r.acceptance_reference),
+      escapeCsv(r.checkout_reference),
+      escapeCsv(r.order_id),
+      escapeCsv(r.listing_id),
+      escapeCsv(r.buyer_id),
+      escapeCsv(r.terms_version),
+      escapeCsv(r.document_hash),
+      escapeCsv(r.accepted_at),
+      escapeCsv(r.ip_address),
+      escapeCsv(r.user_agent),
+      escapeCsv(r.created_at),
+    ].join(',')
+  )
   const csvOutput = [csvHeaders.join(','), ...csvRows].join('\r\n')
 
   assert.ok(csvOutput.includes('Acceptance Reference'), 'CSV includes header')
-  assert.ok(csvOutput.includes('b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'), 'CSV includes document hash')
-  assert.ok(csvOutput.includes(order1.acceptance_reference), 'CSV includes buyer 1 reference')
-  assert.ok(csvOutput.includes(order2.acceptance_reference), 'CSV includes buyer 2 reference')
+  assert.ok(
+    csvOutput.includes(
+      'b7bd68bd6144eec5b791ce9c9c714809dc8a3dd42d89334dee4bbc9efd8ccd35'
+    ),
+    'CSV includes document hash'
+  )
+  assert.ok(
+    csvOutput.includes(order1.acceptance_reference),
+    'CSV includes buyer 1 reference'
+  )
+  assert.ok(
+    csvOutput.includes(order2.acceptance_reference),
+    'CSV includes buyer 2 reference'
+  )
 
   // 6. Immutability verification: Export operation leaves database records unmutated
   assert.equal(db.acceptances.length, 2, 'Ledger count unchanged after export')
@@ -989,13 +1432,28 @@ test('Scenario 14: Admin bulk export server-enforced authorization, privacy isol
 
 // 17. Scenario 15: Acceptance checkboxes start unchecked and block checkout until explicitly checked
 test('Scenario 15: Acceptance checkboxes start unchecked and block checkout until explicitly accepted', () => {
-  const checkoutPageSource = fs.readFileSync(path.resolve('src/pages/public/CheckoutPage.tsx'), 'utf-8')
-  const termsAcceptanceSource = fs.readFileSync(path.resolve('src/components/checkout/TermsAcceptance.tsx'), 'utf-8')
+  const checkoutPageSource = fs.readFileSync(
+    path.resolve('src/pages/public/CheckoutPage.tsx'),
+    'utf-8'
+  )
+  const termsAcceptanceSource = fs.readFileSync(
+    path.resolve('src/components/checkout/TermsAcceptance.tsx'),
+    'utf-8'
+  )
 
   // Verify initial state in CheckoutPage is false (unchecked) for all three acknowledgments
-  assert.match(checkoutPageSource, /const\s+\[escrowAccepted,\s*setEscrowAccepted\]\s*=\s*useState\(false\)/)
-  assert.match(checkoutPageSource, /const\s+\[verificationAccepted,\s*setVerificationAccepted\]\s*=\s*useState\(false\)/)
-  assert.match(checkoutPageSource, /const\s+\[termsAccepted,\s*setTermsAccepted\]\s*=\s*useState\(false\)/)
+  assert.match(
+    checkoutPageSource,
+    /const\s+\[escrowAccepted,\s*setEscrowAccepted\]\s*=\s*useState\(false\)/
+  )
+  assert.match(
+    checkoutPageSource,
+    /const\s+\[verificationAccepted,\s*setVerificationAccepted\]\s*=\s*useState\(false\)/
+  )
+  assert.match(
+    checkoutPageSource,
+    /const\s+\[termsAccepted,\s*setTermsAccepted\]\s*=\s*useState\(false\)/
+  )
 
   // Verify canPay requires all three checkboxes + wallet balance
   assert.match(
@@ -1004,11 +1462,17 @@ test('Scenario 15: Acceptance checkboxes start unchecked and block checkout unti
   )
 
   // Verify handlePaySecurely blocks execution if !canPay
-  assert.match(checkoutPageSource, /if\s*\(!user\?\.id\s*\|\|\s*!user\?\.email\s*\|\|\s*!listing\s*\|\|\s*!canPay\)\s*return/)
+  assert.match(
+    checkoutPageSource,
+    /if\s*\(!user\?\.id\s*\|\|\s*!user\?\.email\s*\|\|\s*!listing\s*\|\|\s*!canPay\)\s*return/
+  )
 
   // Verify TermsAcceptance component binds checked={termsAccepted}
   assert.match(termsAcceptanceSource, /checked=\{termsAccepted\}/)
-  assert.match(termsAcceptanceSource, /onChange=\{\(e\)\s*=>\s*setTermsAccepted\(e\.target\.checked\)\}/)
+  assert.match(
+    termsAcceptanceSource,
+    /onChange=\{\(e\)\s*=>\s*setTermsAccepted\(e\.target\.checked\)\}/
+  )
 })
 
 // 18. Scenario 16: Checkout failure rollback and retry flow supersedes old intent and succeeds cleanly
@@ -1026,10 +1490,19 @@ test('Scenario 16: Checkout failure rollback and retry flow supersedes old inten
   )
 
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', firstPrep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-2',
+        'listing-1',
+        firstPrep.acceptance_token
+      ),
     /Insufficient wallet balance/
   )
-  assert.equal(db.acceptances.length, 0, 'No acceptance record created on failed checkout')
+  assert.equal(
+    db.acceptances.length,
+    0,
+    'No acceptance record created on failed checkout'
+  )
   assert.equal(db.orders.length, 0, 'No order created on failed checkout')
 
   // 2. Buyer-2 funds wallet and clicks Retry, which prepares a fresh consent challenge token
@@ -1045,12 +1518,21 @@ test('Scenario 16: Checkout failure rollback and retry flow supersedes old inten
   // First pending token was automatically superseded/expired when retry token was issued
   assert.equal(db.intents.get(firstPrep.acceptance_token)?.status, 'expired')
   assert.throws(
-    () => db.rpc_checkout_with_wallet('buyer-2', 'listing-1', firstPrep.acceptance_token),
+    () =>
+      db.rpc_checkout_with_wallet(
+        'buyer-2',
+        'listing-1',
+        firstPrep.acceptance_token
+      ),
     /Terms acceptance token has already been consumed or is invalid/
   )
 
   // Retry token succeeds and creates exactly 1 order and 1 immutable acceptance record
-  const retryResult = db.rpc_checkout_with_wallet('buyer-2', 'listing-1', retryPrep.acceptance_token)
+  const retryResult = db.rpc_checkout_with_wallet(
+    'buyer-2',
+    'listing-1',
+    retryPrep.acceptance_token
+  )
   assert.equal(retryResult.success, true)
   assert.equal(db.acceptances.length, 1)
   assert.equal(db.orders.length, 1)
@@ -1069,7 +1551,11 @@ test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authori
     TERMS_DOCUMENT_HASH,
     VALID_AFFIRMATION(TERMS_VERSION)
   )
-  const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const orderRes = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
 
   // Unauthenticated caller rejected
   assert.throws(
@@ -1079,7 +1565,8 @@ test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authori
 
   // Unauthorized Buyer-2 rejected
   assert.throws(
-    () => db.rpc_get_terms_acceptance_receipt('buyer-2', orderRes.order_id, false),
+    () =>
+      db.rpc_get_terms_acceptance_receipt('buyer-2', orderRes.order_id, false),
     /Access denied\. You are not authorized to view this acceptance receipt\./
   )
 
@@ -1087,15 +1574,26 @@ test('Scenario 17: Individual receipt retrieval RPC enforces buyer/admin authori
   db.mutateTermsDocument(TERMS_VERSION, 'archive')
 
   // Buyer-1 retrieves receipt + historical document with verified SHA-256 match
-  const buyerReceipt = db.rpc_get_terms_acceptance_receipt('buyer-1', orderRes.order_id, false)
+  const buyerReceipt = db.rpc_get_terms_acceptance_receipt(
+    'buyer-1',
+    orderRes.order_id,
+    false
+  )
   assert.ok(buyerReceipt)
-  assert.equal(buyerReceipt.acceptance.acceptance_reference, orderRes.acceptance_reference)
+  assert.equal(
+    buyerReceipt.acceptance.acceptance_reference,
+    orderRes.acceptance_reference
+  )
   assert.equal(buyerReceipt.document?.version, TERMS_VERSION)
   assert.equal(buyerReceipt.document?.status, 'archived')
   assert.equal(buyerReceipt.hash_verified, true)
 
   // Admin retrieves receipt + historical document
-  const adminReceipt = db.rpc_get_terms_acceptance_receipt('admin-1', orderRes.order_id, true)
+  const adminReceipt = db.rpc_get_terms_acceptance_receipt(
+    'admin-1',
+    orderRes.order_id,
+    true
+  )
   assert.ok(adminReceipt)
   assert.equal(adminReceipt.acceptance.order_id, orderRes.order_id)
   assert.equal(adminReceipt.hash_verified, true)
@@ -1141,16 +1639,23 @@ test('Scenario 19: Bulk CSV and JSON export serialization with special character
     TERMS_DOCUMENT_HASH,
     VALID_AFFIRMATION(TERMS_VERSION)
   )
-  const orderRes = db.rpc_checkout_with_wallet('buyer-1', 'listing-1', prep.acceptance_token)
+  const orderRes = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-1',
+    prep.acceptance_token
+  )
 
-  const exportedRecords = db.rpc_export_terms_acceptances('admin-1', true).map((r) => ({
-    ...r,
-    id: orderRes.terms_acceptance_id,
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) "Custom, Agent"\r\nLine2',
-  }))
+  const exportedRecords = db
+    .rpc_export_terms_acceptances('admin-1', true)
+    .map((r) => ({
+      ...r,
+      id: orderRes.terms_acceptance_id,
+      user_agent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) "Custom, Agent"\r\nLine2',
+    }))
 
   // Test CSV escaping (quotes doubled, CRLF normalized to space, commas safely enclosed in quotes)
-  const escapeCsv = (val: any) => {
+  const escapeCsv = (val: unknown) => {
     if (val === null || val === undefined) return '""'
     const str = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""')
     return `"${str}"`
@@ -1188,8 +1693,15 @@ test('Scenario 19: Bulk CSV and JSON export serialization with special character
   ].join('\r\n')
 
   const csvLines = csv.split('\r\n')
-  assert.equal(csvLines.length, 2, 'Embedded newlines in user_agent must not break CSV row count')
-  assert.ok(csvLines[1].includes('""Custom, Agent"" Line2'), 'Quotes and newlines in user_agent properly escaped')
+  assert.equal(
+    csvLines.length,
+    2,
+    'Embedded newlines in user_agent must not break CSV row count'
+  )
+  assert.ok(
+    csvLines[1].includes('""Custom, Agent"" Line2'),
+    'Quotes and newlines in user_agent properly escaped'
+  )
 
   // Test JSON export structure and round-trip parsing
   const jsonOutput = JSON.stringify(
@@ -1212,7 +1724,10 @@ test('Scenario 19: Bulk CSV and JSON export serialization with special character
   const parsedJson = JSON.parse(jsonOutput)
   assert.equal(Array.isArray(parsedJson), true)
   assert.equal(parsedJson.length, 1)
-  assert.equal(parsedJson[0].acceptance_reference, orderRes.acceptance_reference)
+  assert.equal(
+    parsedJson[0].acceptance_reference,
+    orderRes.acceptance_reference
+  )
   assert.equal(parsedJson[0].checkout_reference, orderRes.escrow_id)
   assert.equal(parsedJson[0].order_id, orderRes.order_id)
   assert.equal(parsedJson[0].terms_version, TERMS_VERSION)
@@ -1244,7 +1759,11 @@ test('Scenario 20: Live wallet checkout parity (integer fee rounding, repeat pur
     TERMS_DOCUMENT_HASH,
     VALID_AFFIRMATION(TERMS_VERSION)
   )
-  const order1 = db.rpc_checkout_with_wallet('buyer-1', 'listing-fractional', prep1.acceptance_token)
+  const order1 = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-fractional',
+    prep1.acceptance_token
+  )
   assert.equal(order1.success, true)
 
   // Verify integer fee rounding: 110 + ROUND(110 * 0.05) = 110 + 6 = 116 deducted; 110 added to escrow
@@ -1262,13 +1781,23 @@ test('Scenario 20: Live wallet checkout parity (integer fee rounding, repeat pur
     TERMS_DOCUMENT_HASH,
     VALID_AFFIRMATION(TERMS_VERSION)
   )
-  const order2 = db.rpc_checkout_with_wallet('buyer-1', 'listing-fractional', prep2.acceptance_token)
+  const order2 = db.rpc_checkout_with_wallet(
+    'buyer-1',
+    'listing-fractional',
+    prep2.acceptance_token
+  )
   assert.equal(order2.success, true)
-  assert.notEqual(order2.order_id, order1.order_id, 'Repeat purchase creates a distinct order')
-  assert.notEqual(order2.acceptance_reference, order1.acceptance_reference, 'Repeat purchase creates a distinct terms receipt')
+  assert.notEqual(
+    order2.order_id,
+    order1.order_id,
+    'Repeat purchase creates a distinct order'
+  )
+  assert.notEqual(
+    order2.acceptance_reference,
+    order1.acceptance_reference,
+    'Repeat purchase creates a distinct terms receipt'
+  )
   assert.equal(db.wallets.get('buyer-1')?.available_balance, 500 - 232)
   assert.equal(db.wallets.get('buyer-1')?.escrow_balance, 220)
   assert.equal(db.listings.get('listing-fractional')?.status, 'published')
 })
-
-

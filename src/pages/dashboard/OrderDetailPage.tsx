@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Send, Loader2, AlertCircle, MessageSquare, Star, ShieldCheck } from 'lucide-react'
+import {
+  Send,
+  Loader2,
+  AlertCircle,
+  MessageSquare,
+  Star,
+  ShieldCheck,
+} from 'lucide-react'
 import { disputeService } from '@/services/marketplace/dispute.service'
 import { orderService } from '@/services/marketplace/order.service'
 import { paymentService } from '@/services/marketplace/payment.service'
@@ -136,35 +143,43 @@ export const OrderDetailPage: React.FC = () => {
           review: reviewText,
           would_recommend: wouldRecommend,
         })
-        alert('Review submitted successfully. It is pending admin approval and will appear publicly once approved.')
+        alert(
+          'Review submitted successfully. It is pending admin approval and will appear publicly once approved.'
+        )
       }
       refetchReview()
-    } catch (err: any) {
-      console.log('=== TRANSACTIONAL REVIEW FORENSIC ===');
-      console.log('order_id:', order.id);
-      console.log('current_user_id:', user?.id);
-      console.log('buyer_id:', order.buyer_id);
-      console.log('seller_id:', order.seller_id);
-      console.log('listing_id:', order.listing_id);
-      console.log('reviewer_type:', isBuyer ? 'buyer' : 'seller');
-      console.log('rating:', rating);
-      console.log('moderation_status:', 'pending'); // Added by DB default
-      console.log('order_status:', order.status);
-      console.log('would_recommend:', wouldRecommend);
-      console.log('====================================');
-      
-      if (err.code || err.message) {
-        console.log('SUPABASE REVIEW ERROR:');
-        console.log('code:', err.code);
-        console.log('message:', err.message);
-        console.log('details:', err.details);
-        console.log('hint:', err.hint);
-      } else {
-        console.log('ERROR:', err);
+    } catch (err: unknown) {
+      const supaErr = err as {
+        code?: string
+        message?: string
+        details?: string
+        hint?: string
       }
-      console.log('====================================');
-      
-      const errMsg = err.message || 'Failed to submit review'
+      console.log('=== TRANSACTIONAL REVIEW FORENSIC ===')
+      console.log('order_id:', order.id)
+      console.log('current_user_id:', user?.id)
+      console.log('buyer_id:', order.buyer_id)
+      console.log('seller_id:', order.seller_id)
+      console.log('listing_id:', order.listing_id)
+      console.log('reviewer_type:', isBuyer ? 'buyer' : 'seller')
+      console.log('rating:', rating)
+      console.log('moderation_status:', 'pending') // Added by DB default
+      console.log('order_status:', order.status)
+      console.log('would_recommend:', wouldRecommend)
+      console.log('====================================')
+
+      if (supaErr.code || supaErr.message) {
+        console.log('SUPABASE REVIEW ERROR:')
+        console.log('code:', supaErr.code)
+        console.log('message:', supaErr.message)
+        console.log('details:', supaErr.details)
+        console.log('hint:', supaErr.hint)
+      } else {
+        console.log('ERROR:', err)
+      }
+      console.log('====================================')
+
+      const errMsg = supaErr.message || 'Failed to submit review'
       alert(errMsg)
     }
   }
@@ -254,7 +269,11 @@ export const OrderDetailPage: React.FC = () => {
         if (!payment) throw new Error('Payment not found for this order')
         await paymentService.markReleased(payment.id)
       } else if (status === 'disputed') {
-        await disputeService.createDispute({ order_id: id, opened_by: user.id, reason: notes })
+        await disputeService.createDispute({
+          order_id: id,
+          opened_by: user.id,
+          reason: notes,
+        })
       } else if (status === 'cancelled') {
         await orderService.cancelOrder(id, user.id, notes)
       } else {
@@ -262,9 +281,11 @@ export const OrderDetailPage: React.FC = () => {
       }
       refetchOrder()
       loadOrderTimeline()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
-      alert(err.message || 'Failed to update order status')
+      alert(
+        err instanceof Error ? err.message : 'Failed to update order status'
+      )
     } finally {
       setUpdatingStatus(false)
     }
@@ -332,20 +353,22 @@ export const OrderDetailPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Status Badge:</span>
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-sm font-bold capitalize text-primary">
-            {order.status === 'disputed' ? 'Under Review' : getOrderStatusDisplayLabel(order.status as any)}
+          <span className="bg-primary/20 rounded-full px-3 py-1 text-sm font-bold capitalize text-primary">
+            {order.status === 'disputed'
+              ? 'Under Review'
+              : getOrderStatusDisplayLabel(order.status)}
           </span>
         </div>
       </div>
 
       {order.status === 'disputed' ? (
         dispute?.id ? (
-          <DisputeRoom 
-            disputeId={dispute.id} 
-            role={isBuyer ? 'buyer' : 'seller'} 
+          <DisputeRoom
+            disputeId={dispute.id}
+            role={isBuyer ? 'buyer' : 'seller'}
           />
         ) : (
-          <div className="flex h-64 w-full flex-col items-center justify-center text-slate-400 space-y-2">
+          <div className="flex h-64 w-full flex-col items-center justify-center space-y-2 text-slate-400">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
             <span className="text-xs">Loading dispute workspace...</span>
           </div>
@@ -361,517 +384,538 @@ export const OrderDetailPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Column: Messages Chat feed and Timeline updates */}
-        <div className="space-y-8 lg:col-span-8">
-          {/* Timeline Tracking */}
-          <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="border-b pb-2 font-heading text-sm font-bold text-foreground">
-              Timeline History
-            </h3>
-            <div className="space-y-4">
-              {timeline.map((event) => (
-                <div
-                  key={event.id}
-                  className="flex gap-3 text-xs leading-relaxed"
-                >
-                  <div className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-500" />
-                  <div>
-                    <h4 className="font-bold capitalize text-foreground">
-                      {getOrderStatusDisplayLabel(event.status as any)}
-                    </h4>
-                    <span className="block text-[10px] text-muted-foreground">
-                      {new Date(event.created_at).toLocaleString()}
-                    </span>
-                    {event.notes && (
-                      <p className="mt-0.5 text-muted-foreground">
-                        {event.notes}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Messages Area */}
-          <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <div className="bg-muted/40 flex items-center gap-2 border-b border-border px-4 py-3">
-              <MessageSquare className="h-4.5 w-4.5 text-muted-foreground" />
-              <h4 className="text-sm font-bold text-foreground">
-                Escrow Handoff Chat
-              </h4>
-            </div>
-
-            {/* Message Feed */}
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
-              {messages.length > 0 ? (
-                messages.map((msg) => {
-                  const isOwn = msg.sender_id === user?.id
-                  return (
+            {/* Left Column: Messages Chat feed and Timeline updates */}
+            <div className="space-y-8 lg:col-span-8">
+              {/* Timeline Tracking */}
+              <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="border-b pb-2 font-heading text-sm font-bold text-foreground">
+                  Timeline History
+                </h3>
+                <div className="space-y-4">
+                  {timeline.map((event) => (
                     <div
-                      key={msg.id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                      key={event.id}
+                      className="flex gap-3 text-xs leading-relaxed"
                     >
-                      <div
-                        className={`max-w-sm rounded-xl px-4 py-2.5 shadow-sm ${
-                          isOwn
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
-                        }`}
-                      >
-                        <div className="mb-1 flex items-center justify-between gap-2">
-                          <span className="text-[9px] font-bold uppercase opacity-80">
-                            {msg.sender?.full_name || 'Participant'}
-                          </span>
-                          <span className="text-[8px] opacity-60">
-                            {new Date(msg.created_at).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                        <p className="whitespace-pre-wrap text-xs leading-relaxed">
-                          {msg.message_text}
-                        </p>
+                      <div className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                      <div>
+                        <h4 className="font-bold capitalize text-foreground">
+                          {getOrderStatusDisplayLabel(
+                            event.status as Order['status']
+                          )}
+                        </h4>
+                        <span className="block text-[10px] text-muted-foreground">
+                          {new Date(event.created_at).toLocaleString()}
+                        </span>
+                        {event.notes && (
+                          <p className="mt-0.5 text-muted-foreground">
+                            {event.notes}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  )
-                })
-              ) : (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  No chat logs found. Send a message below to coordinate
-                  details.
+                  ))}
                 </div>
-              )}
-              <div ref={messagesEndRef} />
+              </div>
+
+              {/* Messages Area */}
+              <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="bg-muted/40 flex items-center gap-2 border-b border-border px-4 py-3">
+                  <MessageSquare className="h-4.5 w-4.5 text-muted-foreground" />
+                  <h4 className="text-sm font-bold text-foreground">
+                    Escrow Handoff Chat
+                  </h4>
+                </div>
+
+                {/* Message Feed */}
+                <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                  {messages.length > 0 ? (
+                    messages.map((msg) => {
+                      const isOwn = msg.sender_id === user?.id
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-sm rounded-xl px-4 py-2.5 shadow-sm ${
+                              isOwn
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground'
+                            }`}
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <span className="text-[9px] font-bold uppercase opacity-80">
+                                {msg.sender?.full_name || 'Participant'}
+                              </span>
+                              <span className="text-[8px] opacity-60">
+                                {new Date(msg.created_at).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap text-xs leading-relaxed">
+                              {msg.message_text}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="py-12 text-center text-xs text-muted-foreground">
+                      No chat logs found. Send a message below to coordinate
+                      details.
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Chat Send Form */}
+                <form
+                  onSubmit={handleSendMessage}
+                  className="bg-muted/40 flex gap-2 border-t border-border p-3"
+                >
+                  <input
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Type your handoff details here..."
+                    disabled={sendingMsg}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sendingMsg || !messageText.trim()}
+                    className="rounded-lg bg-primary px-3 py-1.5 text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {sendingMsg ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </button>
+                </form>
+              </div>
             </div>
 
-            {/* Chat Send Form */}
-            <form
-              onSubmit={handleSendMessage}
-              className="bg-muted/40 flex gap-2 border-t border-border p-3"
-            >
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type your handoff details here..."
-                disabled={sendingMsg}
-                className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                type="submit"
-                disabled={sendingMsg || !messageText.trim()}
-                className="rounded-lg bg-primary px-3 py-1.5 text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {sendingMsg ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
+            {/* Right Column: Escrow Actions & Listing Details */}
+            <div className="space-y-6 lg:col-span-4">
+              {/* Action Triggers Grid depending on active status state */}
+              <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
+                  Escrow Actions
+                </h3>
 
-        {/* Right Column: Escrow Actions & Listing Details */}
-        <div className="space-y-6 lg:col-span-4">
-          {/* Action Triggers Grid depending on active status state */}
-          <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
-              Escrow Actions
-            </h3>
-
-            {updatingStatus ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {/* Step 3: Payment Received -> Awaiting Seller release */}
-                {order.status === 'payment_received' && isSeller && (
-                  <button
-                    onClick={() =>
-                      handleTransitionStatus(
-                        'seller_processing',
-                        'Seller has marked credentials as released. Awaiting buyer verification review.'
-                      )
-                    }
-                    className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow hover:opacity-90"
-                  >
-                    Mark Credentials Delivered
-                  </button>
-                )}
-
-                {order.status === 'payment_received' && isBuyer && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Awaiting seller delivery of account details.
-                  </p>
-                )}
-
-                {/* Step 4: Seller processing -> Buyer Review */}
-                {order.status === 'seller_processing' && isSeller && (
-                  <button
-                    onClick={() =>
-                      handleTransitionStatus(
-                        'buyer_review',
-                        'Listing details submitted for final review.'
-                      )
-                    }
-                    className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow hover:opacity-90"
-                  >
-                    Submit for Buyer Review
-                  </button>
-                )}
-
-                {order.status === 'seller_processing' && isBuyer && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Seller is currently processing details.
-                  </p>
-                )}
-
-                {/* Step 5: Buyer Review -> Completed / Disputed */}
-                {order.status === 'buyer_review' && isBuyer && (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() =>
-                        handleTransitionStatus(
-                          'completed',
-                          'Escrow completed. Funds successfully dispatched to seller.'
-                        )
-                      }
-                      className="w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white shadow hover:opacity-90"
-                    >
-                      Approve & Complete Escrow
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleTransitionStatus(
-                          'disputed',
-                          'Buyer has opened an escrow dispute. Staff review pending.'
-                        )
-                      }
-                      className="w-full rounded-lg border border-orange-500 py-2.5 text-xs font-semibold text-orange-600 hover:bg-orange-500/10"
-                    >
-                      Open Dispute
-                    </button>
+                {updatingStatus ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
-                )}
+                ) : (
+                  <div className="space-y-2">
+                    {/* Step 3: Payment Received -> Awaiting Seller release */}
+                    {order.status === 'payment_received' && isSeller && (
+                      <button
+                        onClick={() =>
+                          handleTransitionStatus(
+                            'seller_processing',
+                            'Seller has marked credentials as released. Awaiting buyer verification review.'
+                          )
+                        }
+                        className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow hover:opacity-90"
+                      >
+                        Mark Credentials Delivered
+                      </button>
+                    )}
 
-                {order.status === 'buyer_review' && isSeller && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Submitted. Awaiting buyer review completion.
-                  </p>
-                )}
+                    {order.status === 'payment_received' && isBuyer && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Awaiting seller delivery of account details.
+                      </p>
+                    )}
 
-                {/* Completed / Cancelled terminal status views */}
-                {order.status === 'completed' && (
-                  <div className="space-y-4">
-                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center text-xs font-semibold text-emerald-600">
-                      Order completed successfully.
-                    </div>
+                    {/* Step 4: Seller processing -> Buyer Review */}
+                    {order.status === 'seller_processing' && isSeller && (
+                      <button
+                        onClick={() =>
+                          handleTransitionStatus(
+                            'buyer_review',
+                            'Listing details submitted for final review.'
+                          )
+                        }
+                        className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow hover:opacity-90"
+                      >
+                        Submit for Buyer Review
+                      </button>
+                    )}
 
-                    {(isBuyer || isSeller) && (
-                      <div className="space-y-4 border-t pt-4 text-xs">
-                        {reviewData && !isEditingReview ? (
-                          <div className="bg-muted/30 space-y-2.5 rounded-lg border p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex flex-col gap-1">
-                                <span className="font-bold text-foreground">
-                                  Your {isBuyer ? 'Seller' : 'Buyer'} Review Feedback
-                                </span>
-                                {reviewData.moderation_status === 'pending' && (
-                                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
-                                    Pending Admin Approval
-                                  </span>
-                                )}
-                                {reviewData.moderation_status === 'rejected' && (
-                                  <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">
-                                    Rejected by Admin
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex text-amber-500">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-3.5 w-3.5 ${
-                                      i < reviewData.rating
-                                        ? 'fill-current'
-                                        : 'text-muted'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <h5 className="font-bold text-foreground">
-                              {reviewData.title}
-                            </h5>
-                            <p className="italic leading-relaxed text-muted-foreground">
-                              "{reviewData.review}"
-                            </p>
-                            <div className="flex justify-between text-[10px] text-muted-foreground">
-                              <span>
-                                Recommend {isBuyer ? 'seller' : 'buyer'}:{' '}
-                                {reviewData.would_recommend ? 'Yes' : 'No'}
-                              </span>
-                              {new Date(reviewData.created_at).getTime() >
-                                Date.now() - 7 * 24 * 60 * 60 * 1000 && (
-                                <button
-                                  onClick={() => {
-                                    setRating(reviewData.rating)
-                                    setReviewTitle(reviewData.title)
-                                    setReviewText(reviewData.review)
-                                    setWouldRecommend(
-                                      reviewData.would_recommend
-                                    )
-                                    setIsEditingReview(true)
-                                  }}
-                                  className="font-bold text-primary hover:underline"
-                                >
-                                  Edit Review (7 Days Limit)
-                                </button>
-                              )}
-                            </div>
+                    {order.status === 'seller_processing' && isBuyer && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Seller is currently processing details.
+                      </p>
+                    )}
 
-                            {reviewData.seller_reply && reviewData.reviewer_type === 'buyer' && (
-                              <div className="border-border/50 mt-2 space-y-1 rounded border bg-background p-3 text-[11px]">
-                                <span className="block font-bold text-foreground">
-                                  Seller Reply:
-                                </span>
-                                <p className="italic text-muted-foreground">
-                                  "{reviewData.seller_reply}"
+                    {/* Step 5: Buyer Review -> Completed / Disputed */}
+                    {order.status === 'buyer_review' && isBuyer && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() =>
+                            handleTransitionStatus(
+                              'completed',
+                              'Escrow completed. Funds successfully dispatched to seller.'
+                            )
+                          }
+                          className="w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white shadow hover:opacity-90"
+                        >
+                          Approve & Complete Escrow
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleTransitionStatus(
+                              'disputed',
+                              'Buyer has opened an escrow dispute. Staff review pending.'
+                            )
+                          }
+                          className="w-full rounded-lg border border-orange-500 py-2.5 text-xs font-semibold text-orange-600 hover:bg-orange-500/10"
+                        >
+                          Open Dispute
+                        </button>
+                      </div>
+                    )}
+
+                    {order.status === 'buyer_review' && isSeller && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Submitted. Awaiting buyer review completion.
+                      </p>
+                    )}
+
+                    {/* Completed / Cancelled terminal status views */}
+                    {order.status === 'completed' && (
+                      <div className="space-y-4">
+                        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center text-xs font-semibold text-emerald-600">
+                          Order completed successfully.
+                        </div>
+
+                        {(isBuyer || isSeller) && (
+                          <div className="space-y-4 border-t pt-4 text-xs">
+                            {reviewData && !isEditingReview ? (
+                              <div className="bg-muted/30 space-y-2.5 rounded-lg border p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex flex-col gap-1">
+                                    <span className="font-bold text-foreground">
+                                      Your {isBuyer ? 'Seller' : 'Buyer'} Review
+                                      Feedback
+                                    </span>
+                                    {reviewData.moderation_status ===
+                                      'pending' && (
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                                        Pending Admin Approval
+                                      </span>
+                                    )}
+                                    {reviewData.moderation_status ===
+                                      'rejected' && (
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+                                        Rejected by Admin
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex text-amber-500">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-3.5 w-3.5 ${
+                                          i < reviewData.rating
+                                            ? 'fill-current'
+                                            : 'text-muted'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <h5 className="font-bold text-foreground">
+                                  {reviewData.title}
+                                </h5>
+                                <p className="italic leading-relaxed text-muted-foreground">
+                                  "{reviewData.review}"
                                 </p>
+                                <div className="flex justify-between text-[10px] text-muted-foreground">
+                                  <span>
+                                    Recommend {isBuyer ? 'seller' : 'buyer'}:{' '}
+                                    {reviewData.would_recommend ? 'Yes' : 'No'}
+                                  </span>
+                                  {new Date(reviewData.created_at).getTime() >
+                                    Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+                                    <button
+                                      onClick={() => {
+                                        setRating(reviewData.rating)
+                                        setReviewTitle(reviewData.title)
+                                        setReviewText(reviewData.review)
+                                        setWouldRecommend(
+                                          reviewData.would_recommend
+                                        )
+                                        setIsEditingReview(true)
+                                      }}
+                                      className="font-bold text-primary hover:underline"
+                                    >
+                                      Edit Review (7 Days Limit)
+                                    </button>
+                                  )}
+                                </div>
+
+                                {reviewData.seller_reply &&
+                                  reviewData.reviewer_type === 'buyer' && (
+                                    <div className="border-border/50 mt-2 space-y-1 rounded border bg-background p-3 text-[11px]">
+                                      <span className="block font-bold text-foreground">
+                                        Seller Reply:
+                                      </span>
+                                      <p className="italic text-muted-foreground">
+                                        "{reviewData.seller_reply}"
+                                      </p>
+                                    </div>
+                                  )}
                               </div>
+                            ) : (
+                              <form
+                                onSubmit={handleReviewSubmit}
+                                className="bg-muted/20 space-y-3.5 rounded-lg border p-4"
+                              >
+                                <div className="space-y-1 text-center">
+                                  <h4 className="flex items-center justify-center gap-1 text-[13px] font-bold text-foreground">
+                                    <Star className="h-4 w-4 fill-current text-amber-500" />
+                                    {reviewData
+                                      ? `Edit Your ${isBuyer ? 'Seller' : 'Buyer'} Review`
+                                      : `Rate Your ${isBuyer ? 'Seller' : 'Buyer'}`}
+                                  </h4>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {isBuyer
+                                      ? 'Your review will help other buyers evaluate this seller.'
+                                      : "Your review will help build this buyer's reputation."}
+                                  </p>
+                                </div>
+
+                                {/* Stars rating selection */}
+                                <div className="flex justify-center gap-1.5 py-2">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <button
+                                      type="button"
+                                      key={i}
+                                      onClick={() => setRating(i + 1)}
+                                      className="text-amber-500 transition-transform hover:scale-110"
+                                    >
+                                      <Star
+                                        className={`h-7 w-7 ${
+                                          i < rating
+                                            ? 'fill-current'
+                                            : 'text-muted'
+                                        }`}
+                                      />
+                                    </button>
+                                  ))}
+                                </div>
+
+                                {/* Review Title */}
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                                    Review Summary Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="Summary title (e.g. Great delivery, accurate account details)"
+                                    value={reviewTitle}
+                                    onChange={(e) =>
+                                      setReviewTitle(e.target.value)
+                                    }
+                                    className="w-full rounded border bg-background p-2 text-xs text-foreground"
+                                    required
+                                  />
+                                </div>
+
+                                {/* Review Text */}
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
+                                    <label>Review Comments</label>
+                                    <span>{reviewText.length}/500</span>
+                                  </div>
+                                  <textarea
+                                    placeholder="Write detailed feedback about the checkout quality, delivery speed, and credentials handoff..."
+                                    value={reviewText}
+                                    onChange={(e) =>
+                                      setReviewText(
+                                        e.target.value.slice(0, 500)
+                                      )
+                                    }
+                                    className="h-24 w-full rounded border bg-background p-2 text-xs text-foreground"
+                                    required
+                                  />
+                                </div>
+
+                                {/* Would Recommend */}
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-semibold text-foreground">
+                                    Would you recommend this{' '}
+                                    {isBuyer ? 'seller' : 'buyer'}?
+                                  </span>
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setWouldRecommend(true)}
+                                      className={`rounded border px-3 py-1 transition-colors ${
+                                        wouldRecommend
+                                          ? 'border-primary bg-primary text-white'
+                                          : 'bg-background text-muted-foreground'
+                                      }`}
+                                    >
+                                      Yes
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setWouldRecommend(false)}
+                                      className={`rounded border px-3 py-1 transition-colors ${
+                                        !wouldRecommend
+                                          ? 'border-primary bg-primary text-white'
+                                          : 'bg-background text-muted-foreground'
+                                      }`}
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-2 text-xs font-bold">
+                                  {isEditingReview && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsEditingReview(false)}
+                                      className="rounded border px-3 py-1.5 hover:bg-muted"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
+                                  <button
+                                    type="submit"
+                                    className="hover:bg-primary/95 rounded bg-primary px-4 py-1.5 text-white transition-colors"
+                                  >
+                                    {reviewData
+                                      ? 'Save Changes'
+                                      : 'Submit Review'}
+                                  </button>
+                                </div>
+                              </form>
                             )}
                           </div>
-                        ) : (
-                          <form
-                            onSubmit={handleReviewSubmit}
-                            className="bg-muted/20 space-y-3.5 rounded-lg border p-4"
-                          >
-                            <div className="space-y-1 text-center">
-                              <h4 className="flex items-center justify-center gap-1 text-[13px] font-bold text-foreground">
-                                <Star className="h-4 w-4 fill-current text-amber-500" />
-                                {reviewData
-                                  ? `Edit Your ${isBuyer ? 'Seller' : 'Buyer'} Review`
-                                  : `Rate Your ${isBuyer ? 'Seller' : 'Buyer'}`}
-                              </h4>
-                              <p className="text-[10px] text-muted-foreground">
-                                {isBuyer
-                                  ? "Your review will help other buyers evaluate this seller."
-                                  : "Your review will help build this buyer's reputation."}
-                              </p>
-                            </div>
-
-                            {/* Stars rating selection */}
-                            <div className="flex justify-center gap-1.5 py-2">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <button
-                                  type="button"
-                                  key={i}
-                                  onClick={() => setRating(i + 1)}
-                                  className="text-amber-500 transition-transform hover:scale-110"
-                                >
-                                  <Star
-                                    className={`h-7 w-7 ${
-                                      i < rating ? 'fill-current' : 'text-muted'
-                                    }`}
-                                  />
-                                </button>
-                              ))}
-                            </div>
-
-                            {/* Review Title */}
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                Review Summary Title
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="Summary title (e.g. Great delivery, accurate account details)"
-                                value={reviewTitle}
-                                onChange={(e) => setReviewTitle(e.target.value)}
-                                className="w-full rounded border bg-background p-2 text-xs text-foreground"
-                                required
-                              />
-                            </div>
-
-                            {/* Review Text */}
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                                <label>Review Comments</label>
-                                <span>{reviewText.length}/500</span>
-                              </div>
-                              <textarea
-                                placeholder="Write detailed feedback about the checkout quality, delivery speed, and credentials handoff..."
-                                value={reviewText}
-                                onChange={(e) =>
-                                  setReviewText(e.target.value.slice(0, 500))
-                                }
-                                className="h-24 w-full rounded border bg-background p-2 text-xs text-foreground"
-                                required
-                              />
-                            </div>
-
-                            {/* Would Recommend */}
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-semibold text-foreground">
-                                Would you recommend this {isBuyer ? 'seller' : 'buyer'}?
-                              </span>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setWouldRecommend(true)}
-                                  className={`rounded border px-3 py-1 transition-colors ${
-                                    wouldRecommend
-                                      ? 'border-primary bg-primary text-white'
-                                      : 'bg-background text-muted-foreground'
-                                  }`}
-                                >
-                                  Yes
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setWouldRecommend(false)}
-                                  className={`rounded border px-3 py-1 transition-colors ${
-                                    !wouldRecommend
-                                      ? 'border-primary bg-primary text-white'
-                                      : 'bg-background text-muted-foreground'
-                                  }`}
-                                >
-                                  No
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-end gap-2 pt-2 text-xs font-bold">
-                              {isEditingReview && (
-                                <button
-                                  type="button"
-                                  onClick={() => setIsEditingReview(false)}
-                                  className="rounded border px-3 py-1.5 hover:bg-muted"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                              <button
-                                type="submit"
-                                className="hover:bg-primary/95 rounded bg-primary px-4 py-1.5 text-white transition-colors"
-                              >
-                                {reviewData ? 'Save Changes' : 'Submit Review'}
-                              </button>
-                            </div>
-                          </form>
                         )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {order.status === 'cancelled' && (
-                  <div className="border-destructive/20 bg-destructive/10 rounded-lg border p-3 text-center text-xs font-semibold text-destructive">
-                    Order has been cancelled.
+                    {order.status === 'cancelled' && (
+                      <div className="border-destructive/20 bg-destructive/10 rounded-lg border p-3 text-center text-xs font-semibold text-destructive">
+                        Order has been cancelled.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Listing summary metadata details */}
-          <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
-              Listing Summary
-            </h3>
-            {order.listing && (
-              <div className="space-y-3">
-                <span className="bg-primary/10 rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                  {order.listing.platform}
-                </span>
-                <h4 className="font-heading text-xs font-bold leading-snug text-foreground">
-                  {order.listing.title}
-                </h4>
-                <div className="border-border/50 space-y-1.5 border-t pt-3 text-[11px] text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Listing price:</span>
-                    <span className="font-bold text-foreground">
-                      ₦{Number(order.listing.price).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Country:</span>
-                    <span className="font-bold text-foreground">
-                      {order.listing.country}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Legal Terms Acceptance Audit Card */}
-          {termsAcceptance ? (
-            <div className="space-y-3.5 rounded-xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-center justify-between border-b pb-3">
-                <h3 className="font-heading text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  Legal Terms Accepted
+              {/* Listing summary metadata details */}
+              <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="border-b pb-3 font-heading text-sm font-bold text-foreground">
+                  Listing Summary
                 </h3>
-                <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                  {termsAcceptance.acceptance_reference}
-                </span>
-              </div>
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Version:</span>
-                  <span className="font-semibold text-foreground">
-                    {termsAcceptance.terms_version}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Accepted Date:</span>
-                  <span className="font-semibold text-foreground">
-                    {new Date(termsAcceptance.accepted_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="block mb-1 text-[10px] uppercase font-bold text-muted-foreground">
-                    Document Fingerprint:
-                  </span>
-                  <div className="font-mono text-[10px] truncate bg-muted p-1.5 rounded select-all text-foreground">
-                    {termsAcceptance.document_hash}
+                {order.listing && (
+                  <div className="space-y-3">
+                    <span className="bg-primary/10 rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                      {order.listing.platform}
+                    </span>
+                    <h4 className="font-heading text-xs font-bold leading-snug text-foreground">
+                      {order.listing.title}
+                    </h4>
+                    <div className="border-border/50 space-y-1.5 border-t pt-3 text-[11px] text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Listing price:</span>
+                        <span className="font-bold text-foreground">
+                          ₦{Number(order.listing.price).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Country:</span>
+                        <span className="font-bold text-foreground">
+                          {order.listing.country}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowTermsReceipt(true)}
-                className="w-full mt-2 rounded-lg border border-primary/30 bg-primary/10 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
-              >
-                View Acceptance Receipt
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-5 text-xs text-muted-foreground space-y-1.5">
-              <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                <span>Legacy Order — Pre-Clickwrap Policy</span>
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                This transaction was completed prior to the implementation of the cryptographic Terms Acceptance Evidence Ledger.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
 
-      <TermsReceiptModal
-        isOpen={showTermsReceipt}
-        onClose={() => setShowTermsReceipt(false)}
-        record={termsAcceptance || null}
-        orderAmount={order ? Number(order.amount) : undefined}
-        listingTitle={order?.listing?.title}
-      />
+              {/* Legal Terms Acceptance Audit Card */}
+              {termsAcceptance ? (
+                <div className="space-y-3.5 rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h3 className="flex items-center gap-1.5 font-heading text-xs font-bold text-foreground">
+                      <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                      Legal Terms Accepted
+                    </h3>
+                    <span className="bg-primary/10 rounded px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
+                      {termsAcceptance.acceptance_reference}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex justify-between">
+                      <span>Version:</span>
+                      <span className="font-semibold text-foreground">
+                        {termsAcceptance.terms_version}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Accepted Date:</span>
+                      <span className="font-semibold text-foreground">
+                        {new Date(
+                          termsAcceptance.accepted_at
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">
+                        Document Fingerprint:
+                      </span>
+                      <div className="select-all truncate rounded bg-muted p-1.5 font-mono text-[10px] text-foreground">
+                        {termsAcceptance.document_hash}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsReceipt(true)}
+                    className="border-primary/30 bg-primary/10 hover:bg-primary/20 mt-2 w-full rounded-lg border py-2 text-xs font-semibold text-primary transition-colors"
+                  >
+                    View Acceptance Receipt
+                  </button>
+                </div>
+              ) : (
+                <div className="border-border/60 bg-muted/20 space-y-1.5 rounded-xl border p-5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <span>Legacy Order — Pre-Clickwrap Policy</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    This transaction was completed prior to the implementation
+                    of the cryptographic Terms Acceptance Evidence Ledger.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <TermsReceiptModal
+            isOpen={showTermsReceipt}
+            onClose={() => setShowTermsReceipt(false)}
+            record={termsAcceptance || null}
+            orderAmount={order ? Number(order.amount) : undefined}
+            listingTitle={order?.listing?.title}
+          />
         </>
       )}
     </div>

@@ -1,5 +1,13 @@
 import React, { useState } from 'react'
-import { Download, ShieldCheck, Loader2, FileSpreadsheet, FileCode, X, AlertCircle } from 'lucide-react'
+import {
+  Download,
+  ShieldCheck,
+  Loader2,
+  FileSpreadsheet,
+  FileCode,
+  X,
+  AlertCircle,
+} from 'lucide-react'
 import { orderService } from '@/services/marketplace/order.service'
 
 export const TermsExportButton: React.FC = () => {
@@ -14,10 +22,16 @@ export const TermsExportButton: React.FC = () => {
     setError(null)
     setIsLoading(true)
     try {
-      const records = await orderService.getAdminTermsAcceptanceLedger({ limit: 1000 })
+      const records = await orderService.getAdminTermsAcceptanceLedger({
+        limit: 1000,
+      })
       setRecordsCount(records.length)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to connect to terms acceptance ledger. Admin privileges required.')
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to connect to terms acceptance ledger. Admin privileges required.'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -27,7 +41,9 @@ export const TermsExportButton: React.FC = () => {
     setIsLoading(true)
     setError(null)
     try {
-      const records = await orderService.getAdminTermsAcceptanceLedger({ limit: 5000 })
+      const records = await orderService.getAdminTermsAcceptanceLedger({
+        limit: 5000,
+      })
       if (!records || records.length === 0) {
         setError('No acceptance records found in ledger to export.')
         setIsLoading(false)
@@ -35,8 +51,12 @@ export const TermsExportButton: React.FC = () => {
       }
       orderService.downloadAcceptanceLedger(records, format)
       setIsOpen(false)
-    } catch (err: any) {
-      setError(err?.message || 'Export failed. Access denied or query error.')
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Export failed. Access denied or query error.'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -46,7 +66,7 @@ export const TermsExportButton: React.FC = () => {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 hover:text-white transition-all shadow-sm"
+        className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-semibold text-indigo-300 shadow-sm transition-all hover:bg-indigo-500/20 hover:text-white"
         title="Export full terms acceptance ledger for compliance and dispute audits"
       >
         <ShieldCheck className="h-4 w-4 text-indigo-400" />
@@ -63,55 +83,63 @@ export const TermsExportButton: React.FC = () => {
           />
 
           {/* Modal */}
-          <div className="relative z-50 w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl text-slate-100">
+          <div className="relative z-50 w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 text-slate-100 shadow-2xl">
             {/* Header */}
             <div className="flex items-start justify-between border-b border-white/5 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Terms Acceptance Export</h3>
-                  <p className="text-[11px] text-slate-400">Server-authorized administrative evidence ledger</p>
+                  <h3 className="text-base font-bold text-white">
+                    Terms Acceptance Export
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Server-authorized administrative evidence ledger
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
                 disabled={isLoading}
-                className="rounded-lg border border-white/5 bg-slate-950/50 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                className="rounded-lg border border-white/5 bg-slate-950/50 p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="py-5 space-y-4 text-xs">
+            <div className="space-y-4 py-5 text-xs">
               {error ? (
-                <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-rose-300 flex items-start gap-2.5">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-rose-300">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <p className="text-[11px] leading-relaxed">{error}</p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-white/5 bg-slate-950/60 p-3.5 space-y-2">
+                <div className="space-y-2 rounded-xl border border-white/5 bg-slate-950/60 p-3.5">
                   <div className="flex items-center justify-between text-slate-300">
-                    <span className="text-slate-400">Available Audit Records:</span>
+                    <span className="text-slate-400">
+                      Available Audit Records:
+                    </span>
                     <span className="font-mono font-bold text-white">
                       {isLoading && recordsCount === null ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin inline text-indigo-400" />
+                        <Loader2 className="inline h-3.5 w-3.5 animate-spin text-indigo-400" />
                       ) : (
                         `${recordsCount ?? 0} entries`
                       )}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Exports acceptance references, order references, buyer account IDs, version IDs, cryptographic SHA-256 document hashes, server timestamps, and client user-agents.
+                  <p className="text-[11px] leading-relaxed text-slate-400">
+                    Exports acceptance references, order references, buyer
+                    account IDs, version IDs, cryptographic SHA-256 document
+                    hashes, server timestamps, and client user-agents.
                   </p>
                 </div>
               )}
 
               {/* Format Selection */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-2">
+                <label className="mb-2 block text-[11px] font-semibold uppercase text-slate-400">
                   Export File Format
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -144,10 +172,14 @@ export const TermsExportButton: React.FC = () => {
               </div>
 
               {/* Audit Safeguard Note */}
-              <div className="rounded-lg bg-slate-950/40 p-3 text-[10px] text-slate-500 space-y-1">
-                <p className="font-semibold text-slate-400">Security & Privacy Protection:</p>
+              <div className="space-y-1 rounded-lg bg-slate-950/40 p-3 text-[10px] text-slate-500">
+                <p className="font-semibold text-slate-400">
+                  Security & Privacy Protection:
+                </p>
                 <p>
-                  Only administrators with verified server roles may export this ledger. Records in the underlying database table are immutable and cannot be altered or deleted.
+                  Only administrators with verified server roles may export this
+                  ledger. Records in the underlying database table are immutable
+                  and cannot be altered or deleted.
                 </p>
               </div>
             </div>
@@ -158,7 +190,7 @@ export const TermsExportButton: React.FC = () => {
                 type="button"
                 onClick={() => setIsOpen(false)}
                 disabled={isLoading}
-                className="rounded-xl border border-white/5 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                className="rounded-xl border border-white/5 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-400 transition-colors hover:text-white"
               >
                 Cancel
               </button>
@@ -167,7 +199,7 @@ export const TermsExportButton: React.FC = () => {
                 type="button"
                 onClick={handleExport}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
