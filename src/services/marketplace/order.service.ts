@@ -1,13 +1,124 @@
 import { supabase } from '@/lib/supabase'
 import { Order, OrderTimeline, OrderMessage } from '@/types'
+import { EXPECTED_CONSENT_AFFIRMATION } from '@/constants/terms'
 
 const PROFILE_SELECT = 'id, full_name, avatar_url, seller_verified'
 
+export interface TermsAcceptancePayload {
+  termsVersion: string
+  documentHash: string
+  acceptanceToken?: string
+  consentAffirmation?: string
+  userAgent?: string
+}
+
+export interface TermsAcceptanceRecord {
+  id: string
+  acceptance_reference: string
+  buyer_id: string
+  order_id: string
+  listing_id: string
+  consent_intent_id?: string | null
+  terms_version: string
+  document_hash: string
+  accepted_at: string
+  ip_address?: string | null
+  user_agent?: string | null
+  checkout_reference: string
+  created_at: string
+}
+
+export interface TermsDocumentRecord {
+  id: string
+  version: string
+  title: string
+  document_hash: string
+  content: string
+  status: 'draft' | 'published' | 'archived'
+  effective_at: string
+  created_at: string
+}
+
+export interface CheckoutWithWalletResult {
+  success: boolean
+  order_id: string
+  escrow_id: string
+  terms_acceptance_id: string
+  acceptance_reference: string
+  terms_version: string
+  document_hash: string
+  accepted_at: string
+  message?: string
+}
+
 export const orderService = {
-  async checkoutWithWallet(listingId: string): Promise<any> {
+  async prepareTermsAcceptance(
+    listingId: string,
+    payload: {
+      termsVersion: string
+      documentHash: string
+      consentAffirmation?: string
+    }
+  ): Promise<{
+    acceptance_token: string
+    terms_version: string
+    document_hash: string
+    expires_at: string
+  }> {
+    const affirmation =
+      payload.consentAffirmation !== undefined
+        ? payload.consentAffirmation
+        : EXPECTED_CONSENT_AFFIRMATION ||
+          `I explicitly accept the Remote Jobs Hub Terms and Conditions version ${payload.termsVersion} and agree to be legally bound thereby.`
+
+    const { data, error } = await supabase.rpc(
+      'rpc_prepare_checkout_terms_acceptance',
+      {
+        p_listing_id: listingId,
+        p_terms_version: payload.termsVersion,
+        p_document_hash: payload.documentHash,
+        p_consent_affirmation: affirmation,
+      }
+    )
+
+    if (error) {
+      console.error('Error in prepareTermsAcceptance:', error)
+      throw new Error(
+        error.message || 'Failed to prepare terms acceptance token'
+      )
+    }
+
+    return data
+  },
+
+  async checkoutWithWallet(
+    listingId: string,
+    termsPayload?: TermsAcceptancePayload
+  ): Promise<CheckoutWithWalletResult> {
     try {
+      const userAgent =
+        termsPayload?.userAgent ||
+        (typeof navigator !== 'undefined' ? navigator.userAgent : null)
+
+      let token = termsPayload?.acceptanceToken
+
+      // If no token was pre-generated but terms version and hash are present, prepare one now
+      if (!token && termsPayload?.termsVersion && termsPayload?.documentHash) {
+        const prep = await this.prepareTermsAcceptance(listingId, {
+          termsVersion: termsPayload.termsVersion,
+          documentHash: termsPayload.documentHash,
+          consentAffirmation: termsPayload.consentAffirmation,
+        })
+        token = prep.acceptance_token
+      }
+
       const { data, error } = await supabase.rpc('rpc_checkout_with_wallet', {
         p_listing_id: listingId,
+        p_acceptance_token: token || null,
+        p_terms_version: termsPayload?.termsVersion || null,
+        p_document_hash: termsPayload?.documentHash || null,
+        p_user_agent: userAgent,
+        p_ip_address: null,
       })
 
       if (error) {
@@ -15,17 +126,17 @@ export const orderService = {
         throw new Error(error.message || 'Failed to complete checkout')
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to complete checkout')
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to complete checkout')
       }
 
       // Notifications are now handled purely by the rpc_checkout_with_wallet trigger/rpc natively
       // to guarantee atomicity and prevent duplicate notifications.
 
-      return data
-    } catch (err: any) {
+      return data as CheckoutWithWalletResult
+    } catch (err: unknown) {
       console.error('Error in checkoutWithWallet:', err)
-      throw new Error(err.message || 'Checkout failed')
+      throw new Error(err instanceof Error ? err.message : 'Checkout failed')
     }
   },
 
@@ -33,7 +144,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('buyer_id', buyerId)
         .order('created_at', { ascending: false })
 
@@ -49,7 +162,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('seller_id', sellerId)
         .order('created_at', { ascending: false })
 
@@ -65,7 +180,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('id', id)
         .single()
 
@@ -82,16 +199,33 @@ export const orderService = {
 
   async markSellerProcessing(orderId: string, sellerId: string): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
-      if (order.status !== 'payment_received') throw new Error('Invalid state transition: order must be payment_received')
+      if (order.seller_id !== sellerId)
+        throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'payment_received')
+        throw new Error(
+          'Invalid state transition: order must be payment_received'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'seller_processing' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'seller_processing' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'seller_processing', notes: 'Seller has accepted and is processing your account transfer.' }])
+      await supabase.from('order_timeline').insert([
+        {
+          order_id: orderId,
+          status: 'seller_processing',
+          notes: 'Seller has accepted and is processing your account transfer.',
+        },
+      ])
     } catch (err) {
       console.error('Error in markSellerProcessing:', err)
       throw err
@@ -100,54 +234,104 @@ export const orderService = {
 
   async markBuyerReview(orderId: string, sellerId: string): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== sellerId) throw new Error('Unauthorized: only seller can update')
-      if (order.status !== 'seller_processing') throw new Error('Invalid state transition: order must be seller_processing')
+      if (order.seller_id !== sellerId)
+        throw new Error('Unauthorized: only seller can update')
+      if (order.status !== 'seller_processing')
+        throw new Error(
+          'Invalid state transition: order must be seller_processing'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'buyer_review' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'buyer_review' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'buyer_review', notes: 'Listing details submitted for final review.' }])
+      await supabase.from('order_timeline').insert([
+        {
+          order_id: orderId,
+          status: 'buyer_review',
+          notes: 'Listing details submitted for final review.',
+        },
+      ])
     } catch (err) {
       console.error('Error in markBuyerReview:', err)
       throw err
     }
   },
 
-  async markDisputed(orderId: string, userId: string, notes: string): Promise<void> {
+  async markDisputed(
+    orderId: string,
+    userId: string,
+    notes: string
+  ): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.buyer_id !== userId && order.seller_id !== userId) throw new Error('Unauthorized: only participants can dispute')
-      if (['completed', 'cancelled', 'disputed'].includes(order.status)) throw new Error('Invalid state transition: order is already in a terminal state')
+      if (order.buyer_id !== userId && order.seller_id !== userId)
+        throw new Error('Unauthorized: only participants can dispute')
+      if (['completed', 'cancelled', 'disputed'].includes(order.status))
+        throw new Error(
+          'Invalid state transition: order is already in a terminal state'
+        )
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'disputed' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'disputed' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'disputed', notes }])
+      await supabase
+        .from('order_timeline')
+        .insert([{ order_id: orderId, status: 'disputed', notes }])
     } catch (err) {
       console.error('Error in markDisputed:', err)
       throw err
     }
   },
 
-  async cancelOrder(orderId: string, userId: string, notes: string): Promise<void> {
+  async cancelOrder(
+    orderId: string,
+    userId: string,
+    notes: string
+  ): Promise<void> {
     try {
-      const { data: order, error: fetchErr } = await supabase.from('orders').select('id, seller_id, buyer_id, status').eq('id', orderId).single()
+      const { data: order, error: fetchErr } = await supabase
+        .from('orders')
+        .select('id, seller_id, buyer_id, status')
+        .eq('id', orderId)
+        .single()
       if (fetchErr) throw fetchErr
       if (!order) throw new Error('Order not found')
-      if (order.seller_id !== userId && order.buyer_id !== userId) throw new Error('Unauthorized: only participants can cancel')
+      if (order.seller_id !== userId && order.buyer_id !== userId)
+        throw new Error('Unauthorized: only participants can cancel')
       if (order.status !== 'pending' && order.status !== 'payment_pending') {
-        throw new Error('Order has already been funded or processed. Please contact support to cancel.')
+        throw new Error(
+          'Order has already been funded or processed. Please contact support to cancel.'
+        )
       }
 
-      const { error: updateErr } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
       if (updateErr) throw updateErr
 
-      await supabase.from('order_timeline').insert([{ order_id: orderId, status: 'cancelled', notes }])
+      await supabase
+        .from('order_timeline')
+        .insert([{ order_id: orderId, status: 'cancelled', notes }])
     } catch (err) {
       console.error('Error in cancelOrder:', err)
       throw err
@@ -185,7 +369,9 @@ export const orderService = {
             message_text: messageText,
           },
         ])
-        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`
+        )
         .single()
 
       if (error) throw error
@@ -200,7 +386,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('order_messages')
-        .select(`*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, sender:profiles!order_messages_sender_id_fkey(${PROFILE_SELECT})`
+        )
         .eq('order_id', orderId)
         .order('created_at', { ascending: true })
 
@@ -216,7 +404,9 @@ export const orderService = {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`)
+        .select(
+          `*, listing:listings(*), buyer:profiles!orders_buyer_id_fkey(${PROFILE_SELECT}), seller:profiles!orders_seller_id_fkey(${PROFILE_SELECT})`
+        )
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -225,5 +415,239 @@ export const orderService = {
       console.error('Error in getAllOrders:', err)
       return []
     }
+  },
+
+  async getTermsAcceptance(
+    orderId: string
+  ): Promise<TermsAcceptanceRecord | null> {
+    try {
+      const { data, error } = await supabase
+        .from('terms_acceptances')
+        .select('*')
+        .eq('order_id', orderId)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error in getTermsAcceptance:', error)
+        return null
+      }
+      return data as TermsAcceptanceRecord | null
+    } catch (err) {
+      console.error('Error in getTermsAcceptance:', err)
+      return null
+    }
+  },
+
+  async getTermsAcceptanceByReference(
+    reference: string
+  ): Promise<TermsAcceptanceRecord | null> {
+    try {
+      const { data, error } = await supabase
+        .from('terms_acceptances')
+        .select('*')
+        .eq('acceptance_reference', reference)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error in getTermsAcceptanceByReference:', error)
+        return null
+      }
+      return data as TermsAcceptanceRecord | null
+    } catch (err) {
+      console.error('Error in getTermsAcceptanceByReference:', err)
+      return null
+    }
+  },
+
+  async getTermsDocument(version: string): Promise<TermsDocumentRecord | null> {
+    try {
+      const { data, error } = await supabase
+        .from('terms_documents')
+        .select('*')
+        .eq('version', version)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error in getTermsDocument:', error)
+        return null
+      }
+      return data as TermsDocumentRecord | null
+    } catch (err) {
+      console.error('Error in getTermsDocument:', err)
+      return null
+    }
+  },
+
+  async getTermsAcceptanceReceipt(orderId: string): Promise<{
+    acceptance: TermsAcceptanceRecord
+    document: TermsDocumentRecord | null
+    hash_verified: boolean
+  } | null> {
+    try {
+      const { data, error } = await supabase.rpc(
+        'rpc_get_terms_acceptance_receipt',
+        {
+          p_order_id: orderId,
+        }
+      )
+
+      if (!error && data && data.acceptance) {
+        return data as {
+          acceptance: TermsAcceptanceRecord
+          document: TermsDocumentRecord | null
+          hash_verified: boolean
+        }
+      }
+
+      const acceptance = await this.getTermsAcceptance(orderId)
+      if (!acceptance) return null
+
+      const document = await this.getTermsDocument(acceptance.terms_version)
+      return {
+        acceptance,
+        document,
+        hash_verified: Boolean(
+          document && document.document_hash === acceptance.document_hash
+        ),
+      }
+    } catch (err) {
+      console.error('Error in getTermsAcceptanceReceipt:', err)
+      return null
+    }
+  },
+
+  async getAdminTermsAcceptanceLedger(options?: {
+    termsVersion?: string
+    limit?: number
+  }): Promise<TermsAcceptanceRecord[]> {
+    try {
+      // 1. Try server-enforced security definer RPC first
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        'rpc_export_terms_acceptances',
+        {
+          p_terms_version: options?.termsVersion || null,
+          p_limit: options?.limit || 1000,
+        }
+      )
+
+      if (!rpcError && rpcData) {
+        return rpcData as TermsAcceptanceRecord[]
+      }
+
+      // 2. Fall back to direct query on terms_acceptances protected by RLS (public.is_admin())
+      let query = supabase
+        .from('terms_acceptances')
+        .select('*')
+        .order('accepted_at', { ascending: false })
+
+      if (options?.termsVersion) {
+        query = query.eq('terms_version', options.termsVersion)
+      }
+      if (options?.limit) {
+        query = query.limit(options.limit)
+      }
+
+      const { data, error } = await query
+      if (error) {
+        console.error('Error fetching admin terms acceptance ledger:', error)
+        throw new Error(error.message || 'Access denied or query failed')
+      }
+
+      return (data || []) as TermsAcceptanceRecord[]
+    } catch (err: unknown) {
+      console.error('Error in getAdminTermsAcceptanceLedger:', err)
+      throw new Error(
+        err instanceof Error
+          ? err.message
+          : 'Access denied. Administrator privileges required.'
+      )
+    }
+  },
+
+  exportAcceptanceLedgerAsCsv(records: TermsAcceptanceRecord[]): string {
+    const headers = [
+      'Acceptance Reference',
+      'Checkout Reference',
+      'Order ID',
+      'Listing ID',
+      'Buyer ID',
+      'Terms Version',
+      'SHA-256 Hash',
+      'Accepted At (ISO)',
+      'Client IP',
+      'User Agent',
+      'Created At (ISO)',
+    ]
+
+    const escapeCsv = (val: string | number | boolean | null | undefined) => {
+      if (val === null || val === undefined) return '""'
+      const str = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""')
+      return `"${str}"`
+    }
+
+    const rows = records.map((r) =>
+      [
+        escapeCsv(r.acceptance_reference),
+        escapeCsv(r.checkout_reference),
+        escapeCsv(r.order_id),
+        escapeCsv(r.listing_id),
+        escapeCsv(r.buyer_id),
+        escapeCsv(r.terms_version),
+        escapeCsv(r.document_hash),
+        escapeCsv(r.accepted_at),
+        escapeCsv(r.ip_address || ''),
+        escapeCsv(r.user_agent || ''),
+        escapeCsv(r.created_at),
+      ].join(',')
+    )
+
+    return [headers.join(','), ...rows].join('\r\n')
+  },
+
+  exportAcceptanceLedgerAsJson(records: TermsAcceptanceRecord[]): string {
+    const normalized = records.map((r) => ({
+      acceptance_reference: r.acceptance_reference,
+      checkout_reference: r.checkout_reference,
+      order_id: r.order_id,
+      listing_id: r.listing_id,
+      buyer_id: r.buyer_id,
+      terms_version: r.terms_version,
+      document_hash: r.document_hash,
+      accepted_at: r.accepted_at,
+      ip_address: r.ip_address ?? null,
+      user_agent: r.user_agent ?? null,
+      created_at: r.created_at,
+    }))
+    return JSON.stringify(normalized, null, 2)
+  },
+
+  downloadAcceptanceLedger(
+    records: TermsAcceptanceRecord[],
+    format: 'csv' | 'json' = 'csv'
+  ) {
+    const dateStr = new Date().toISOString().split('T')[0]
+    let content: string
+    let mimeType: string
+    let filename: string
+
+    if (format === 'json') {
+      content = this.exportAcceptanceLedgerAsJson(records)
+      mimeType = 'application/json'
+      filename = `remotejobshub-terms-acceptance-ledger-${dateStr}.json`
+    } else {
+      content = this.exportAcceptanceLedgerAsCsv(records)
+      mimeType = 'text/csv;charset=utf-8;'
+      filename = `remotejobshub-terms-acceptance-ledger-${dateStr}.csv`
+    }
+
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   },
 }

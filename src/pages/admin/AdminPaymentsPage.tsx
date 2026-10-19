@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { paymentService } from '@/services/marketplace/payment.service'
 import { disputeService } from '@/services/marketplace/dispute.service'
-import { Payment, WithdrawalRequest } from '@/types'
+import { Payment, Profile, WithdrawalRequest } from '@/types'
 
 // Component Imports
 import { PaymentsHero } from '@/components/admin/payments/PaymentsHero'
@@ -15,6 +15,7 @@ import { TransactionDetailsDrawer } from '@/components/admin/payments/Transactio
 import { WithdrawalsCenter } from '@/components/admin/payments/WithdrawalsCenter'
 import { RefundRequests } from '@/components/admin/payments/RefundRequests'
 import { FraudDetection } from '@/components/admin/payments/FraudDetection'
+import { TermsExportButton } from '@/components/admin/payments/TermsExportButton'
 
 export const AdminPaymentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -55,7 +56,7 @@ export const AdminPaymentsPage: React.FC = () => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return (data || []) as (WithdrawalRequest & { user: any })[]
+      return (data || []) as (WithdrawalRequest & { user: Profile | null })[]
     },
   })
 
@@ -114,19 +115,27 @@ export const AdminPaymentsPage: React.FC = () => {
     return matchesSearch && matchesStatus
   })
 
-  const isLoading = isLoadingPayments || isLoadingWithdrawals || isLoadingDisputes
+  const isLoading =
+    isLoadingPayments || isLoadingWithdrawals || isLoadingDisputes
 
   return (
     <div className="space-y-8 pb-12">
       {/* Title */}
-      <div className="border-b border-border/50 pb-4">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
-          Security Administrator Control Console
-        </span>
-        <h1 className="font-heading text-2xl font-bold text-foreground mt-1">
-          Platform Payments & Escrow Logs
-        </h1>
-        <p className="text-xs text-muted-foreground">Manage transaction volumes, releases, and audits</p>
+      <div className="border-border/50 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">
+            Security Administrator Control Console
+          </span>
+          <h1 className="mt-1 font-heading text-2xl font-bold text-foreground">
+            Platform Payments & Escrow Logs
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Manage transaction volumes, releases, and audits
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <TermsExportButton />
+        </div>
       </div>
 
       {/* Executive Hero metrics */}
@@ -157,12 +166,18 @@ export const AdminPaymentsPage: React.FC = () => {
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3 items-start">
+        <div className="grid items-start gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <EscrowQueue payments={filteredPayments} onInspect={setSelectedPayment} />
+            <EscrowQueue
+              payments={filteredPayments}
+              onInspect={setSelectedPayment}
+            />
           </div>
           <div className="space-y-6">
-            <WithdrawalsCenter withdrawals={withdrawals} onRefresh={refetchWithdrawals} />
+            <WithdrawalsCenter
+              withdrawals={withdrawals}
+              onRefresh={refetchWithdrawals}
+            />
             <RefundRequests disputes={disputes} onRefresh={refetchDisputes} />
           </div>
         </div>
