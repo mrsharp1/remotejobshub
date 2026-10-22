@@ -116,13 +116,21 @@ export const HeroSection: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="space-y-1 rounded-xl bg-slate-950/40 p-3 border border-white/5">
+                  <div className="space-y-1.5 rounded-xl bg-slate-950/40 p-3 border border-white/5">
                     <div className="font-bold text-white flex items-center gap-1.5">
                       <span className="text-indigo-400">🚀</span> Free Practical Masterclass
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Every purchase includes free step-by-step guidance on navigating platforms, completing tasks, and setting up PayPal or Airtm withdrawals.
+                    <p className="font-bold text-indigo-200 text-[11px]">
+                      Beginners, You’re Not Limited!
                     </p>
+                    <div className="space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                      <p>
+                        Every purchase includes free, step-by-step guidance on understanding tasks, setting up and connecting your PayPal or Airtm accounts, and learning about other available withdrawal methods. You’ll also learn how to use proxies responsibly and manage your account for long-term sustainability.
+                      </p>
+                      <p>
+                        It’s a live, practical class you can return to whenever you need a refresher. Have questions? You’ll get the opportunity to ask and have them answered throughout the class.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -130,9 +138,14 @@ export const HeroSection: React.FC = () => {
                   <p>
                     <strong className="text-indigo-200">Account First:</strong> You need your account before training begins so sessions are hands-on and practical.
                   </p>
-                  <p className="text-slate-400 border-t border-white/5 pt-1.5 text-[10.5px]">
-                    *Note: The stated 5% fee on withdrawals for your first two weeks is a client-provided mentorship fee arrangement, not an automatic platform deduction.
-                  </p>
+                  <div className="border-t border-white/5 pt-1.5 space-y-0.5">
+                    <p className="font-bold text-indigo-200 text-[11px]">
+                      Brand Fee for the Mentorship Program
+                    </p>
+                    <p className="text-slate-400 text-[10.5px]">
+                      If you’re a beginner joining the mentorship class, the brand fee is 5% of your first 2 weeks earnings on the platform for the first two weeks only. ( this class is compulsory for beginners)
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -140,10 +153,10 @@ export const HeroSection: React.FC = () => {
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 sm:p-4 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-base sm:text-lg">🛡️</span>
-                  <h4 className="text-xs sm:text-sm font-bold text-emerald-300">Secure Transactions & Buyer Protection</h4>
+                  <h4 className="text-xs sm:text-sm font-bold text-emerald-300">Secure Payments & Escrow Protection</h4>
                 </div>
                 <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
-                  Your payment is protected. Sellers only receive their funds after you confirm that the account handoff is complete and works for you.
+                  Payments are processed securely through Paystack, while Remote Jobs Hub’s internal Brand Escrow Team safeguards the transaction and manages the release of funds according to our escrow process. Sellers receive payment only after the buyer confirms successful account handover.
                 </p>
               </div>
             </motion.div>
