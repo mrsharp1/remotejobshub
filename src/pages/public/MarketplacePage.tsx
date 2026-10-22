@@ -41,6 +41,15 @@ import { RecentlyViewedSection } from '@/components/marketplace/conversion/Recen
 import { WrittenReviews } from '@/components/home/WrittenReviews'
 import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 
+const RECOMMENDED_PRICE_OPTIONS = [
+  { label: '₦35K', value: 35000 },
+  { label: '₦40K', value: 40000 },
+  { label: '₦50K', value: 50000 },
+  { label: '₦110K', value: 110000 },
+  { label: '₦150K', value: 150000 },
+  { label: '₦250K', value: 250000 },
+]
+
 export const MarketplacePage: React.FC = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -229,6 +238,21 @@ export const MarketplacePage: React.FC = () => {
       }, 50)
     } else {
       setSelectedPlatforms([])
+    }
+  }
+
+  // Handle recommended account price option selection with toggle and auto-scroll
+  const handleSelectRecommendedPrice = (priceVal: number) => {
+    const priceStr = priceVal.toString()
+    if (minPrice === priceStr && maxPrice === priceStr) {
+      setMinPrice('')
+      setMaxPrice('')
+    } else {
+      setMinPrice(priceStr)
+      setMaxPrice(priceStr)
+      setTimeout(() => {
+        scrollToResults(true)
+      }, 50)
     }
   }
 
@@ -553,54 +577,112 @@ The goal is to help beginners understand the process and get started confidently
         )}
 
         {/* Recommended Accounts & Best Picks */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-xs">★</span>
-                Recommended Accounts
-              </h4>
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                Top Tiers
-              </span>
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
+              <div className="flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-xs">★</span>
+                  Recommended Accounts
+                </h4>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                  Top Tiers
+                </span>
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                {RECOMMENDED_PRICE_OPTIONS.map((option) => {
+                  const isSelected = minPrice === option.value.toString() && maxPrice === option.value.toString()
+                  return (
+                    <button
+                      key={`recommended-price-${option.value}`}
+                      type="button"
+                      onClick={() => handleSelectRecommendedPrice(option.value)}
+                      aria-pressed={isSelected}
+                      title={`Filter by ${option.label}`}
+                      className={`cursor-pointer rounded-xl px-3 py-1.5 font-mono text-sm font-bold shadow-sm transition-all active:scale-95 ${
+                        isSelected
+                          ? 'border border-emerald-400 bg-emerald-500/30 text-white shadow-md ring-1 ring-emerald-400/60'
+                          : option.value === 110000
+                          ? 'border border-emerald-500/40 bg-emerald-500/15 text-white hover:border-emerald-400 hover:bg-emerald-500/25'
+                          : 'border border-slate-700/70 bg-slate-800/80 text-white hover:border-emerald-500/40 hover:bg-slate-800'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Verified high-demand account tiers matching active buyer preferences.
+              </p>
             </div>
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <span className="rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                ₦100K
-              </span>
-              <span className="rounded-xl border border-slate-700/70 bg-slate-800/80 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                ₦46K
-              </span>
-              <span className="rounded-xl border border-slate-700/70 bg-slate-800/80 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                ₦35K
-              </span>
+
+            <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
+              <div className="flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-blue-400">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/20 text-xs">⚡</span>
+                  Best Picks
+                </h4>
+                <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
+                  Popular Values
+                </span>
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <span className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
+                  ₦110K
+                </span>
+                <span className="rounded-xl border border-slate-700/70 bg-slate-800/80 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
+                  ₦35K
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Curated sweet-spot price points for immediate work readiness.
+              </p>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Verified high-demand account tiers matching active buyer preferences.
-            </p>
           </div>
 
-          <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-blue-400">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/20 text-xs">⚡</span>
-                Best Picks
-              </h4>
-              <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
-                Popular Values
+          {/* Why We Recommend These Accounts */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 sm:p-5 shadow-lg backdrop-blur-md">
+            <h4 className="flex items-center gap-2 font-heading text-xs font-bold uppercase tracking-wider text-slate-200 sm:text-sm">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
               </span>
+              Why We Recommend These Accounts
+            </h4>
+            <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3">
+                <div className="text-xs font-bold text-emerald-400">
+                  Higher Earning Potential
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  Opportunities for stronger weekly earnings.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3">
+                <div className="text-xs font-bold text-blue-400">
+                  Beginner-Friendly
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  A great starting point for newcomers.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3">
+                <div className="text-xs font-bold text-indigo-400">
+                  Easier to Get Started
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  A smoother, more manageable experience.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3">
+                <div className="text-xs font-bold text-purple-400">
+                  Long-Term Potential
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  Worth considering for sustained opportunities.
+                </p>
+              </div>
             </div>
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <span className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                ₦100K
-              </span>
-              <span className="rounded-xl border border-slate-700/70 bg-slate-800/80 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                ₦35K
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Curated sweet-spot price points for immediate work readiness.
-            </p>
           </div>
         </div>
 
