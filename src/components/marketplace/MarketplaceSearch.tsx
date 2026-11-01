@@ -5,11 +5,6 @@ import { CountrySelect } from './CountrySelect'
 const MARKETPLACE_PLATFORMS = [
   'Outlier',
   'Handshake',
-  'DataAnnotation',
-  'TELUS',
-  'Scale AI',
-  'Appen',
-  'OneForma',
 ]
 
 interface MarketplaceSearchProps {

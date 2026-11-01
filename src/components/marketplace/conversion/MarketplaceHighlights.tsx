@@ -68,7 +68,7 @@ export const MarketplaceHighlights: React.FC = () => {
         </div>
 
         {/* Right Side: The 5 Steps */}
-        <div className="lg:col-span-8 p-8 lg:p-10 relative bg-slate-950/50">
+        <div className="lg:col-span-8 p-8 lg:p-10 relative bg-slate-950/50 flex flex-col justify-center">
           <div className="absolute top-0 right-0 h-full w-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
           
           <div className="relative z-10">
@@ -95,53 +95,6 @@ export const MarketplaceHighlights: React.FC = () => {
               ))}
             </div>
           </div>
-        {/* FAQ Section */}
-        <div className="mt-8 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-sm font-medium text-indigo-200">
-          <strong>Frequently Asked Questions</strong>
-          <ol className="mt-4 list-decimal list-inside space-y-2">
-            <li className="mt-2">
-              <p className="font-semibold">Once I make payment, can I start immediately?</p>
-              <p>Yes. Once your payment is confirmed, you can start immediately.</p>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">After buying an account, will I receive the account information immediately?</p>
-              <p>Once your payment is processed via Paystack and secured in our Escrow Vault, the seller completes the account handoff in your order chat. You will also receive access to our Masterclass, where you’ll learn how to properly use and manage the account.</p>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">Will I also get a proxy with the account?</p>
-              <p>It depends on the account you’re buying.</p>
-              <p>Before making payment, check the account description or chat with the seller to confirm whether a proxy is included.</p>
-              <p>If the account comes with a proxy, you’ll receive the proxy details together with the account.</p>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">Can the seller just wake up one day and log me out of the account?</p>
-              <p>No. As a buyer, you should understand that this is not just a casual buyer-and-seller agreement. This is a business contract the seller must follow.</p>
-              <p>As long as you follow the agreed terms, properly manage the account, and pay the seller their agreed percentage, the seller should not simply log you out or take back the account.</p>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">Who receives the payout?</p>
-              <p>This depends on the seller and the account.</p>
-              <p>Some sellers allow the buyer to receive the payout directly through their own PayPal account. (Read the account description to confirm.)</p>
-              <p>If you don’t have PayPal or Airtm, don’t worry. You’ll be taught in the Masterclass how to create and connect your PayPal or Airtm account.</p>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">How long can I use the account?</p>
-              <p>An account can potentially last for years, as long as you take proper care of it and follow the agreement.</p>
-              <p>To keep the account running:</p>
-              <ul className="ml-5 list-disc space-y-1">
-                <li>Use the proxy or RDP correctly.</li>
-                <li>Follow all the agreed terms.</li>
-                <li>Pay the seller their agreed percentage.</li>
-                <li>Avoid doing anything that could cause problems or get the account restricted.</li>
-              </ul>
-            </li>
-            <li className="mt-2">
-              <p className="font-semibold">Is there a project on the account?</p>
-              <p>Yes, there is. That is one thing the brand confirms before an account is approved.</p>
-              <p>Don’t worry if you’re new to all this. The free Masterclass will guide you step-by-step on how to properly use and manage the account.</p>
-            </li>
-          </ol>
-        </div>
         </div>
         
       </div>

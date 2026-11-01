@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, MessageSquare } from 'lucide-react'
+import { ChevronLeft, MessageSquare, MessageCircle } from 'lucide-react'
 import { listingService } from '@/services/marketplace/listing.service'
 import { recommendationService } from '@/services/marketplace/recommendation.service'
 import { reviewService } from '@/services/marketplace/review.service'
@@ -21,6 +21,7 @@ import { FAQ } from '@/components/listing/FAQ'
 import { SimilarListings } from '@/components/listing/SimilarListings'
 import { StickyPurchaseCard } from '@/components/listing/StickyPurchaseCard'
 import { useRecentlyViewedStore } from '@/stores/recentlyViewedStore'
+import { getDirectBrandDealInfo } from '@/components/marketplace/DirectBrandDealArtwork'
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -30,6 +31,10 @@ export const ListingDetailPage: React.FC = () => {
 
   const [favorites, setFavorites] = useState<string[]>([])
   const [isCopied, setIsCopied] = useState(false)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [id])
 
   const {
     data: listing,
@@ -178,8 +183,11 @@ export const ListingDetailPage: React.FC = () => {
   const isFavorited = listing ? favorites.includes(listing.id) : false
 
   const images = useMemo(() => {
-    return listing?.images?.map((i) => i.image_url) || []
-  }, [listing?.images])
+    const uploaded = listing?.images?.map((i) => i.image_url) || []
+    if (uploaded.length > 0) return uploaded
+    const brandDeal = getDirectBrandDealInfo(listing)
+    return brandDeal ? [brandDeal.artworkUrl] : []
+  }, [listing])
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -204,7 +212,18 @@ export const ListingDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
           {/* Main Content Column */}
           <div className="space-y-12 lg:col-span-8">
-            <ListingHero listing={listing} sellerRating={sellerRating} />
+            <div className="space-y-6">
+              <ListingHero listing={listing} sellerRating={sellerRating} />
+
+              <button
+                type="button"
+                onClick={handleContactSeller}
+                className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#10B981] px-6 py-4 text-base font-bold text-white shadow-[0_0_25px_-5px_rgba(16,185,129,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-[0_0_35px_-5px_rgba(16,185,129,0.8)] active:scale-[0.99]"
+              >
+                <MessageCircle className="h-5 w-5 shrink-0" />
+                <span>Contact Seller</span>
+              </button>
+            </div>
 
             <Gallery images={images} title={listing.title} />
 
@@ -229,7 +248,12 @@ export const ListingDetailPage: React.FC = () => {
                   const metricsLines = metricsRaw.split('\n').filter(Boolean)
                   const metrics = metricsLines.map((line) => {
                     const [key, ...value] = line.split(':')
-                    return { key: key.trim(), value: value.join(':').trim() }
+                    const trimmedKey = key.trim()
+                    const displayKey =
+                      trimmedKey.toLowerCase() === 'hours worked'
+                        ? 'Hours Worked Daily'
+                        : trimmedKey
+                    return { key: displayKey, value: value.join(':').trim() }
                   })
                   return {
                     metrics,

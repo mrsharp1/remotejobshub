@@ -69,7 +69,7 @@ export const MarketplaceAnnouncementBar: React.FC = () => {
           {isExpandedMobile && (
             <div className="max-h-48 overflow-y-auto border-t border-white/10 pb-2.5 pt-2 text-xs leading-relaxed text-slate-300">
               <p>
-                Our final seller batch for this year. Once these accounts are sold out, the next batch is expected around March next year (date not guaranteed).
+                Our final seller batch for this year. Once these accounts are sold out, the next batch is expected around May next year (date not guaranteed). We advise you to choose the best account within your budget, as this may be your last opportunity to purchase an account this year.
               </p>
               <p className="mt-1 font-bold text-amber-400">
                 Don’t miss out!
@@ -85,7 +85,7 @@ export const MarketplaceAnnouncementBar: React.FC = () => {
               🔥 LAST BATCH OF THE YEAR!
             </span>
             <span className="text-slate-300 leading-snug">
-              Our final seller batch for this year. Once these accounts are sold out, the next batch is expected around March next year (date not guaranteed).{' '}
+              Our final seller batch for this year. Once these accounts are sold out, the next batch is expected around May next year (date not guaranteed). We advise you to choose the best account within your budget, as this may be your last opportunity to purchase an account this year.{' '}
               <strong className="font-bold text-amber-400">Don’t miss out!</strong>
             </span>
           </div>

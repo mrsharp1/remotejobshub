@@ -23,13 +23,11 @@ import { toast } from 'sonner'
 
 // Components
 import { MarketplaceAnnouncementBar } from '@/components/marketplace/MarketplaceAnnouncementBar'
-import { MarketplaceHero } from '@/components/marketplace/MarketplaceHero'
 import { MarketplaceSearch } from '@/components/marketplace/MarketplaceSearch'
 import { CategoryGrid } from '@/components/marketplace/CategoryGrid'
 import { FilterSidebar } from '@/components/marketplace/FilterSidebar'
 import { ListingGrid } from '@/components/marketplace/ListingGrid'
 import { MarketplaceListingCard } from '@/components/marketplace/MarketplaceListingCard'
-import { TrustBar } from '@/components/marketplace/TrustBar'
 import { useDebounce } from '@/hooks/useDebounce'
 import { BuyerProtectionBanner } from '@/components/shared/BuyerProtectionBanner'
 import {
@@ -37,17 +35,30 @@ import {
   ComparisonBar,
 } from '@/components/marketplace/intelligence/ListingComparison'
 import { MarketplaceHighlights } from '@/components/marketplace/conversion/MarketplaceHighlights'
-import { RecentlyViewedSection } from '@/components/marketplace/conversion/RecentlyViewedSection'
 import { WrittenReviews } from '@/components/home/WrittenReviews'
 import { VideoTestimonials } from '@/components/home/VideoTestimonials'
 
-const RECOMMENDED_PRICE_OPTIONS = [
-  { label: '₦35K', value: 35000 },
-  { label: '₦40K', value: 40000 },
-  { label: '₦50K', value: 50000 },
-  { label: '₦110K', value: 110000 },
-  { label: '₦150K', value: 150000 },
-  { label: '₦250K', value: 250000 },
+const ALLOWED_PLATFORMS = ['Outlier', 'Handshake']
+
+const RECOMMENDED_ACCOUNT_GROUPS = [
+  {
+    title: 'Average Accounts',
+    options: [
+      { label: '₦40K', value: 40000 },
+      { label: '₦46K', value: 46000 },
+      { label: '₦30K', value: 30000 },
+    ],
+  },
+  {
+    title: 'Pro Accounts',
+    options: [
+      { label: '₦150K', value: 150000 },
+      { label: '₦110K', value: 110000 },
+      { label: '₦35K', value: 35000 },
+      { label: '₦80K', value: 80000 },
+      { label: '₦200K', value: 200000 },
+    ],
+  },
 ]
 
 export const MarketplacePage: React.FC = () => {
@@ -76,11 +87,16 @@ export const MarketplacePage: React.FC = () => {
   }
 
   const [keyword, setKeyword] = useState(searchParams.get('keyword') || '')
-  const [platform, setPlatform] = useState(searchParams.get('platform') || '')
+  const rawInitialPlatform = searchParams.get('platform') || ''
+  const [platform, setPlatform] = useState(
+    ALLOWED_PLATFORMS.includes(rawInitialPlatform) ? rawInitialPlatform : ''
+  )
   const [country, setCountry] = useState(searchParams.get('country') || '')
   
   const platformsParam = searchParams.get('platforms')
-  const initialPlatforms = platformsParam ? platformsParam.split(',') : []
+  const initialPlatforms = platformsParam
+    ? platformsParam.split(',').filter((p) => ALLOWED_PLATFORMS.includes(p))
+    : []
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialPlatforms)
   
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '')
@@ -147,12 +163,6 @@ export const MarketplacePage: React.FC = () => {
     enabled: !!user?.id,
   })
 
-  const { data: recentlyViewed = [] } = useQuery({
-    queryKey: ['recently-viewed-listings', user?.id],
-    queryFn: () =>
-      user?.id ? recommendationService.getRecentlyViewed(user.id) : [],
-    enabled: !!user?.id,
-  })
 
   // Fetch initial favorites list if authenticated
   useEffect(() => {
@@ -176,6 +186,7 @@ export const MarketplacePage: React.FC = () => {
 
   // Filter callback for toggling checks
   const handleTogglePlatform = (p: string) => {
+    if (!ALLOWED_PLATFORMS.includes(p)) return
     setSelectedPlatforms((prev) =>
       prev.includes(p) ? prev.filter((item) => item !== p) : [...prev, p]
     )
@@ -230,9 +241,10 @@ export const MarketplacePage: React.FC = () => {
 
   // Handle platform button selection with automatic scroll to listings
   const handleSelectPlatform = (plat: string) => {
-    setPlatform(plat)
-    if (plat) {
-      setSelectedPlatforms([plat])
+    const nextPlat = ALLOWED_PLATFORMS.includes(plat) ? plat : ''
+    setPlatform(nextPlat)
+    if (nextPlat) {
+      setSelectedPlatforms([nextPlat])
       setTimeout(() => {
         scrollToResults(true)
       }, 50)
@@ -256,7 +268,7 @@ export const MarketplacePage: React.FC = () => {
     }
   }
 
-  // Auto-scroll on initial load when a platform filter is present in URL
+  // Auto-scroll on initial load when a platform filter is present in URL, otherwise start at very top
   const hasAutoScrolledInitialRef = useRef(false)
   useEffect(() => {
     const initialPlatform = searchParams.get('platform') || searchParams.get('platforms')
@@ -266,6 +278,9 @@ export const MarketplacePage: React.FC = () => {
         scrollToResults(true)
       }, 200)
       return () => clearTimeout(timer)
+    } else if (!hasAutoScrolledInitialRef.current) {
+      hasAutoScrolledInitialRef.current = true
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     }
   }, [searchParams])
 
@@ -399,12 +414,6 @@ export const MarketplacePage: React.FC = () => {
     sortBy,
   ])
 
-  // Featured listings (is_featured = true or fallback to first 3 published listings)
-  const featuredListings = useMemo(() => {
-    const featured = rawListings.filter((l) => l.is_featured === true)
-    return featured.length > 0 ? featured.slice(0, 3) : rawListings.slice(0, 3)
-  }, [rawListings])
-
   const faqs = [
     {
       q: 'How does the account handoff work?',
@@ -443,52 +452,8 @@ The goal is to help beginners understand the process and get started confidently
       {/* Sticky "Last Batch of the Year" Announcement Bar */}
       <MarketplaceAnnouncementBar />
 
-      <div className="space-y-12">
-        {/* Hero section */}
-        <MarketplaceHero
-        onBrowseClick={() => {
-          const el = document.getElementById('search-grid-section')
-          el?.scrollIntoView({ behavior: 'smooth' })
-        }}
-      />
-
-      <TrustBar />
-
-      {/* Community Channels / Stay Connected Section */}
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-slate-900/90 via-indigo-950/30 to-slate-900/90 p-5 sm:p-6 shadow-xl backdrop-blur-md">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Official Community Channels
-              </div>
-              <h2 className="font-heading text-lg sm:text-xl font-bold text-white tracking-tight">
-                Stay Connected With Remote Jobs Hub
-              </h2>
-              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-400">
-                Stay updated with new account opportunities, marketplace updates, important announcements, and helpful resources. Join our community and never miss an update.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <a
-                href="https://whatsapp.com/channel/0029Vb8iwJJ3gvWctviMHX0B"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500 hover:shadow-emerald-600/30 active:scale-95"
-              >
-                <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                </svg>
-                Join Our WhatsApp Channel
-              </a>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Buyer Protection Banner */}
+      <div className="space-y-8 sm:space-y-12 pt-6 sm:pt-8">
+        {/* Buyer Protection Banner */}
       <BuyerProtectionBanner
         variant="horizontal"
         className="mx-auto max-w-7xl px-4"
@@ -552,93 +517,59 @@ The goal is to help beginners understand the process and get started confidently
           </div>
         )}
 
-        {/* Continue Browsing / Recently Viewed */}
-        {user?.id && recentlyViewed.length > 0 && (
-          <div className="bg-muted/10 space-y-4 rounded-xl border border-t border-dashed p-4 pt-6">
-            <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
-              Continue Browsing / Recently Viewed
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {recentlyViewed.slice(0, 4).map((listing) => (
+
+        {/* Recommended Accounts */}
+        <div className="space-y-3 sm:space-y-4">
+          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 p-4 sm:p-5 shadow-lg backdrop-blur-md">
+            <div className="flex items-center justify-between">
+              <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-emerald-400 sm:text-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-xs">★</span>
+                Recommended Accounts
+              </h4>
+              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                Top Tiers
+              </span>
+            </div>
+
+            <div className="mt-3.5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
+              {RECOMMENDED_ACCOUNT_GROUPS.map((group) => (
                 <div
-                  key={`recent-view-${listing.id}`}
-                  className="space-y-1 rounded-lg border bg-card p-3 text-xs"
+                  key={group.title}
+                  className="rounded-xl border border-white/5 bg-slate-950/50 p-3.5"
                 >
-                  <span className="block truncate font-bold text-foreground">
-                    {listing.title}
-                  </span>
-                  <span className="block font-mono text-primary">
-                    ₦{Number(listing.price).toLocaleString()}
-                  </span>
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    {group.title}:
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {group.options.map((option) => {
+                      const isSelected =
+                        minPrice === option.value.toString() &&
+                        maxPrice === option.value.toString()
+                      return (
+                        <button
+                          key={`recommended-price-${group.title}-${option.value}`}
+                          type="button"
+                          onClick={() => handleSelectRecommendedPrice(option.value)}
+                          aria-pressed={isSelected}
+                          title={`Filter by ${option.label}`}
+                          className={`cursor-pointer rounded-xl px-3 py-1.5 font-mono text-sm font-bold shadow-sm transition-all active:scale-95 ${
+                            isSelected
+                              ? 'border border-emerald-400 bg-emerald-500/30 text-white shadow-md ring-1 ring-emerald-400/60'
+                              : 'border border-slate-700/70 bg-slate-800/80 text-white hover:border-emerald-500/40 hover:bg-slate-800'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
 
-        {/* Recommended Accounts & Best Picks */}
-        <div className="space-y-3 sm:space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-xs">★</span>
-                  Recommended Accounts
-                </h4>
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                  Top Tiers
-                </span>
-              </div>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                {RECOMMENDED_PRICE_OPTIONS.map((option) => {
-                  const isSelected = minPrice === option.value.toString() && maxPrice === option.value.toString()
-                  return (
-                    <button
-                      key={`recommended-price-${option.value}`}
-                      type="button"
-                      onClick={() => handleSelectRecommendedPrice(option.value)}
-                      aria-pressed={isSelected}
-                      title={`Filter by ${option.label}`}
-                      className={`cursor-pointer rounded-xl px-3 py-1.5 font-mono text-sm font-bold shadow-sm transition-all active:scale-95 ${
-                        isSelected
-                          ? 'border border-emerald-400 bg-emerald-500/30 text-white shadow-md ring-1 ring-emerald-400/60'
-                          : option.value === 110000
-                          ? 'border border-emerald-500/40 bg-emerald-500/15 text-white hover:border-emerald-400 hover:bg-emerald-500/25'
-                          : 'border border-slate-700/70 bg-slate-800/80 text-white hover:border-emerald-500/40 hover:bg-slate-800'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Verified high-demand account tiers matching active buyer preferences.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-slate-900/60 to-slate-900/80 p-4 shadow-lg backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <h4 className="flex items-center gap-1.5 font-heading text-xs font-bold uppercase tracking-wider text-blue-400">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/20 text-xs">⚡</span>
-                  Best Picks
-                </h4>
-                <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
-                  Popular Values
-                </span>
-              </div>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <span className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                  ₦110K
-                </span>
-                <span className="rounded-xl border border-slate-700/70 bg-slate-800/80 px-3 py-1.5 font-mono text-sm font-bold text-white shadow-sm">
-                  ₦35K
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Curated sweet-spot price points for immediate work readiness.
-              </p>
-            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Verified high-demand account tiers matching active buyer preferences.
+            </p>
           </div>
 
           {/* Why We Recommend These Accounts */}
@@ -649,7 +580,7 @@ The goal is to help beginners understand the process and get started confidently
               </span>
               Why We Recommend These Accounts
             </h4>
-            <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
               <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3">
                 <div className="text-xs font-bold text-emerald-400">
                   Higher Earning Potential
@@ -682,43 +613,20 @@ The goal is to help beginners understand the process and get started confidently
                   Worth considering for sustained opportunities.
                 </p>
               </div>
+              <div className="rounded-xl border border-white/5 bg-slate-950/50 p-3 sm:col-span-2 lg:col-span-1">
+                <div className="text-xs font-bold text-cyan-400">
+                  Proxy / RDP Included
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  Recommended accounts include a free beginner masterclass and may come with a proxy or RDP, depending on the listing. Non-recommended accounts include the masterclass and a VPN where applicable.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Featured Listings Carousel/Grid */}
-        {featuredListings.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-heading text-xl font-black text-white">
-              Featured Asset Opportunities
-            </h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredListings.map((listing) => (
-                <MarketplaceListingCard
-                  key={`featured-${listing.id}`}
-                  listing={listing}
-                  isFavorited={favorites.includes(listing.id)}
-                  onToggleFavorite={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    handleToggleFavorite(listing.id)
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Payment Protection & Escrow Highlights - immediately before available listings */}
         <MarketplaceHighlights />
-
-        {/* Buying Guidance Notice */}
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-200 backdrop-blur-md">
-          <span className="text-xl shrink-0">💡</span>
-          <p className="leading-relaxed">
-            <strong className="font-bold text-white">Buying Tip:</strong> Read the account description carefully or chat with the seller before purchasing.
-          </p>
-        </div>
 
         {/* Search Control elements */}
         <div id="marketplace-search-section" className="relative z-20 -mx-4 px-4 py-2 sm:py-3 md:py-4">
@@ -733,6 +641,14 @@ The goal is to help beginners understand the process and get started confidently
             activeFiltersCount={activeFiltersCount}
             selectedPlatforms={selectedPlatforms}
           />
+        </div>
+
+        {/* Buying Guidance Notice */}
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-200 backdrop-blur-md">
+          <span className="text-xl shrink-0">💡</span>
+          <p className="leading-relaxed">
+            <strong className="font-bold text-white">Buying Tip:</strong> Read the account description carefully or chat with the seller before purchasing.
+          </p>
         </div>
 
         {/* Search Results / Main Filter Grid */}
@@ -958,8 +874,6 @@ The goal is to help beginners understand the process and get started confidently
           </div>
         </div>
 
-        <RecentlyViewedSection />
-        
         {/* Marketplace Reviews Section */}
         <div className="space-y-4">
           <WrittenReviews location="marketplace" />

@@ -11,6 +11,7 @@ import {
   Sparkles,
   BadgeCheck,
   Zap,
+  Briefcase,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Listing } from '@/types'
@@ -18,6 +19,10 @@ import { OptimizedImage } from '@/components/shared/OptimizedImage'
 import { useComparisonStore } from '@/stores/comparisonStore'
 import { TrustRibbon } from '@/components/shared/TrustRibbon'
 import { springs } from '@/lib/framer-physics'
+import {
+  DirectBrandDealArtwork,
+  getDirectBrandDealInfo,
+} from './DirectBrandDealArtwork'
 
 interface MarketplaceListingCardProps {
   listing: Listing
@@ -106,6 +111,7 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
   const isSellerVerified = listing.seller?.seller_verified || false
   const sellerAvatar = listing.seller?.avatar_url
   const intelligenceLabel = computeIntelligenceLabel(listing)
+  const directBrandDeal = getDirectBrandDealInfo(listing)
 
   const { addToCompare, removeFromCompare, isInCompare } = useComparisonStore()
   const inCompare = isInCompare(listing.id)
@@ -123,14 +129,19 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
   return (
     <motion.div
       whileHover={{ y: -8, transition: springs.gentle }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-white/5 bg-slate-900/40 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-white/10 hover:shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]"
+      className={`group relative flex h-full flex-col overflow-hidden rounded-[24px] backdrop-blur-xl transition-all duration-500 ${
+        directBrandDeal
+          ? 'border border-emerald-500/30 bg-slate-900/50 shadow-[0_0_24px_-8px_rgba(16,185,129,0.22)] hover:border-emerald-500/45 hover:shadow-[0_0_32px_-8px_rgba(16,185,129,0.32)]'
+          : 'border border-white/5 bg-slate-900/40 shadow-2xl hover:border-white/10 hover:shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]'
+      }`}
     >
       {/* Thumbnail Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-950">
-        {listing.seller?.subscription_plan === 'enterprise' && (
+        {!directBrandDeal && listing.seller?.subscription_plan === 'enterprise' && (
           <TrustRibbon type="premium" />
         )}
-        {isSellerVerified &&
+        {!directBrandDeal &&
+          isSellerVerified &&
           listing.seller?.subscription_plan !== 'enterprise' && (
             <TrustRibbon type="verified" />
           )}
@@ -141,6 +152,8 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
             alt={listing.title}
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
+        ) : directBrandDeal ? (
+          <DirectBrandDealArtwork info={directBrandDeal} />
         ) : (
           <div className="flex h-full flex-col items-center justify-center bg-slate-900 text-slate-500">
             <Globe className="h-10 w-10 opacity-50" />
@@ -153,11 +166,16 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-80" />
 
         {/* Intelligence Label (Top Left) */}
-        <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 max-w-[calc(100%-6rem)]">
-          <span className="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-md truncate">
+        <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-1.5 max-w-[calc(100%-5.5rem)]">
+          <span className="rounded-lg border border-white/10 bg-slate-950/75 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-md truncate">
             {listing.platform}
           </span>
-          {intelligenceLabel && (
+          {directBrandDeal ? (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 shadow-lg backdrop-blur-md truncate">
+              <Briefcase className="h-3 w-3 shrink-0 text-emerald-400" />
+              <span className="truncate">{directBrandDeal.badgeLabel}</span>
+            </span>
+          ) : intelligenceLabel && (
             <span
               className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-lg backdrop-blur-md truncate ${intelligenceLabel.bg} ${intelligenceLabel.color}`}
             >
@@ -265,6 +283,7 @@ export const MarketplaceListingCard: React.FC<MarketplaceListingCardProps> = ({
             <motion.div whileTap={{ scale: 0.95, transition: springs.snappy }}>
               <Link
                 to={`/listing/${listing.id}`}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                 className="group/btn inline-flex h-12 items-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] transition-all hover:bg-indigo-500 hover:shadow-[0_0_30px_-5px_rgba(79,70,229,0.8)]"
               >
                 View Details

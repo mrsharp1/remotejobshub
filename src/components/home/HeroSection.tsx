@@ -107,13 +107,21 @@ export const HeroSection: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300 leading-relaxed">
-                  <div className="space-y-1 rounded-xl bg-slate-950/40 p-3 border border-white/5">
+                  <div className="space-y-1.5 rounded-xl bg-slate-950/40 p-3 border border-white/5">
                     <div className="font-bold text-white flex items-center gap-1.5">
                       <span className="text-indigo-400">⚡</span> The Platforms & Pay
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Companies pay people to review and improve AI models, plus other remote tasks. Tasks may pay around <strong>$15/hr</strong> or <strong>$200+ per task</strong> (earnings vary and are not guaranteed).
+                    <p className="font-bold text-indigo-200 text-[11px]">
+                      What Are Outlier AI and Handshake AI?
                     </p>
+                    <div className="space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                      <p>
+                        Outlier AI and Handshake AI are platforms where companies pay people to help with AI-related work.
+                      </p>
+                      <p>
+                        Simply put, companies need real people to review, correct, and improve AI, and they pay for completed tasks. Depending on the task, earnings may reach around $15 per hour or $200+ per task. Higher-priced accounts may offer access to more tasks, depending on account eligibility and availability.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 rounded-xl bg-slate-950/40 p-3 border border-white/5">
@@ -150,14 +158,22 @@ export const HeroSection: React.FC = () => {
               </div>
 
               {/* Secure Transactions Card */}
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 sm:p-4 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-1">
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5 backdrop-blur-sm space-y-3">
+                <div className="flex items-center gap-2">
                   <span className="text-base sm:text-lg">🛡️</span>
                   <h4 className="text-xs sm:text-sm font-bold text-emerald-300">Secure Payments & Escrow Protection</h4>
                 </div>
-                <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
-                  Payments are processed securely through Paystack, while Remote Jobs Hub’s internal Brand Escrow Team safeguards the transaction and manages the release of funds according to our escrow process. Sellers receive payment only after the buyer confirms successful account handover.
-                </p>
+                <div className="space-y-2.5 text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+                  <p>
+                    Through our partnership with Paystack, payments are processed securely. Remote Jobs Hub's Escrow Team also oversees transactions and ensures sellers receive payment only after buyers confirm successful account handover.
+                  </p>
+                  <p className="rounded-xl border border-emerald-500/20 bg-slate-950/50 p-2.5 sm:p-3 text-slate-200">
+                    If you log in and discover that the account you purchased doesn't meet your expectations, simply contact our support team for assistance with a refund.
+                  </p>
+                  <p className="font-bold text-emerald-300">
+                    Your safety and satisfaction are our priority.
+                  </p>
+                </div>
               </div>
             </motion.div>
 
@@ -180,6 +196,7 @@ export const HeroSection: React.FC = () => {
             >
               <Link
                 to="/marketplace"
+                onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' })}
                 className="group relative flex w-full sm:w-auto items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-bold text-slate-900 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
                 <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
