@@ -183,7 +183,7 @@ export const HeroSection: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.28, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="mt-6 flex flex-col items-center lg:items-start gap-1 text-xs text-slate-400"
             >
-              <p><strong className="text-slate-300">₦20K and above Accounts:</strong> Selected accounts may include Proxy & RDP, depending on the account.</p>
+              <p><strong className="text-slate-300">Recommended Accounts:</strong> Selected accounts may include Proxy & RDP, depending on the account.</p>
               <p><strong className="text-slate-300">Requirements:</strong> Phone or laptop.</p>
               <p className="text-indigo-400 font-medium mt-1">Shop with confidence. Start your remote-work journey today.</p>
             </motion.div>
