@@ -12,8 +12,6 @@ import { supabase } from '@/lib/supabase'
 import { LoadingSkeleton } from '@/components/listing/LoadingSkeleton'
 import { EmptyState } from '@/components/listing/EmptyState'
 import { ListingHero } from '@/components/listing/ListingHero'
-import { Gallery } from '@/components/listing/Gallery'
-import { RevenueAnalytics } from '@/components/listing/RevenueAnalytics'
 import { TrustCenter } from '@/components/listing/TrustCenter'
 import { SellerProfile } from '@/components/listing/SellerProfile'
 import { PurchaseTimeline } from '@/components/listing/PurchaseTimeline'
@@ -213,7 +211,11 @@ export const ListingDetailPage: React.FC = () => {
           {/* Main Content Column */}
           <div className="space-y-12 lg:col-span-8">
             <div className="space-y-6">
-              <ListingHero listing={listing} sellerRating={sellerRating} />
+              <ListingHero
+                listing={listing}
+                sellerRating={sellerRating}
+                images={images}
+              />
 
               <button
                 type="button"
@@ -224,10 +226,6 @@ export const ListingDetailPage: React.FC = () => {
                 <span>Contact Seller</span>
               </button>
             </div>
-
-            <Gallery images={images} title={listing.title} />
-
-            <RevenueAnalytics listing={listing} />
 
             {/* Why This Account */}
             {listing.description &&
@@ -324,14 +322,14 @@ export const ListingDetailPage: React.FC = () => {
                         </p>
                       </div>
                     )}
-{/* Mobile-only Contact Seller button */}
-<button
-  onClick={handleContactSeller}
-  className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-slate-950 px-6 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-bold text-white transition-colors hover:bg-slate-800 lg:hidden"
->
-  <MessageSquare className="h-4 w-4 shrink-0" />
-  <span className="truncate">Contact Seller</span>
-</button>
+                    {/* Mobile-only Contact Seller button */}
+                    <button
+                      onClick={handleContactSeller}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-slate-950 px-6 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-bold text-white transition-colors hover:bg-slate-800 lg:hidden"
+                    >
+                      <MessageSquare className="h-4 w-4 shrink-0" />
+                      <span className="truncate">Contact Seller</span>
+                    </button>
                   </div>
                 )
               })()}

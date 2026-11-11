@@ -1,14 +1,16 @@
 import React from 'react'
 
 import { ShieldCheck, Lock, Globe, Clock, Zap, Star } from 'lucide-react'
+import { Gallery } from '@/components/listing/Gallery'
 import type { Listing, SellerRating } from '@/types'
 
 interface ListingHeroProps {
   listing: Listing
   sellerRating?: SellerRating | null
+  images: string[]
 }
 
-export const ListingHero: React.FC<ListingHeroProps> = ({ listing, sellerRating }) => {
+export const ListingHero: React.FC<ListingHeroProps> = ({ listing, sellerRating, images }) => {
   const weeklyRevenue = (Number(listing.monthly_income || 0) / 4).toLocaleString()
   const monthlyRevenue = Number(listing.monthly_income || 0).toLocaleString()
   const price = Number(listing.price).toLocaleString()
@@ -53,7 +55,9 @@ export const ListingHero: React.FC<ListingHeroProps> = ({ listing, sellerRating 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Gallery images={images} title={listing.title} />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1 rounded-2xl border border-white/5 bg-slate-900/50 p-4 backdrop-blur-sm min-w-0">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">Asking Price</p>
           <p className="font-mono text-xl sm:text-2xl font-bold text-white truncate" title={`₦${price}`}>₦{price}</p>

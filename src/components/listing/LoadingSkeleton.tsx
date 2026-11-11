@@ -22,9 +22,14 @@ export const LoadingSkeleton: React.FC = () => {
           {/* Gallery skeleton */}
           <div className="aspect-[16/9] w-full rounded-[24px] bg-white/5" />
 
-          {/* Analytics blocks */}
-          <div className="h-48 w-full rounded-[24px] bg-white/5" />
-          
+          {/* Metrics skeleton */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="h-24 w-full rounded-2xl bg-white/5" />
+            <div className="h-24 w-full rounded-2xl bg-white/5" />
+            <div className="h-24 w-full rounded-2xl bg-white/5" />
+            <div className="h-24 w-full rounded-2xl bg-white/5" />
+          </div>
+
           <div className="h-64 w-full rounded-[24px] bg-white/5" />
         </div>
 
